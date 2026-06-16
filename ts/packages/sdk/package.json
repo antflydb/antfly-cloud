@@ -1,0 +1,23 @@
+{
+  "name": "@antflydb/antfly-cloud-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../../../openapi.yaml -o ./src/types.ts",
+    "check-types": "tsc --noEmit",
+    "test": "pnpm check-types"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.15.2"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}
+
