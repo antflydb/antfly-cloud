@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+project_name: antfly-cloud
+
+before:
+  hooks:
+    - go mod tidy
+    - sh -c 'rm -rf completions && mkdir -p completions'
+    - sh -c 'go run ./cmd/antfly-cloud completion bash > completions/antfly-cloud.bash'
+    - sh -c 'go run ./cmd/antfly-cloud completion zsh > completions/antfly-cloud.zsh'
+    - sh -c 'go run ./cmd/antfly-cloud completion fish > completions/antfly-cloud.fish'
+
+builds:
+  - id: antfly-cloud
+    main: ./cmd/antfly-cloud
+    binary: antfly-cloud
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .Date }}
+      - -X main.dirty={{ .IsGitDirty }}
+
+archives:
+  - id: antfly-cloud
+    ids:
+      - antfly-cloud
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - completions/*
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: '0.0.0-snapshot'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+release:
+  disable: true
+
+brews:
+  - name: antfly-cloud
+    ids:
+      - antfly-cloud
+    skip_upload: auto
+    directory: Formula
+    repository:
+      owner: antflydb
+      name: homebrew-taps
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://docs.antfly.io"
+    description: "Command-line tools for Antfly Cloud"
+    url_template: "https://releases.antfly.io/antfly-cloud/{{ .Tag }}/{{ .ArtifactName }}"
+    custom_block: |
+      license :cannot_represent
+    install: |
+      bin.install "antfly-cloud"
+      doc.install "README.md"
+      doc.install "LICENSE"
+      bash_completion.install "completions/antfly-cloud.bash" => "antfly-cloud"
+      zsh_completion.install "completions/antfly-cloud.zsh" => "_antfly-cloud"
+      fish_completion.install "completions/antfly-cloud.fish"
+    test: |
+      system "#{bin}/antfly-cloud", "version"
+
+blobs:
+  - provider: gs
+    bucket: '{{ .Env.ANTFLY_CLOUD_RELEASE_BUCKET }}'
+    directory: 'antfly-cloud/{{ .Tag }}'
+    ids:
+      - antfly-cloud
+      - checksums
+    extra_files:
+      - glob: ./dist/metadata.json
+      - glob: ./dist/artifacts.json

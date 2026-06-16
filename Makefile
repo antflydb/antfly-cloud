@@ -3,10 +3,10 @@
 test: test-go test-ts
 
 test-go:
-	cd go && GOWORK=off go test ./...
+	cd go && GOWORK=off GOCACHE=/tmp/antfly-cloud-go-build-cache go test ./...
 
 test-ts:
-	cd ts && pnpm install --frozen-lockfile && pnpm test
+	cd ts && pnpm test
 
 generate: generate-ts
 
