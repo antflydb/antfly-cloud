@@ -1,7 +1,7 @@
 /**
  * Auth-related cookie names.
  *
- * Shared between @antflydb/antfly-cloud-sdk (use-sign-out, etc.) and the dashboard app
+ * Shared between @antfly/cloud-sdk (use-sign-out, etc.) and the dashboard app
  * so cookie names are defined in one place.
  */
 

@@ -11,4 +11,4 @@ test-ts:
 generate: generate-ts
 
 generate-ts:
-	cd ts && pnpm --filter @antflydb/antfly-cloud-sdk generate
+	cd ts && pnpm --filter @antfly/cloud-sdk generate

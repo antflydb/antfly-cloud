@@ -2,8 +2,8 @@
   "name": "@antflydb/antfly-cloud-workspace",
   "private": true,
   "scripts": {
-    "test": "pnpm --filter @antflydb/antfly-cloud-sdk test",
-    "check-types": "pnpm --filter @antflydb/antfly-cloud-sdk check-types"
+    "test": "pnpm --filter @antfly/cloud-sdk test",
+    "check-types": "pnpm --filter @antfly/cloud-sdk check-types"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

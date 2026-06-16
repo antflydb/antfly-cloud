@@ -18,7 +18,7 @@ docs/                Public client documentation
 
 ## Packages
 
-- TypeScript SDK: `@antflydb/antfly-cloud-sdk`
+- TypeScript SDK: `@antfly/cloud-sdk`
 - Go SDK import path: `github.com/antflydb/antfly-cloud/go/pkg/sdk`
 - CLI command: `antfly-cloud`
 
