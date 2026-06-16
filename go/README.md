@@ -75,11 +75,11 @@ antfly-cloud status
 antfly-cloud instances
 antfly-cloud usage
 antfly-cloud instance use prod
-antfly-cloud antfly context --json
-eval "$(antfly-cloud antfly env)"
+antfly-cloud context --json
+eval "$(antfly-cloud env)"
 ```
 
-`antfly-cloud antfly env` exports data-plane connection settings for the Antfly CLI.
+`antfly-cloud env` exports data-plane connection settings for the Antfly CLI.
 Antfly Cloud management API keys (`cloudaf_*`) cannot be used as Antfly data-plane
 tokens; use device login for that flow.
 

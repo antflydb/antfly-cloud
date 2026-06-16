@@ -12,6 +12,13 @@ output-options:
     - getCurrentUser
     - listOrganizations
     - getOrganization
+    - listOrganizationMembers
+    - inviteOrganizationMember
+    - updateMemberRole
+    - updateMemberMetadata
+    - removeOrganizationMember
+    - revokeInvitation
+    - resendInvitation
     - listCloudInstances
     - getCloudInstance
     - updateCloudInstance
@@ -19,5 +26,17 @@ output-options:
     - listCloudInstanceEvents
     - getCloudInstanceMetrics
     - getCloudUsage
+    - listCloudGroups
+    - createCloudGroup
+    - updateCloudGroup
+    - getCloudUserAttributes
+    - updateCloudUserAttributes
+    - syncCloudSCIMGroups
+    - listCloudGroupMembers
+    - addCloudGroupMember
+    - removeCloudGroupMember
+    - listCloudGrants
+    - upsertCloudGrant
+    - deleteCloudGrant
   prefer-skip-optional-pointer: true
   prefer-skip-optional-pointer-with-omitzero: true

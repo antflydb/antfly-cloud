@@ -17,18 +17,9 @@ type antflyContext struct {
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
-func newAntflyCommand(stateFor stateFactory) *cobra.Command {
-	cmd := &cobra.Command{Use: "antfly", Short: "Export Antfly CLI connection context"}
-	cmd.AddCommand(&cobra.Command{Use: "context [instance-id-or-slug]", Short: "Show Antfly CLI connection context", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		st, err := stateFor(true)
-		if err != nil {
-			return err
-		}
-		ref := ""
-		if len(args) > 0 {
-			ref = args[0]
-		}
-		ctx, err := resolveAntflyContext(cmd, st, ref)
+func newAntflyContextCommand(stateFor stateFactory) *cobra.Command {
+	return &cobra.Command{Use: "context [instance-id-or-slug]", Short: "Show Antfly CLI connection context", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, ctx, err := antflyContextForCommand(cmd, stateFor, args)
 		if err != nil {
 			return err
 		}
@@ -37,28 +28,38 @@ func newAntflyCommand(stateFor stateFactory) *cobra.Command {
 			if ctx.ExpiresAt != nil {
 				fmt.Fprintf(st.out.W, "Token expires: %s\n", fmtTime(*ctx.ExpiresAt))
 			}
-			fmt.Fprintln(st.out.W, "Use `antfly-cloud antfly context --json` or `antfly-cloud antfly env` to export credentials.")
+			fmt.Fprintln(st.out.W, "Use `antfly-cloud context --json` or `antfly-cloud env` to export credentials.")
 			return nil
 		})
-	}})
-	cmd.AddCommand(&cobra.Command{Use: "env [instance-id-or-slug]", Short: "Print shell exports for the Antfly CLI", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		st, err := stateFor(true)
-		if err != nil {
-			return err
-		}
-		ref := ""
-		if len(args) > 0 {
-			ref = args[0]
-		}
-		ctx, err := resolveAntflyContext(cmd, st, ref)
+	}}
+}
+
+func newAntflyEnvCommand(stateFor stateFactory) *cobra.Command {
+	return &cobra.Command{Use: "env [instance-id-or-slug]", Short: "Print shell exports for the Antfly CLI", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, ctx, err := antflyContextForCommand(cmd, stateFor, args)
 		if err != nil {
 			return err
 		}
 		fmt.Fprintf(st.out.W, "export ANTFLY_URL=%s\n", shellQuote(ctx.URL))
 		fmt.Fprintf(st.out.W, "export ANTFLY_TOKEN=%s\n", shellQuote(ctx.Token))
 		return nil
-	}})
-	return cmd
+	}}
+}
+
+func antflyContextForCommand(cmd *cobra.Command, stateFor stateFactory, args []string) (*appState, *antflyContext, error) {
+	st, err := stateFor(true)
+	if err != nil {
+		return nil, nil, err
+	}
+	ref := ""
+	if len(args) > 0 {
+		ref = args[0]
+	}
+	ctx, err := resolveAntflyContext(cmd, st, ref)
+	if err != nil {
+		return nil, nil, err
+	}
+	return st, ctx, nil
 }
 
 func resolveAntflyContext(cmd *cobra.Command, st *appState, instanceRef string) (*antflyContext, error) {

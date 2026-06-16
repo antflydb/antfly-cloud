@@ -94,7 +94,7 @@ func TestInstanceUseAndAntflyContext(t *testing.T) {
 
 	var out, errb bytes.Buffer
 	cmd := newRootCommand(&out, &errb)
-	cmd.SetArgs([]string{"--config", configPath, "antfly", "context", "--json"})
+	cmd.SetArgs([]string{"--config", configPath, "context", "--json"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestInstanceUseAndAntflyContext(t *testing.T) {
 
 	var envOut, envErr bytes.Buffer
 	envCmd := newRootCommand(&envOut, &envErr)
-	envCmd.SetArgs([]string{"--config", configPath, "antfly", "env"})
+	envCmd.SetArgs([]string{"--config", configPath, "env"})
 	if err := envCmd.Execute(); err != nil {
 		t.Fatal(err)
 	}

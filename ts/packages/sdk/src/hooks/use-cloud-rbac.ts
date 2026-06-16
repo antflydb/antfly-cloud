@@ -1,29 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client";
 
-const cloudRBACClient = client as {
-  GET: (
-    path: string,
-    options?: unknown
-  ) => Promise<{ data?: unknown; error?: { detail?: string } }>;
-  POST: (
-    path: string,
-    options?: unknown
-  ) => Promise<{ data?: unknown; error?: { detail?: string } }>;
-  PUT: (
-    path: string,
-    options?: unknown
-  ) => Promise<{ data?: unknown; error?: { detail?: string } }>;
-  PATCH: (
-    path: string,
-    options?: unknown
-  ) => Promise<{ data?: unknown; error?: { detail?: string } }>;
-  DELETE: (
-    path: string,
-    options?: unknown
-  ) => Promise<{ data?: unknown; error?: { detail?: string } }>;
-};
-
 export type CloudGrantSubjectType = "user" | "group" | "cloud_api_key";
 
 export type CloudGroup = {
@@ -78,7 +55,7 @@ type UpdateCloudGroupRequest = {
 type UpsertCloudGrantRequest = {
   subject_type: CloudGrantSubjectType;
   subject_id: string;
-  table_name?: string;
+  table_name: string;
   actions: string[];
   row_filter?: Record<string, unknown>;
   row_filter_template?: Record<string, unknown>;
@@ -120,7 +97,7 @@ export function useCloudGroups(orgId: string | null) {
     queryFn: async () => {
       if (!orgId) throw new Error("Organization ID is required");
 
-      const { data, error } = await cloudRBACClient.GET("/organizations/{org_id}/cloud/groups", {
+      const { data, error } = await client.GET("/organizations/{org_id}/cloud/groups", {
         params: { path: { org_id: orgId } },
       });
 
@@ -140,7 +117,7 @@ export function useCreateCloudGroup(orgId: string) {
 
   return useMutation({
     mutationFn: async (body: CreateCloudGroupRequest) => {
-      const { data, error } = await cloudRBACClient.POST("/organizations/{org_id}/cloud/groups", {
+      const { data, error } = await client.POST("/organizations/{org_id}/cloud/groups", {
         params: { path: { org_id: orgId } },
         body,
       });
@@ -162,7 +139,7 @@ export function useUpdateCloudGroup(orgId: string) {
 
   return useMutation({
     mutationFn: async ({ groupId, body }: { groupId: string; body: UpdateCloudGroupRequest }) => {
-      const { data, error } = await cloudRBACClient.PATCH(
+      const { data, error } = await client.PATCH(
         "/organizations/{org_id}/cloud/groups/{group_id}",
         {
           params: { path: { org_id: orgId, group_id: groupId } },
@@ -188,7 +165,7 @@ export function useCloudUserAttributes(orgId: string | null, userId: string | nu
     queryFn: async () => {
       if (!orgId || !userId) throw new Error("Organization and user IDs are required");
 
-      const { data, error } = await cloudRBACClient.GET(
+      const { data, error } = await client.GET(
         "/organizations/{org_id}/cloud/users/{user_id}/attributes",
         {
           params: { path: { org_id: orgId, user_id: userId } },
@@ -211,7 +188,7 @@ export function useUpdateCloudUserAttributes(orgId: string, userId: string) {
 
   return useMutation({
     mutationFn: async (manualAttributes: Record<string, unknown>) => {
-      const { data, error } = await cloudRBACClient.PUT(
+      const { data, error } = await client.PUT(
         "/organizations/{org_id}/cloud/users/{user_id}/attributes",
         {
           params: { path: { org_id: orgId, user_id: userId } },
@@ -240,7 +217,7 @@ export function useCloudGroupMembers(orgId: string | null, groupId: string | nul
     queryFn: async () => {
       if (!orgId || !groupId) throw new Error("Organization and group IDs are required");
 
-      const { data, error } = await cloudRBACClient.GET(
+      const { data, error } = await client.GET(
         "/organizations/{org_id}/cloud/groups/{group_id}/members",
         {
           params: { path: { org_id: orgId, group_id: groupId } },
@@ -263,7 +240,7 @@ export function useAddCloudGroupMember(orgId: string, groupId: string) {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await cloudRBACClient.POST(
+      const { data, error } = await client.POST(
         "/organizations/{org_id}/cloud/groups/{group_id}/members",
         {
           params: { path: { org_id: orgId, group_id: groupId } },
@@ -290,7 +267,7 @@ export function useRemoveCloudGroupMember(orgId: string, groupId: string) {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await cloudRBACClient.DELETE(
+      const { error } = await client.DELETE(
         "/organizations/{org_id}/cloud/groups/{group_id}/members/{user_id}",
         {
           params: { path: { org_id: orgId, group_id: groupId, user_id: userId } },
@@ -317,7 +294,7 @@ export function useCloudGrants(orgId: string | null, instanceId: string | null) 
     queryFn: async () => {
       if (!orgId || !instanceId) throw new Error("Organization and instance IDs are required");
 
-      const { data, error } = await cloudRBACClient.GET(
+      const { data, error } = await client.GET(
         "/organizations/{org_id}/cloud/instances/{instance_id}/grants",
         {
           params: { path: { org_id: orgId, instance_id: instanceId } },
@@ -340,7 +317,7 @@ export function useUpsertCloudGrant(orgId: string, instanceId: string) {
 
   return useMutation({
     mutationFn: async (body: UpsertCloudGrantRequest) => {
-      const { data, error } = await cloudRBACClient.PUT(
+      const { data, error } = await client.PUT(
         "/organizations/{org_id}/cloud/instances/{instance_id}/grants",
         {
           params: { path: { org_id: orgId, instance_id: instanceId } },
@@ -367,7 +344,7 @@ export function useDeleteCloudGrant(orgId: string, instanceId: string) {
 
   return useMutation({
     mutationFn: async (grantId: string) => {
-      const { error } = await cloudRBACClient.DELETE(
+      const { error } = await client.DELETE(
         "/organizations/{org_id}/cloud/instances/{instance_id}/grants/{grant_id}",
         {
           params: { path: { org_id: orgId, instance_id: instanceId, grant_id: grantId } },
@@ -393,7 +370,7 @@ export function useSyncCloudSCIMGroups(orgId: string) {
 
   return useMutation({
     mutationFn: async (body: CloudSCIMGroupSyncRequest) => {
-      const { data, error } = await cloudRBACClient.PUT(
+      const { data, error } = await client.PUT(
         "/organizations/{org_id}/cloud/scim/groups",
         {
           params: { path: { org_id: orgId } },

@@ -26,6 +26,27 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "BearerAuth.Scopes"
 )
 
+// Defines values for CloudGrantSubjectType.
+const (
+	CloudGrantSubjectTypeCloudApiKey CloudGrantSubjectType = "cloud_api_key"
+	CloudGrantSubjectTypeGroup       CloudGrantSubjectType = "group"
+	CloudGrantSubjectTypeUser        CloudGrantSubjectType = "user"
+)
+
+// Valid indicates whether the value is a known member of the CloudGrantSubjectType enum.
+func (e CloudGrantSubjectType) Valid() bool {
+	switch e {
+	case CloudGrantSubjectTypeCloudApiKey:
+		return true
+	case CloudGrantSubjectTypeGroup:
+		return true
+	case CloudGrantSubjectTypeUser:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CloudInstanceMode.
 const (
 	CloudInstanceModeReplicated CloudInstanceMode = "replicated"
@@ -155,6 +176,63 @@ func (e CloudInstanceVersionUpgradeStatus) Valid() bool {
 	}
 }
 
+// Defines values for InvitationResponse2Status.
+const (
+	InvitationResponse2StatusInvited InvitationResponse2Status = "invited"
+)
+
+// Valid indicates whether the value is a known member of the InvitationResponse2Status enum.
+func (e InvitationResponse2Status) Valid() bool {
+	switch e {
+	case InvitationResponse2StatusInvited:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MembershipStatus.
+const (
+	MembershipStatusActive  MembershipStatus = "active"
+	MembershipStatusInvited MembershipStatus = "invited"
+	MembershipStatusRemoved MembershipStatus = "removed"
+)
+
+// Valid indicates whether the value is a known member of the MembershipStatus enum.
+func (e MembershipStatus) Valid() bool {
+	switch e {
+	case MembershipStatusActive:
+		return true
+	case MembershipStatusInvited:
+		return true
+	case MembershipStatusRemoved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationRole.
+const (
+	OrganizationRoleAdmin     OrganizationRole = "admin"
+	OrganizationRoleDeveloper OrganizationRole = "developer"
+	OrganizationRoleOwner     OrganizationRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationRole enum.
+func (e OrganizationRole) Valid() bool {
+	switch e {
+	case OrganizationRoleAdmin:
+		return true
+	case OrganizationRoleDeveloper:
+		return true
+	case OrganizationRoleOwner:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OrganizationStatus.
 const (
 	OrganizationStatusActive  OrganizationStatus = "active"
@@ -170,6 +248,27 @@ func (e OrganizationStatus) Valid() bool {
 	case OrganizationStatusDeleted:
 		return true
 	case OrganizationStatusFrozen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpsertCloudGrantRequestSubjectType.
+const (
+	UpsertCloudGrantRequestSubjectTypeCloudApiKey UpsertCloudGrantRequestSubjectType = "cloud_api_key"
+	UpsertCloudGrantRequestSubjectTypeGroup       UpsertCloudGrantRequestSubjectType = "group"
+	UpsertCloudGrantRequestSubjectTypeUser        UpsertCloudGrantRequestSubjectType = "user"
+)
+
+// Valid indicates whether the value is a known member of the UpsertCloudGrantRequestSubjectType enum.
+func (e UpsertCloudGrantRequestSubjectType) Valid() bool {
+	switch e {
+	case UpsertCloudGrantRequestSubjectTypeCloudApiKey:
+		return true
+	case UpsertCloudGrantRequestSubjectTypeGroup:
+		return true
+	case UpsertCloudGrantRequestSubjectTypeUser:
 		return true
 	default:
 		return false
@@ -195,6 +294,107 @@ func (e UserStatus) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Defines values for UpdateMemberRoleJSONBodyRole.
+const (
+	UpdateMemberRoleJSONBodyRoleAdmin     UpdateMemberRoleJSONBodyRole = "admin"
+	UpdateMemberRoleJSONBodyRoleDeveloper UpdateMemberRoleJSONBodyRole = "developer"
+)
+
+// Valid indicates whether the value is a known member of the UpdateMemberRoleJSONBodyRole enum.
+func (e UpdateMemberRoleJSONBodyRole) Valid() bool {
+	switch e {
+	case UpdateMemberRoleJSONBodyRoleAdmin:
+		return true
+	case UpdateMemberRoleJSONBodyRoleDeveloper:
+		return true
+	default:
+		return false
+	}
+}
+
+// AddCloudGroupMemberRequest defines model for AddCloudGroupMemberRequest.
+type AddCloudGroupMemberRequest struct {
+	// UserId RFC 4122 UUID identifier
+	UserId UUID `json:"user_id"`
+}
+
+// CloudGrant defines model for CloudGrant.
+type CloudGrant struct {
+	// Actions Explicit action strings or role presets such as instance_viewer, instance_developer, instance_admin.
+	Actions []string `json:"actions"`
+
+	// CloudInstanceId RFC 4122 UUID identifier
+	CloudInstanceId UUID `json:"cloud_instance_id"`
+
+	// CreatedAt ISO 8601 timestamp
+	CreatedAt Timestamp `json:"created_at"`
+
+	// CreatedBy RFC 4122 UUID identifier
+	CreatedBy UUID `json:"created_by,omitempty,omitzero"`
+
+	// Id RFC 4122 UUID identifier
+	Id       UUID                   `json:"id"`
+	Metadata map[string]interface{} `json:"metadata,omitempty,omitzero"`
+
+	// OrganizationId RFC 4122 UUID identifier
+	OrganizationId    UUID                   `json:"organization_id"`
+	RowFilter         map[string]interface{} `json:"row_filter,omitempty,omitzero"`
+	RowFilterTemplate map[string]interface{} `json:"row_filter_template,omitempty,omitzero"`
+
+	// SubjectId RFC 4122 UUID identifier
+	SubjectId   UUID                  `json:"subject_id"`
+	SubjectType CloudGrantSubjectType `json:"subject_type"`
+
+	// TableName Table name or "*" for all tables.
+	TableName string `json:"table_name"`
+
+	// UpdatedAt ISO 8601 timestamp
+	UpdatedAt Timestamp `json:"updated_at"`
+}
+
+// CloudGrantSubjectType defines model for CloudGrant.SubjectType.
+type CloudGrantSubjectType string
+
+// CloudGroup defines model for CloudGroup.
+type CloudGroup struct {
+	// CreatedAt ISO 8601 timestamp
+	CreatedAt Timestamp `json:"created_at"`
+
+	// CreatedBy RFC 4122 UUID identifier
+	CreatedBy   UUID   `json:"created_by,omitempty,omitzero"`
+	Description string `json:"description,omitempty,omitzero"`
+
+	// ExternalId External SCIM group identifier, when the group is managed by SCIM.
+	ExternalId string `json:"external_id,omitempty,omitzero"`
+
+	// Id RFC 4122 UUID identifier
+	Id       UUID                   `json:"id"`
+	Metadata map[string]interface{} `json:"metadata,omitempty,omitzero"`
+	Name     string                 `json:"name"`
+
+	// OrganizationId RFC 4122 UUID identifier
+	OrganizationId UUID   `json:"organization_id"`
+	Slug           string `json:"slug"`
+
+	// UpdatedAt ISO 8601 timestamp
+	UpdatedAt Timestamp `json:"updated_at"`
+}
+
+// CloudGroupMember defines model for CloudGroupMember.
+type CloudGroupMember struct {
+	// AddedAt ISO 8601 timestamp
+	AddedAt Timestamp `json:"added_at"`
+
+	// AddedBy RFC 4122 UUID identifier
+	AddedBy UUID `json:"added_by,omitempty,omitzero"`
+
+	// GroupId RFC 4122 UUID identifier
+	GroupId UUID `json:"group_id"`
+
+	// UserId RFC 4122 UUID identifier
+	UserId UUID `json:"user_id"`
 }
 
 // CloudInstance defines model for CloudInstance.
@@ -320,6 +520,36 @@ type CloudInstanceVersionPolicy string
 // CloudInstanceVersionUpgradeStatus Antfly runtime rollout status.
 type CloudInstanceVersionUpgradeStatus string
 
+// CloudSCIMGroupInput defines model for CloudSCIMGroupInput.
+type CloudSCIMGroupInput struct {
+	Description string                      `json:"description,omitempty,omitzero"`
+	DisplayName string                      `json:"display_name"`
+	ExternalId  string                      `json:"external_id"`
+	Members     []CloudSCIMGroupMemberInput `json:"members"`
+	Slug        string                      `json:"slug,omitempty,omitzero"`
+}
+
+// CloudSCIMGroupMemberInput defines model for CloudSCIMGroupMemberInput.
+type CloudSCIMGroupMemberInput struct {
+	// Attributes SSO/SCIM principal attributes persisted for row-filter templates.
+	Attributes map[string]interface{} `json:"attributes,omitempty,omitzero"`
+
+	// UserId RFC 4122 UUID identifier
+	UserId UUID `json:"user_id"`
+}
+
+// CloudSCIMGroupSyncRequest defines model for CloudSCIMGroupSyncRequest.
+type CloudSCIMGroupSyncRequest struct {
+	Groups []CloudSCIMGroupInput `json:"groups"`
+}
+
+// CloudSCIMGroupSyncResult defines model for CloudSCIMGroupSyncResult.
+type CloudSCIMGroupSyncResult struct {
+	AttributesSynced  int `json:"attributes_synced"`
+	GroupsSynced      int `json:"groups_synced"`
+	MembershipsSynced int `json:"memberships_synced"`
+}
+
 // CloudUsageSummary defines model for CloudUsageSummary.
 type CloudUsageSummary struct {
 	// BillingCycleEnd End of the current billing cycle
@@ -355,6 +585,23 @@ type CloudUsageTotals struct {
 	Queries int `json:"queries"`
 }
 
+// CloudUserAttributes defines model for CloudUserAttributes.
+type CloudUserAttributes struct {
+	EffectiveAttributes map[string]interface{} `json:"effective_attributes"`
+	ManualAttributes    map[string]interface{} `json:"manual_attributes"`
+
+	// OrganizationId RFC 4122 UUID identifier
+	OrganizationId   UUID                   `json:"organization_id"`
+	Source           string                 `json:"source,omitempty,omitzero"`
+	SyncedAttributes map[string]interface{} `json:"synced_attributes"`
+
+	// UpdatedAt ISO 8601 timestamp
+	UpdatedAt Timestamp `json:"updated_at,omitempty,omitzero"`
+
+	// UserId RFC 4122 UUID identifier
+	UserId UUID `json:"user_id"`
+}
+
 // ConnectionDetails defines model for ConnectionDetails.
 type ConnectionDetails struct {
 	// AntflyInferenceProxyUrl Colony proxy URL for accessing the attached Antfly Inference service for this instance
@@ -368,6 +615,14 @@ type ConnectionDetails struct {
 
 	// Status Instance lifecycle status
 	Status CloudInstanceStatus `json:"status"`
+}
+
+// CreateCloudGroupRequest defines model for CreateCloudGroupRequest.
+type CreateCloudGroupRequest struct {
+	Description string                 `json:"description,omitempty,omitzero"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty,omitzero"`
+	Name        string                 `json:"name"`
+	Slug        string                 `json:"slug,omitempty,omitzero"`
 }
 
 // Error defines model for Error.
@@ -420,6 +675,33 @@ type InstanceMetrics struct {
 	// TableCount Number of tables
 	TableCount int `json:"table_count"`
 }
+
+// InvitationResponse2 defines model for InvitationResponse-2.
+type InvitationResponse2 struct {
+	// Email Email address of the invited user
+	Email openapi_types.Email `json:"email"`
+
+	// ExpiresAt ISO 8601 timestamp
+	ExpiresAt Timestamp `json:"expires_at"`
+
+	// InvitationId RFC 4122 UUID identifier
+	InvitationId UUID `json:"invitation_id"`
+
+	// Role Organization-level role
+	Role OrganizationRole `json:"role"`
+
+	// Status Invitation status
+	Status InvitationResponse2Status `json:"status"`
+
+	// Token Invitation token for accepting the invitation
+	Token string `json:"token"`
+}
+
+// InvitationResponse2Status Invitation status
+type InvitationResponse2Status string
+
+// MembershipStatus Membership status
+type MembershipStatus string
 
 // NodeConfig Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
 type NodeConfig struct {
@@ -522,6 +804,40 @@ type Organization struct {
 	UpdatedAt Timestamp `json:"updated_at"`
 }
 
+// OrganizationMember defines model for OrganizationMember.
+type OrganizationMember struct {
+	// Id RFC 4122 UUID identifier
+	Id UUID `json:"id"`
+
+	// InvitedAt ISO 8601 timestamp
+	InvitedAt Timestamp `json:"invited_at"`
+
+	// InvitedBy RFC 4122 UUID identifier
+	InvitedBy UUID `json:"invited_by,omitempty,omitzero"`
+
+	// JoinedAt ISO 8601 timestamp
+	JoinedAt Timestamp `json:"joined_at,omitempty,omitzero"`
+
+	// Metadata Organization-scoped metadata for this membership and role context.
+	Metadata map[string]interface{} `json:"metadata,omitempty,omitzero"`
+
+	// OrganizationId RFC 4122 UUID identifier
+	OrganizationId UUID `json:"organization_id"`
+
+	// Role Organization-level role
+	Role OrganizationRole `json:"role"`
+
+	// Status Membership status
+	Status MembershipStatus `json:"status"`
+	User   User             `json:"user,omitempty,omitzero"`
+
+	// UserId RFC 4122 UUID identifier
+	UserId UUID `json:"user_id"`
+}
+
+// OrganizationRole Organization-level role
+type OrganizationRole string
+
 // OrganizationStatus Organization status
 type OrganizationStatus string
 
@@ -555,11 +871,28 @@ type ProvisioningEvent struct {
 	Metadata map[string]interface{} `json:"metadata,omitempty,omitzero"`
 }
 
+// ResendInvitationResponse2 defines model for ResendInvitationResponse-2.
+type ResendInvitationResponse2 struct {
+	// ExpiresAt ISO 8601 timestamp
+	ExpiresAt Timestamp `json:"expires_at"`
+	Message   string    `json:"message"`
+
+	// NewToken New invitation token
+	NewToken string `json:"new_token"`
+}
+
 // Timestamp ISO 8601 timestamp
 type Timestamp = time.Time
 
 // UUID RFC 4122 UUID identifier
 type UUID = openapi_types.UUID
+
+// UpdateCloudGroupRequest defines model for UpdateCloudGroupRequest.
+type UpdateCloudGroupRequest struct {
+	Description string                 `json:"description,omitempty,omitzero"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty,omitzero"`
+	Name        string                 `json:"name,omitempty,omitzero"`
+}
 
 // UpdateCloudInstanceRequest defines model for UpdateCloudInstanceRequest.
 type UpdateCloudInstanceRequest struct {
@@ -590,6 +923,27 @@ type UpdateCloudInstanceRequest struct {
 	// VersionPolicy Antfly runtime version policy for managed upgrades.
 	VersionPolicy CloudInstanceVersionPolicy `json:"version_policy,omitempty,omitzero"`
 }
+
+// UpdateCloudUserAttributesRequest defines model for UpdateCloudUserAttributesRequest.
+type UpdateCloudUserAttributesRequest struct {
+	ManualAttributes map[string]interface{} `json:"manual_attributes"`
+}
+
+// UpsertCloudGrantRequest defines model for UpsertCloudGrantRequest.
+type UpsertCloudGrantRequest struct {
+	Actions           []string               `json:"actions"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty,omitzero"`
+	RowFilter         map[string]interface{} `json:"row_filter,omitempty,omitzero"`
+	RowFilterTemplate map[string]interface{} `json:"row_filter_template,omitempty,omitzero"`
+
+	// SubjectId RFC 4122 UUID identifier
+	SubjectId   UUID                               `json:"subject_id"`
+	SubjectType UpsertCloudGrantRequestSubjectType `json:"subject_type"`
+	TableName   string                             `json:"table_name,omitempty,omitzero"`
+}
+
+// UpsertCloudGrantRequestSubjectType defines model for UpsertCloudGrantRequest.SubjectType.
+type UpsertCloudGrantRequestSubjectType string
 
 // User defines model for User.
 type User struct {
@@ -624,11 +978,17 @@ type User struct {
 // UserStatus User account status
 type UserStatus string
 
+// GroupId RFC 4122 UUID identifier
+type GroupId = UUID
+
 // InstanceId RFC 4122 UUID identifier
 type InstanceId = UUID
 
 // Limit defines model for Limit.
 type Limit = int
+
+// MemberId RFC 4122 UUID identifier
+type MemberId = UUID
 
 // Offset defines model for Offset.
 type Offset = int
@@ -641,6 +1001,9 @@ type BadRequest = Error
 
 // Forbidden defines model for Forbidden.
 type Forbidden = Error
+
+// InternalServerError defines model for InternalServerError.
+type InternalServerError = Error
 
 // NotFound defines model for NotFound.
 type NotFound = Error
@@ -681,8 +1044,66 @@ type ListCloudInstanceEventsParams struct {
 	Limit Limit `form:"limit,omitempty" json:"limit,omitempty,omitzero"`
 }
 
+// ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
+type ListOrganizationMembersParams struct {
+	// Offset Number of items to skip
+	Offset Offset `form:"offset,omitempty" json:"offset,omitempty,omitzero"`
+
+	// Limit Maximum number of items to return
+	Limit Limit `form:"limit,omitempty" json:"limit,omitempty,omitzero"`
+}
+
+// InviteOrganizationMemberJSONBody defines parameters for InviteOrganizationMember.
+type InviteOrganizationMemberJSONBody struct {
+	Email openapi_types.Email `json:"email"`
+
+	// Role Organization-level role
+	Role OrganizationRole `json:"role"`
+}
+
+// UpdateMemberRoleJSONBody defines parameters for UpdateMemberRole.
+type UpdateMemberRoleJSONBody struct {
+	// Role New role for the member (cannot set to owner via this endpoint)
+	Role UpdateMemberRoleJSONBodyRole `json:"role"`
+}
+
+// UpdateMemberRoleJSONBodyRole defines parameters for UpdateMemberRole.
+type UpdateMemberRoleJSONBodyRole string
+
+// UpdateMemberMetadataJSONBody defines parameters for UpdateMemberMetadata.
+type UpdateMemberMetadataJSONBody struct {
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// CreateCloudGroupJSONRequestBody defines body for CreateCloudGroup for application/json ContentType.
+type CreateCloudGroupJSONRequestBody = CreateCloudGroupRequest
+
+// UpdateCloudGroupJSONRequestBody defines body for UpdateCloudGroup for application/json ContentType.
+type UpdateCloudGroupJSONRequestBody = UpdateCloudGroupRequest
+
+// AddCloudGroupMemberJSONRequestBody defines body for AddCloudGroupMember for application/json ContentType.
+type AddCloudGroupMemberJSONRequestBody = AddCloudGroupMemberRequest
+
 // UpdateCloudInstanceJSONRequestBody defines body for UpdateCloudInstance for application/json ContentType.
 type UpdateCloudInstanceJSONRequestBody = UpdateCloudInstanceRequest
+
+// UpsertCloudGrantJSONRequestBody defines body for UpsertCloudGrant for application/json ContentType.
+type UpsertCloudGrantJSONRequestBody = UpsertCloudGrantRequest
+
+// SyncCloudSCIMGroupsJSONRequestBody defines body for SyncCloudSCIMGroups for application/json ContentType.
+type SyncCloudSCIMGroupsJSONRequestBody = CloudSCIMGroupSyncRequest
+
+// UpdateCloudUserAttributesJSONRequestBody defines body for UpdateCloudUserAttributes for application/json ContentType.
+type UpdateCloudUserAttributesJSONRequestBody = UpdateCloudUserAttributesRequest
+
+// InviteOrganizationMemberJSONRequestBody defines body for InviteOrganizationMember for application/json ContentType.
+type InviteOrganizationMemberJSONRequestBody InviteOrganizationMemberJSONBody
+
+// UpdateMemberRoleJSONRequestBody defines body for UpdateMemberRole for application/json ContentType.
+type UpdateMemberRoleJSONRequestBody UpdateMemberRoleJSONBody
+
+// UpdateMemberMetadataJSONRequestBody defines body for UpdateMemberMetadata for application/json ContentType.
+type UpdateMemberMetadataJSONRequestBody UpdateMemberMetadataJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -757,11 +1178,41 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// RevokeInvitation request
+	RevokeInvitation(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResendInvitation request
+	ResendInvitation(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListOrganizations request
 	ListOrganizations(ctx context.Context, params *ListOrganizationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetOrganization request
 	GetOrganization(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListCloudGroups request
+	ListCloudGroups(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateCloudGroupWithBody request with any body
+	CreateCloudGroupWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCloudGroup(ctx context.Context, orgId OrgId, body CreateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCloudGroupWithBody request with any body
+	UpdateCloudGroupWithBody(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCloudGroup(ctx context.Context, orgId OrgId, groupId GroupId, body UpdateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListCloudGroupMembers request
+	ListCloudGroupMembers(ctx context.Context, orgId OrgId, groupId GroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddCloudGroupMemberWithBody request with any body
+	AddCloudGroupMemberWithBody(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddCloudGroupMember(ctx context.Context, orgId OrgId, groupId GroupId, body AddCloudGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveCloudGroupMember request
+	RemoveCloudGroupMember(ctx context.Context, orgId OrgId, groupId GroupId, userId UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListCloudInstances request
 	ListCloudInstances(ctx context.Context, orgId OrgId, params *ListCloudInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -780,14 +1231,83 @@ type ClientInterface interface {
 	// ListCloudInstanceEvents request
 	ListCloudInstanceEvents(ctx context.Context, orgId OrgId, instanceId InstanceId, params *ListCloudInstanceEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListCloudGrants request
+	ListCloudGrants(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpsertCloudGrantWithBody request with any body
+	UpsertCloudGrantWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpsertCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpsertCloudGrantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteCloudGrant request
+	DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCloudInstanceMetrics request
 	GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SyncCloudSCIMGroupsWithBody request with any body
+	SyncCloudSCIMGroupsWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SyncCloudSCIMGroups(ctx context.Context, orgId OrgId, body SyncCloudSCIMGroupsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCloudUsage request
 	GetCloudUsage(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetCloudUserAttributes request
+	GetCloudUserAttributes(ctx context.Context, orgId OrgId, userId UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCloudUserAttributesWithBody request with any body
+	UpdateCloudUserAttributesWithBody(ctx context.Context, orgId OrgId, userId UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCloudUserAttributes(ctx context.Context, orgId OrgId, userId UUID, body UpdateCloudUserAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListOrganizationMembers request
+	ListOrganizationMembers(ctx context.Context, orgId OrgId, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// InviteOrganizationMemberWithBody request with any body
+	InviteOrganizationMemberWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	InviteOrganizationMember(ctx context.Context, orgId OrgId, body InviteOrganizationMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveOrganizationMember request
+	RemoveOrganizationMember(ctx context.Context, orgId OrgId, memberId MemberId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMemberRoleWithBody request with any body
+	UpdateMemberRoleWithBody(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMemberRole(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMemberMetadataWithBody request with any body
+	UpdateMemberMetadataWithBody(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMemberMetadata(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCurrentUser request
 	GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) RevokeInvitation(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeInvitationRequest(c.Server, token)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ResendInvitation(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResendInvitationRequest(c.Server, token)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ListOrganizations(ctx context.Context, params *ListOrganizationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -804,6 +1324,114 @@ func (c *Client) ListOrganizations(ctx context.Context, params *ListOrganization
 
 func (c *Client) GetOrganization(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOrganizationRequest(c.Server, orgId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListCloudGroups(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCloudGroupsRequest(c.Server, orgId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudGroupWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudGroupRequestWithBody(c.Server, orgId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudGroup(ctx context.Context, orgId OrgId, body CreateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudGroupRequest(c.Server, orgId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudGroupWithBody(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudGroupRequestWithBody(c.Server, orgId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudGroup(ctx context.Context, orgId OrgId, groupId GroupId, body UpdateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudGroupRequest(c.Server, orgId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListCloudGroupMembers(ctx context.Context, orgId OrgId, groupId GroupId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCloudGroupMembersRequest(c.Server, orgId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddCloudGroupMemberWithBody(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddCloudGroupMemberRequestWithBody(c.Server, orgId, groupId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddCloudGroupMember(ctx context.Context, orgId OrgId, groupId GroupId, body AddCloudGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddCloudGroupMemberRequest(c.Server, orgId, groupId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RemoveCloudGroupMember(ctx context.Context, orgId OrgId, groupId GroupId, userId UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveCloudGroupMemberRequest(c.Server, orgId, groupId, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -886,8 +1514,80 @@ func (c *Client) ListCloudInstanceEvents(ctx context.Context, orgId OrgId, insta
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListCloudGrants(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCloudGrantsRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertCloudGrantWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertCloudGrantRequestWithBody(c.Server, orgId, instanceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpsertCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpsertCloudGrantJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpsertCloudGrantRequest(c.Server, orgId, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteCloudGrantRequest(c.Server, orgId, instanceId, grantId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCloudInstanceMetricsRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SyncCloudSCIMGroupsWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSyncCloudSCIMGroupsRequestWithBody(c.Server, orgId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SyncCloudSCIMGroups(ctx context.Context, orgId OrgId, body SyncCloudSCIMGroupsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSyncCloudSCIMGroupsRequest(c.Server, orgId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -910,6 +1610,138 @@ func (c *Client) GetCloudUsage(ctx context.Context, orgId OrgId, reqEditors ...R
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetCloudUserAttributes(ctx context.Context, orgId OrgId, userId UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCloudUserAttributesRequest(c.Server, orgId, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudUserAttributesWithBody(ctx context.Context, orgId OrgId, userId UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudUserAttributesRequestWithBody(c.Server, orgId, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudUserAttributes(ctx context.Context, orgId OrgId, userId UUID, body UpdateCloudUserAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudUserAttributesRequest(c.Server, orgId, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListOrganizationMembers(ctx context.Context, orgId OrgId, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListOrganizationMembersRequest(c.Server, orgId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) InviteOrganizationMemberWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInviteOrganizationMemberRequestWithBody(c.Server, orgId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) InviteOrganizationMember(ctx context.Context, orgId OrgId, body InviteOrganizationMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInviteOrganizationMemberRequest(c.Server, orgId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RemoveOrganizationMember(ctx context.Context, orgId OrgId, memberId MemberId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveOrganizationMemberRequest(c.Server, orgId, memberId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMemberRoleWithBody(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMemberRoleRequestWithBody(c.Server, orgId, memberId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMemberRole(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMemberRoleRequest(c.Server, orgId, memberId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMemberMetadataWithBody(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMemberMetadataRequestWithBody(c.Server, orgId, memberId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMemberMetadata(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMemberMetadataRequest(c.Server, orgId, memberId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCurrentUserRequest(c.Server)
 	if err != nil {
@@ -920,6 +1752,74 @@ func (c *Client) GetCurrentUser(ctx context.Context, reqEditors ...RequestEditor
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewRevokeInvitationRequest generates requests for RevokeInvitation
+func NewRevokeInvitationRequest(server string, token string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "token", token, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invitations/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewResendInvitationRequest generates requests for ResendInvitation
+func NewResendInvitationRequest(server string, token string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "token", token, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invitations/%s/resend", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewListOrganizationsRequest generates requests for ListOrganizations
@@ -1007,6 +1907,284 @@ func NewGetOrganizationRequest(server string, orgId OrgId) (*http.Request, error
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListCloudGroupsRequest generates requests for ListCloudGroups
+func NewListCloudGroupsRequest(server string, orgId OrgId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateCloudGroupRequest calls the generic CreateCloudGroup builder with application/json body
+func NewCreateCloudGroupRequest(server string, orgId OrgId, body CreateCloudGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateCloudGroupRequestWithBody(server, orgId, "application/json", bodyReader)
+}
+
+// NewCreateCloudGroupRequestWithBody generates requests for CreateCloudGroup with any type of body
+func NewCreateCloudGroupRequestWithBody(server string, orgId OrgId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateCloudGroupRequest calls the generic UpdateCloudGroup builder with application/json body
+func NewUpdateCloudGroupRequest(server string, orgId OrgId, groupId GroupId, body UpdateCloudGroupJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCloudGroupRequestWithBody(server, orgId, groupId, "application/json", bodyReader)
+}
+
+// NewUpdateCloudGroupRequestWithBody generates requests for UpdateCloudGroup with any type of body
+func NewUpdateCloudGroupRequestWithBody(server string, orgId OrgId, groupId GroupId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "group_id", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListCloudGroupMembersRequest generates requests for ListCloudGroupMembers
+func NewListCloudGroupMembersRequest(server string, orgId OrgId, groupId GroupId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "group_id", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups/%s/members", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddCloudGroupMemberRequest calls the generic AddCloudGroupMember builder with application/json body
+func NewAddCloudGroupMemberRequest(server string, orgId OrgId, groupId GroupId, body AddCloudGroupMemberJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddCloudGroupMemberRequestWithBody(server, orgId, groupId, "application/json", bodyReader)
+}
+
+// NewAddCloudGroupMemberRequestWithBody generates requests for AddCloudGroupMember with any type of body
+func NewAddCloudGroupMemberRequestWithBody(server string, orgId OrgId, groupId GroupId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "group_id", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups/%s/members", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveCloudGroupMemberRequest generates requests for RemoveCloudGroupMember
+func NewRemoveCloudGroupMemberRequest(server string, orgId OrgId, groupId GroupId, userId UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "group_id", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/groups/%s/members/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1287,6 +2465,149 @@ func NewListCloudInstanceEventsRequest(server string, orgId OrgId, instanceId In
 	return req, nil
 }
 
+// NewListCloudGrantsRequest generates requests for ListCloudGrants
+func NewListCloudGrantsRequest(server string, orgId OrgId, instanceId InstanceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/grants", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpsertCloudGrantRequest calls the generic UpsertCloudGrant builder with application/json body
+func NewUpsertCloudGrantRequest(server string, orgId OrgId, instanceId InstanceId, body UpsertCloudGrantJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpsertCloudGrantRequestWithBody(server, orgId, instanceId, "application/json", bodyReader)
+}
+
+// NewUpsertCloudGrantRequestWithBody generates requests for UpsertCloudGrant with any type of body
+func NewUpsertCloudGrantRequestWithBody(server string, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/grants", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteCloudGrantRequest generates requests for DeleteCloudGrant
+func NewDeleteCloudGrantRequest(server string, orgId OrgId, instanceId InstanceId, grantId UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "grant_id", grantId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/grants/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetCloudInstanceMetricsRequest generates requests for GetCloudInstanceMetrics
 func NewGetCloudInstanceMetricsRequest(server string, orgId OrgId, instanceId InstanceId) (*http.Request, error) {
 	var err error
@@ -1328,6 +2649,53 @@ func NewGetCloudInstanceMetricsRequest(server string, orgId OrgId, instanceId In
 	return req, nil
 }
 
+// NewSyncCloudSCIMGroupsRequest calls the generic SyncCloudSCIMGroups builder with application/json body
+func NewSyncCloudSCIMGroupsRequest(server string, orgId OrgId, body SyncCloudSCIMGroupsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSyncCloudSCIMGroupsRequestWithBody(server, orgId, "application/json", bodyReader)
+}
+
+// NewSyncCloudSCIMGroupsRequestWithBody generates requests for SyncCloudSCIMGroups with any type of body
+func NewSyncCloudSCIMGroupsRequestWithBody(server string, orgId OrgId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/scim/groups", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetCloudUsageRequest generates requests for GetCloudUsage
 func NewGetCloudUsageRequest(server string, orgId OrgId) (*http.Request, error) {
 	var err error
@@ -1358,6 +2726,362 @@ func NewGetCloudUsageRequest(server string, orgId OrgId) (*http.Request, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetCloudUserAttributesRequest generates requests for GetCloudUserAttributes
+func NewGetCloudUserAttributesRequest(server string, orgId OrgId, userId UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/users/%s/attributes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateCloudUserAttributesRequest calls the generic UpdateCloudUserAttributes builder with application/json body
+func NewUpdateCloudUserAttributesRequest(server string, orgId OrgId, userId UUID, body UpdateCloudUserAttributesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCloudUserAttributesRequestWithBody(server, orgId, userId, "application/json", bodyReader)
+}
+
+// NewUpdateCloudUserAttributesRequestWithBody generates requests for UpdateCloudUserAttributes with any type of body
+func NewUpdateCloudUserAttributesRequestWithBody(server string, orgId OrgId, userId UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "user_id", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/users/%s/attributes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListOrganizationMembersRequest generates requests for ListOrganizationMembers
+func NewListOrganizationMembersRequest(server string, orgId OrgId, params *ListOrganizationMembersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/members", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "offset", params.Offset, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewInviteOrganizationMemberRequest calls the generic InviteOrganizationMember builder with application/json body
+func NewInviteOrganizationMemberRequest(server string, orgId OrgId, body InviteOrganizationMemberJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewInviteOrganizationMemberRequestWithBody(server, orgId, "application/json", bodyReader)
+}
+
+// NewInviteOrganizationMemberRequestWithBody generates requests for InviteOrganizationMember with any type of body
+func NewInviteOrganizationMemberRequestWithBody(server string, orgId OrgId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/members", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveOrganizationMemberRequest generates requests for RemoveOrganizationMember
+func NewRemoveOrganizationMemberRequest(server string, orgId OrgId, memberId MemberId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "member_id", memberId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/members/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMemberRoleRequest calls the generic UpdateMemberRole builder with application/json body
+func NewUpdateMemberRoleRequest(server string, orgId OrgId, memberId MemberId, body UpdateMemberRoleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMemberRoleRequestWithBody(server, orgId, memberId, "application/json", bodyReader)
+}
+
+// NewUpdateMemberRoleRequestWithBody generates requests for UpdateMemberRole with any type of body
+func NewUpdateMemberRoleRequestWithBody(server string, orgId OrgId, memberId MemberId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "member_id", memberId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/members/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateMemberMetadataRequest calls the generic UpdateMemberMetadata builder with application/json body
+func NewUpdateMemberMetadataRequest(server string, orgId OrgId, memberId MemberId, body UpdateMemberMetadataJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMemberMetadataRequestWithBody(server, orgId, memberId, "application/json", bodyReader)
+}
+
+// NewUpdateMemberMetadataRequestWithBody generates requests for UpdateMemberMetadata with any type of body
+func NewUpdateMemberMetadataRequestWithBody(server string, orgId OrgId, memberId MemberId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "member_id", memberId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/members/%s/metadata", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1432,11 +3156,41 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// RevokeInvitationWithResponse request
+	RevokeInvitationWithResponse(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*RevokeInvitationResponse, error)
+
+	// ResendInvitationWithResponse request
+	ResendInvitationWithResponse(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*ResendInvitationResponse, error)
+
 	// ListOrganizationsWithResponse request
 	ListOrganizationsWithResponse(ctx context.Context, params *ListOrganizationsParams, reqEditors ...RequestEditorFn) (*ListOrganizationsResponse, error)
 
 	// GetOrganizationWithResponse request
 	GetOrganizationWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*GetOrganizationResponse, error)
+
+	// ListCloudGroupsWithResponse request
+	ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error)
+
+	// CreateCloudGroupWithBodyWithResponse request with any body
+	CreateCloudGroupWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudGroupResponse, error)
+
+	CreateCloudGroupWithResponse(ctx context.Context, orgId OrgId, body CreateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudGroupResponse, error)
+
+	// UpdateCloudGroupWithBodyWithResponse request with any body
+	UpdateCloudGroupWithBodyWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudGroupResponse, error)
+
+	UpdateCloudGroupWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, body UpdateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudGroupResponse, error)
+
+	// ListCloudGroupMembersWithResponse request
+	ListCloudGroupMembersWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, reqEditors ...RequestEditorFn) (*ListCloudGroupMembersResponse, error)
+
+	// AddCloudGroupMemberWithBodyWithResponse request with any body
+	AddCloudGroupMemberWithBodyWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddCloudGroupMemberResponse, error)
+
+	AddCloudGroupMemberWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, body AddCloudGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*AddCloudGroupMemberResponse, error)
+
+	// RemoveCloudGroupMemberWithResponse request
+	RemoveCloudGroupMemberWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, userId UUID, reqEditors ...RequestEditorFn) (*RemoveCloudGroupMemberResponse, error)
 
 	// ListCloudInstancesWithResponse request
 	ListCloudInstancesWithResponse(ctx context.Context, orgId OrgId, params *ListCloudInstancesParams, reqEditors ...RequestEditorFn) (*ListCloudInstancesResponse, error)
@@ -1455,14 +3209,126 @@ type ClientWithResponsesInterface interface {
 	// ListCloudInstanceEventsWithResponse request
 	ListCloudInstanceEventsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, params *ListCloudInstanceEventsParams, reqEditors ...RequestEditorFn) (*ListCloudInstanceEventsResponse, error)
 
+	// ListCloudGrantsWithResponse request
+	ListCloudGrantsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*ListCloudGrantsResponse, error)
+
+	// UpsertCloudGrantWithBodyWithResponse request with any body
+	UpsertCloudGrantWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertCloudGrantResponse, error)
+
+	UpsertCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpsertCloudGrantJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertCloudGrantResponse, error)
+
+	// DeleteCloudGrantWithResponse request
+	DeleteCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*DeleteCloudGrantResponse, error)
+
 	// GetCloudInstanceMetricsWithResponse request
 	GetCloudInstanceMetricsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceMetricsResponse, error)
+
+	// SyncCloudSCIMGroupsWithBodyWithResponse request with any body
+	SyncCloudSCIMGroupsWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SyncCloudSCIMGroupsResponse, error)
+
+	SyncCloudSCIMGroupsWithResponse(ctx context.Context, orgId OrgId, body SyncCloudSCIMGroupsJSONRequestBody, reqEditors ...RequestEditorFn) (*SyncCloudSCIMGroupsResponse, error)
 
 	// GetCloudUsageWithResponse request
 	GetCloudUsageWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*GetCloudUsageResponse, error)
 
+	// GetCloudUserAttributesWithResponse request
+	GetCloudUserAttributesWithResponse(ctx context.Context, orgId OrgId, userId UUID, reqEditors ...RequestEditorFn) (*GetCloudUserAttributesResponse, error)
+
+	// UpdateCloudUserAttributesWithBodyWithResponse request with any body
+	UpdateCloudUserAttributesWithBodyWithResponse(ctx context.Context, orgId OrgId, userId UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudUserAttributesResponse, error)
+
+	UpdateCloudUserAttributesWithResponse(ctx context.Context, orgId OrgId, userId UUID, body UpdateCloudUserAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudUserAttributesResponse, error)
+
+	// ListOrganizationMembersWithResponse request
+	ListOrganizationMembersWithResponse(ctx context.Context, orgId OrgId, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*ListOrganizationMembersResponse, error)
+
+	// InviteOrganizationMemberWithBodyWithResponse request with any body
+	InviteOrganizationMemberWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InviteOrganizationMemberResponse, error)
+
+	InviteOrganizationMemberWithResponse(ctx context.Context, orgId OrgId, body InviteOrganizationMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*InviteOrganizationMemberResponse, error)
+
+	// RemoveOrganizationMemberWithResponse request
+	RemoveOrganizationMemberWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, reqEditors ...RequestEditorFn) (*RemoveOrganizationMemberResponse, error)
+
+	// UpdateMemberRoleWithBodyWithResponse request with any body
+	UpdateMemberRoleWithBodyWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMemberRoleResponse, error)
+
+	UpdateMemberRoleWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMemberRoleResponse, error)
+
+	// UpdateMemberMetadataWithBodyWithResponse request with any body
+	UpdateMemberMetadataWithBodyWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMemberMetadataResponse, error)
+
+	UpdateMemberMetadataWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMemberMetadataResponse, error)
+
 	// GetCurrentUserWithResponse request
 	GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error)
+}
+
+type RevokeInvitationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeInvitationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeInvitationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeInvitationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResendInvitationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ResendInvitationResponse2
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r ResendInvitationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResendInvitationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResendInvitationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
 }
 
 type ListOrganizationsResponse struct {
@@ -1526,6 +3392,210 @@ func (r GetOrganizationResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetOrganizationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListCloudGroupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []CloudGroup           `json:"data,omitempty,omitzero"`
+		Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+	}
+	JSON401 *Unauthorized
+	JSON403 *Forbidden
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCloudGroupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCloudGroupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCloudGroupsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateCloudGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CloudGroup
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateCloudGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateCloudGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateCloudGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateCloudGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudGroup
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCloudGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCloudGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateCloudGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListCloudGroupMembersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []CloudGroupMember     `json:"data,omitempty,omitzero"`
+		Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+	}
+	JSON401 *Unauthorized
+	JSON403 *Forbidden
+	JSON404 *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCloudGroupMembersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCloudGroupMembersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCloudGroupMembersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddCloudGroupMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CloudGroupMember
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r AddCloudGroupMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddCloudGroupMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddCloudGroupMemberResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RemoveCloudGroupMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveCloudGroupMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveCloudGroupMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveCloudGroupMemberResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -1703,6 +3773,106 @@ func (r ListCloudInstanceEventsResponse) ContentType() string {
 	return ""
 }
 
+type ListCloudGrantsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []CloudGrant           `json:"data,omitempty,omitzero"`
+		Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+	}
+	JSON401 *Unauthorized
+	JSON403 *Forbidden
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCloudGrantsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCloudGrantsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCloudGrantsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpsertCloudGrantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudGrant
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+}
+
+// Status returns HTTPResponse.Status
+func (r UpsertCloudGrantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpsertCloudGrantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpsertCloudGrantResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteCloudGrantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteCloudGrantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteCloudGrantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteCloudGrantResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetCloudInstanceMetricsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1730,6 +3900,39 @@ func (r GetCloudInstanceMetricsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetCloudInstanceMetricsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SyncCloudSCIMGroupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudSCIMGroupSyncResult
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+}
+
+// Status returns HTTPResponse.Status
+func (r SyncCloudSCIMGroupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SyncCloudSCIMGroupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SyncCloudSCIMGroupsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -1768,6 +3971,255 @@ func (r GetCloudUsageResponse) ContentType() string {
 	return ""
 }
 
+type GetCloudUserAttributesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudUserAttributes
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCloudUserAttributesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCloudUserAttributesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCloudUserAttributesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateCloudUserAttributesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudUserAttributes
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCloudUserAttributesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCloudUserAttributesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateCloudUserAttributesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListOrganizationMembersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []OrganizationMember `json:"data"`
+		Meta PaginationMeta       `json:"meta"`
+	}
+	JSON401 *Unauthorized
+	JSON403 *Forbidden
+	JSON404 *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListOrganizationMembersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListOrganizationMembersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListOrganizationMembersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type InviteOrganizationMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *InvitationResponse2
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r InviteOrganizationMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r InviteOrganizationMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r InviteOrganizationMemberResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RemoveOrganizationMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveOrganizationMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveOrganizationMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveOrganizationMemberResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateMemberRoleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// OrganizationId RFC 4122 UUID identifier
+		OrganizationId UUID   `json:"organization_id"`
+		Role           string `json:"role"`
+
+		// UpdatedAt ISO 8601 timestamp
+		UpdatedAt Timestamp `json:"updated_at"`
+
+		// UserId RFC 4122 UUID identifier
+		UserId UUID `json:"user_id"`
+	}
+	JSON400 *BadRequest
+	JSON401 *Unauthorized
+	JSON403 *Forbidden
+	JSON404 *NotFound
+	JSON500 *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMemberRoleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMemberRoleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateMemberRoleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateMemberMetadataResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *OrganizationMember
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMemberMetadataResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMemberMetadataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateMemberMetadataResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetCurrentUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1799,6 +4251,24 @@ func (r GetCurrentUserResponse) ContentType() string {
 	return ""
 }
 
+// RevokeInvitationWithResponse request returning *RevokeInvitationResponse
+func (c *ClientWithResponses) RevokeInvitationWithResponse(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*RevokeInvitationResponse, error) {
+	rsp, err := c.RevokeInvitation(ctx, token, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeInvitationResponse(rsp)
+}
+
+// ResendInvitationWithResponse request returning *ResendInvitationResponse
+func (c *ClientWithResponses) ResendInvitationWithResponse(ctx context.Context, token string, reqEditors ...RequestEditorFn) (*ResendInvitationResponse, error) {
+	rsp, err := c.ResendInvitation(ctx, token, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResendInvitationResponse(rsp)
+}
+
 // ListOrganizationsWithResponse request returning *ListOrganizationsResponse
 func (c *ClientWithResponses) ListOrganizationsWithResponse(ctx context.Context, params *ListOrganizationsParams, reqEditors ...RequestEditorFn) (*ListOrganizationsResponse, error) {
 	rsp, err := c.ListOrganizations(ctx, params, reqEditors...)
@@ -1815,6 +4285,84 @@ func (c *ClientWithResponses) GetOrganizationWithResponse(ctx context.Context, o
 		return nil, err
 	}
 	return ParseGetOrganizationResponse(rsp)
+}
+
+// ListCloudGroupsWithResponse request returning *ListCloudGroupsResponse
+func (c *ClientWithResponses) ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error) {
+	rsp, err := c.ListCloudGroups(ctx, orgId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCloudGroupsResponse(rsp)
+}
+
+// CreateCloudGroupWithBodyWithResponse request with arbitrary body returning *CreateCloudGroupResponse
+func (c *ClientWithResponses) CreateCloudGroupWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudGroupResponse, error) {
+	rsp, err := c.CreateCloudGroupWithBody(ctx, orgId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateCloudGroupWithResponse(ctx context.Context, orgId OrgId, body CreateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudGroupResponse, error) {
+	rsp, err := c.CreateCloudGroup(ctx, orgId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudGroupResponse(rsp)
+}
+
+// UpdateCloudGroupWithBodyWithResponse request with arbitrary body returning *UpdateCloudGroupResponse
+func (c *ClientWithResponses) UpdateCloudGroupWithBodyWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudGroupResponse, error) {
+	rsp, err := c.UpdateCloudGroupWithBody(ctx, orgId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudGroupResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCloudGroupWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, body UpdateCloudGroupJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudGroupResponse, error) {
+	rsp, err := c.UpdateCloudGroup(ctx, orgId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudGroupResponse(rsp)
+}
+
+// ListCloudGroupMembersWithResponse request returning *ListCloudGroupMembersResponse
+func (c *ClientWithResponses) ListCloudGroupMembersWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, reqEditors ...RequestEditorFn) (*ListCloudGroupMembersResponse, error) {
+	rsp, err := c.ListCloudGroupMembers(ctx, orgId, groupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCloudGroupMembersResponse(rsp)
+}
+
+// AddCloudGroupMemberWithBodyWithResponse request with arbitrary body returning *AddCloudGroupMemberResponse
+func (c *ClientWithResponses) AddCloudGroupMemberWithBodyWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddCloudGroupMemberResponse, error) {
+	rsp, err := c.AddCloudGroupMemberWithBody(ctx, orgId, groupId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddCloudGroupMemberResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddCloudGroupMemberWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, body AddCloudGroupMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*AddCloudGroupMemberResponse, error) {
+	rsp, err := c.AddCloudGroupMember(ctx, orgId, groupId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddCloudGroupMemberResponse(rsp)
+}
+
+// RemoveCloudGroupMemberWithResponse request returning *RemoveCloudGroupMemberResponse
+func (c *ClientWithResponses) RemoveCloudGroupMemberWithResponse(ctx context.Context, orgId OrgId, groupId GroupId, userId UUID, reqEditors ...RequestEditorFn) (*RemoveCloudGroupMemberResponse, error) {
+	rsp, err := c.RemoveCloudGroupMember(ctx, orgId, groupId, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveCloudGroupMemberResponse(rsp)
 }
 
 // ListCloudInstancesWithResponse request returning *ListCloudInstancesResponse
@@ -1870,6 +4418,41 @@ func (c *ClientWithResponses) ListCloudInstanceEventsWithResponse(ctx context.Co
 	return ParseListCloudInstanceEventsResponse(rsp)
 }
 
+// ListCloudGrantsWithResponse request returning *ListCloudGrantsResponse
+func (c *ClientWithResponses) ListCloudGrantsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*ListCloudGrantsResponse, error) {
+	rsp, err := c.ListCloudGrants(ctx, orgId, instanceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCloudGrantsResponse(rsp)
+}
+
+// UpsertCloudGrantWithBodyWithResponse request with arbitrary body returning *UpsertCloudGrantResponse
+func (c *ClientWithResponses) UpsertCloudGrantWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpsertCloudGrantResponse, error) {
+	rsp, err := c.UpsertCloudGrantWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertCloudGrantResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpsertCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpsertCloudGrantJSONRequestBody, reqEditors ...RequestEditorFn) (*UpsertCloudGrantResponse, error) {
+	rsp, err := c.UpsertCloudGrant(ctx, orgId, instanceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpsertCloudGrantResponse(rsp)
+}
+
+// DeleteCloudGrantWithResponse request returning *DeleteCloudGrantResponse
+func (c *ClientWithResponses) DeleteCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*DeleteCloudGrantResponse, error) {
+	rsp, err := c.DeleteCloudGrant(ctx, orgId, instanceId, grantId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteCloudGrantResponse(rsp)
+}
+
 // GetCloudInstanceMetricsWithResponse request returning *GetCloudInstanceMetricsResponse
 func (c *ClientWithResponses) GetCloudInstanceMetricsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceMetricsResponse, error) {
 	rsp, err := c.GetCloudInstanceMetrics(ctx, orgId, instanceId, reqEditors...)
@@ -1877,6 +4460,23 @@ func (c *ClientWithResponses) GetCloudInstanceMetricsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseGetCloudInstanceMetricsResponse(rsp)
+}
+
+// SyncCloudSCIMGroupsWithBodyWithResponse request with arbitrary body returning *SyncCloudSCIMGroupsResponse
+func (c *ClientWithResponses) SyncCloudSCIMGroupsWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SyncCloudSCIMGroupsResponse, error) {
+	rsp, err := c.SyncCloudSCIMGroupsWithBody(ctx, orgId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSyncCloudSCIMGroupsResponse(rsp)
+}
+
+func (c *ClientWithResponses) SyncCloudSCIMGroupsWithResponse(ctx context.Context, orgId OrgId, body SyncCloudSCIMGroupsJSONRequestBody, reqEditors ...RequestEditorFn) (*SyncCloudSCIMGroupsResponse, error) {
+	rsp, err := c.SyncCloudSCIMGroups(ctx, orgId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSyncCloudSCIMGroupsResponse(rsp)
 }
 
 // GetCloudUsageWithResponse request returning *GetCloudUsageResponse
@@ -1888,6 +4488,101 @@ func (c *ClientWithResponses) GetCloudUsageWithResponse(ctx context.Context, org
 	return ParseGetCloudUsageResponse(rsp)
 }
 
+// GetCloudUserAttributesWithResponse request returning *GetCloudUserAttributesResponse
+func (c *ClientWithResponses) GetCloudUserAttributesWithResponse(ctx context.Context, orgId OrgId, userId UUID, reqEditors ...RequestEditorFn) (*GetCloudUserAttributesResponse, error) {
+	rsp, err := c.GetCloudUserAttributes(ctx, orgId, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCloudUserAttributesResponse(rsp)
+}
+
+// UpdateCloudUserAttributesWithBodyWithResponse request with arbitrary body returning *UpdateCloudUserAttributesResponse
+func (c *ClientWithResponses) UpdateCloudUserAttributesWithBodyWithResponse(ctx context.Context, orgId OrgId, userId UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudUserAttributesResponse, error) {
+	rsp, err := c.UpdateCloudUserAttributesWithBody(ctx, orgId, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudUserAttributesResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCloudUserAttributesWithResponse(ctx context.Context, orgId OrgId, userId UUID, body UpdateCloudUserAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudUserAttributesResponse, error) {
+	rsp, err := c.UpdateCloudUserAttributes(ctx, orgId, userId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudUserAttributesResponse(rsp)
+}
+
+// ListOrganizationMembersWithResponse request returning *ListOrganizationMembersResponse
+func (c *ClientWithResponses) ListOrganizationMembersWithResponse(ctx context.Context, orgId OrgId, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*ListOrganizationMembersResponse, error) {
+	rsp, err := c.ListOrganizationMembers(ctx, orgId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListOrganizationMembersResponse(rsp)
+}
+
+// InviteOrganizationMemberWithBodyWithResponse request with arbitrary body returning *InviteOrganizationMemberResponse
+func (c *ClientWithResponses) InviteOrganizationMemberWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InviteOrganizationMemberResponse, error) {
+	rsp, err := c.InviteOrganizationMemberWithBody(ctx, orgId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInviteOrganizationMemberResponse(rsp)
+}
+
+func (c *ClientWithResponses) InviteOrganizationMemberWithResponse(ctx context.Context, orgId OrgId, body InviteOrganizationMemberJSONRequestBody, reqEditors ...RequestEditorFn) (*InviteOrganizationMemberResponse, error) {
+	rsp, err := c.InviteOrganizationMember(ctx, orgId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInviteOrganizationMemberResponse(rsp)
+}
+
+// RemoveOrganizationMemberWithResponse request returning *RemoveOrganizationMemberResponse
+func (c *ClientWithResponses) RemoveOrganizationMemberWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, reqEditors ...RequestEditorFn) (*RemoveOrganizationMemberResponse, error) {
+	rsp, err := c.RemoveOrganizationMember(ctx, orgId, memberId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveOrganizationMemberResponse(rsp)
+}
+
+// UpdateMemberRoleWithBodyWithResponse request with arbitrary body returning *UpdateMemberRoleResponse
+func (c *ClientWithResponses) UpdateMemberRoleWithBodyWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMemberRoleResponse, error) {
+	rsp, err := c.UpdateMemberRoleWithBody(ctx, orgId, memberId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMemberRoleResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMemberRoleWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberRoleJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMemberRoleResponse, error) {
+	rsp, err := c.UpdateMemberRole(ctx, orgId, memberId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMemberRoleResponse(rsp)
+}
+
+// UpdateMemberMetadataWithBodyWithResponse request with arbitrary body returning *UpdateMemberMetadataResponse
+func (c *ClientWithResponses) UpdateMemberMetadataWithBodyWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMemberMetadataResponse, error) {
+	rsp, err := c.UpdateMemberMetadataWithBody(ctx, orgId, memberId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMemberMetadataResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMemberMetadataWithResponse(ctx context.Context, orgId OrgId, memberId MemberId, body UpdateMemberMetadataJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMemberMetadataResponse, error) {
+	rsp, err := c.UpdateMemberMetadata(ctx, orgId, memberId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMemberMetadataResponse(rsp)
+}
+
 // GetCurrentUserWithResponse request returning *GetCurrentUserResponse
 func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCurrentUserResponse, error) {
 	rsp, err := c.GetCurrentUser(ctx, reqEditors...)
@@ -1895,6 +4590,107 @@ func (c *ClientWithResponses) GetCurrentUserWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetCurrentUserResponse(rsp)
+}
+
+// ParseRevokeInvitationResponse parses an HTTP response from a RevokeInvitationWithResponse call
+func ParseRevokeInvitationResponse(rsp *http.Response) (*RevokeInvitationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeInvitationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResendInvitationResponse parses an HTTP response from a ResendInvitationWithResponse call
+func ParseResendInvitationResponse(rsp *http.Response) (*ResendInvitationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResendInvitationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ResendInvitationResponse2
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseListOrganizationsResponse parses an HTTP response from a ListOrganizationsWithResponse call
@@ -1954,6 +4750,294 @@ func ParseGetOrganizationResponse(rsp *http.Response) (*GetOrganizationResponse,
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListCloudGroupsResponse parses an HTTP response from a ListCloudGroupsWithResponse call
+func ParseListCloudGroupsResponse(rsp *http.Response) (*ListCloudGroupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCloudGroupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []CloudGroup           `json:"data,omitempty,omitzero"`
+			Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateCloudGroupResponse parses an HTTP response from a CreateCloudGroupWithResponse call
+func ParseCreateCloudGroupResponse(rsp *http.Response) (*CreateCloudGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateCloudGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CloudGroup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCloudGroupResponse parses an HTTP response from a UpdateCloudGroupWithResponse call
+func ParseUpdateCloudGroupResponse(rsp *http.Response) (*UpdateCloudGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCloudGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudGroup
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListCloudGroupMembersResponse parses an HTTP response from a ListCloudGroupMembersWithResponse call
+func ParseListCloudGroupMembersResponse(rsp *http.Response) (*ListCloudGroupMembersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCloudGroupMembersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []CloudGroupMember     `json:"data,omitempty,omitzero"`
+			Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddCloudGroupMemberResponse parses an HTTP response from a AddCloudGroupMemberWithResponse call
+func ParseAddCloudGroupMemberResponse(rsp *http.Response) (*AddCloudGroupMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddCloudGroupMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CloudGroupMember
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveCloudGroupMemberResponse parses an HTTP response from a RemoveCloudGroupMemberWithResponse call
+func ParseRemoveCloudGroupMemberResponse(rsp *http.Response) (*RemoveCloudGroupMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveCloudGroupMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Unauthorized
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -2221,6 +5305,136 @@ func ParseListCloudInstanceEventsResponse(rsp *http.Response) (*ListCloudInstanc
 	return response, nil
 }
 
+// ParseListCloudGrantsResponse parses an HTTP response from a ListCloudGrantsWithResponse call
+func ParseListCloudGrantsResponse(rsp *http.Response) (*ListCloudGrantsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCloudGrantsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []CloudGrant           `json:"data,omitempty,omitzero"`
+			Meta map[string]interface{} `json:"meta,omitempty,omitzero"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpsertCloudGrantResponse parses an HTTP response from a UpsertCloudGrantWithResponse call
+func ParseUpsertCloudGrantResponse(rsp *http.Response) (*UpsertCloudGrantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpsertCloudGrantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudGrant
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteCloudGrantResponse parses an HTTP response from a DeleteCloudGrantWithResponse call
+func ParseDeleteCloudGrantResponse(rsp *http.Response) (*DeleteCloudGrantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteCloudGrantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetCloudInstanceMetricsResponse parses an HTTP response from a GetCloudInstanceMetricsWithResponse call
 func ParseGetCloudInstanceMetricsResponse(rsp *http.Response) (*GetCloudInstanceMetricsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2268,6 +5482,53 @@ func ParseGetCloudInstanceMetricsResponse(rsp *http.Response) (*GetCloudInstance
 	return response, nil
 }
 
+// ParseSyncCloudSCIMGroupsResponse parses an HTTP response from a SyncCloudSCIMGroupsWithResponse call
+func ParseSyncCloudSCIMGroupsResponse(rsp *http.Response) (*SyncCloudSCIMGroupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SyncCloudSCIMGroupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudSCIMGroupSyncResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetCloudUsageResponse parses an HTTP response from a GetCloudUsageWithResponse call
 func ParseGetCloudUsageResponse(rsp *http.Response) (*GetCloudUsageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2302,6 +5563,383 @@ func ParseGetCloudUsageResponse(rsp *http.Response) (*GetCloudUsageResponse, err
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCloudUserAttributesResponse parses an HTTP response from a GetCloudUserAttributesWithResponse call
+func ParseGetCloudUserAttributesResponse(rsp *http.Response) (*GetCloudUserAttributesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCloudUserAttributesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudUserAttributes
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCloudUserAttributesResponse parses an HTTP response from a UpdateCloudUserAttributesWithResponse call
+func ParseUpdateCloudUserAttributesResponse(rsp *http.Response) (*UpdateCloudUserAttributesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCloudUserAttributesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudUserAttributes
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListOrganizationMembersResponse parses an HTTP response from a ListOrganizationMembersWithResponse call
+func ParseListOrganizationMembersResponse(rsp *http.Response) (*ListOrganizationMembersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListOrganizationMembersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []OrganizationMember `json:"data"`
+			Meta PaginationMeta       `json:"meta"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseInviteOrganizationMemberResponse parses an HTTP response from a InviteOrganizationMemberWithResponse call
+func ParseInviteOrganizationMemberResponse(rsp *http.Response) (*InviteOrganizationMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &InviteOrganizationMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest InvitationResponse2
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveOrganizationMemberResponse parses an HTTP response from a RemoveOrganizationMemberWithResponse call
+func ParseRemoveOrganizationMemberResponse(rsp *http.Response) (*RemoveOrganizationMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveOrganizationMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMemberRoleResponse parses an HTTP response from a UpdateMemberRoleWithResponse call
+func ParseUpdateMemberRoleResponse(rsp *http.Response) (*UpdateMemberRoleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMemberRoleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// OrganizationId RFC 4122 UUID identifier
+			OrganizationId UUID   `json:"organization_id"`
+			Role           string `json:"role"`
+
+			// UpdatedAt ISO 8601 timestamp
+			UpdatedAt Timestamp `json:"updated_at"`
+
+			// UserId RFC 4122 UUID identifier
+			UserId UUID `json:"user_id"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMemberMetadataResponse parses an HTTP response from a UpdateMemberMetadataWithResponse call
+func ParseUpdateMemberMetadataResponse(rsp *http.Response) (*UpdateMemberMetadataResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMemberMetadataResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OrganizationMember
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 
@@ -2346,101 +5984,135 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"i6+LfwcAAP//",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
