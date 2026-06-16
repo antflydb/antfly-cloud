@@ -1,0 +1,69 @@
+name: Antfly Cloud CLI Release
+
+on:
+  push:
+    tags:
+      - "client-v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GO_VERSION: "1.26"
+  ANTFLY_CLOUD_RELEASE_BUCKET: ${{ vars.ANTFLY_CLOUD_RELEASE_BUCKET }}
+
+jobs:
+  release:
+    name: Build, publish, and update Homebrew tap
+    runs-on: arc-antfly-publish
+    environment: antfly-cloud-cli-release
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go/go.sum
+
+      - name: Run Antfly Cloud CLI tests
+        working-directory: go
+        run: go test ./...
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Derive release version
+        id: version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#client-v}"
+          if [[ "$version" == "$tag" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid Antfly Cloud CLI tag '$tag'. Expected client-vX.Y.Z or client-vX.Y.Z-rc.N" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "goreleaser_tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.goreleaser_tag }}
+          ANTFLY_CLOUD_RELEASE_BUCKET: ${{ env.ANTFLY_CLOUD_RELEASE_BUCKET }}
+        with:
+          distribution: goreleaser
+          version: "v2.12.0"
+          workdir: go
+          args: release --clean --skip=validate
