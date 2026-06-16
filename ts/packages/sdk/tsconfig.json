@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "exactOptionalPropertyTypes": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "exactOptionalPropertyTypes": false,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "noEmit": true,
+    "outDir": "dist",
+    "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ES2022",
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
 }
-

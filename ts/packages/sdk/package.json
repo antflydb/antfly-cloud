@@ -5,19 +5,39 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./hooks": "./src/hooks/index.ts"
   },
   "scripts": {
     "generate": "openapi-typescript ../../../openapi.yaml -o ./src/types.ts",
+    "lint": "biome lint src",
     "check-types": "tsc --noEmit",
-    "test": "pnpm check-types"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "openapi-fetch": "^0.15.2"
   },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.90.12",
+    "next": "16.0.10",
+    "react": "^19.2.3",
+    "sonner": "^2.0.7"
+  },
   "devDependencies": {
+    "@tanstack/react-query": "^5.90.12",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^27.4.0",
+    "next": "16.0.10",
     "openapi-typescript": "^7.13.0",
-    "typescript": "^5.9.3"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "sonner": "^2.0.7",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.0"
   }
 }
-
