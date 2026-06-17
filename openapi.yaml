@@ -2186,7 +2186,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       summary: Create Antfly Cloud management API key
-      description: Create an organization-scoped cloudaf_* key for Antfly Cloud management API calls
+      description: Create an organization-scoped antfly_cloud_* key for Antfly Cloud management API calls
       operationId: createCloudManagementAPIKey
       tags:
         - CloudAPIKeys
@@ -2219,7 +2219,7 @@ paths:
         description: Production
     delete:
       summary: Revoke Antfly Cloud management API key
-      description: Revoke an organization-scoped cloudaf_* management API key
+      description: Revoke an organization-scoped antfly_cloud_* management API key
       operationId: revokeCloudManagementAPIKey
       tags:
         - CloudAPIKeys
@@ -2612,7 +2612,7 @@ paths:
         description: Production
     post:
       summary: Rotate Antfly Cloud management API key
-      description: Atomically revoke a cloudaf_* key and create a replacement with the same scopes
+      description: Atomically revoke an antfly_cloud_* key and create a replacement with the same scopes
       operationId: rotateCloudManagementAPIKey
       tags:
         - CloudAPIKeys
@@ -5032,7 +5032,7 @@ components:
           nullable: true
         key_prefix:
           type: string
-          description: Key prefix for identification (e.g., "antflydb_abc123" or "cloudaf_abc123")
+          description: Key prefix for identification (e.g., "antflydb_abc123" or "antfly_cloud_abc123")
           example: antflydb_abc123
         key_scope:
           type: string
@@ -5044,7 +5044,7 @@ components:
           type: string
           enum:
             - antflydb
-            - cloudaf
+            - antfly_cloud
           description: Full-token prefix type
         name:
           type: string
@@ -5093,7 +5093,7 @@ components:
           type: array
           items:
             type: string
-          description: Antfly Cloud management actions allowed by cloudaf_* keys.
+          description: Antfly Cloud management actions allowed by antfly_cloud_* keys.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.

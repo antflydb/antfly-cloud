@@ -235,7 +235,7 @@ func TestLoginWithAntflyCloudTokenUsesParsedConfigFlag(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), configDirName, defaultConfigFile)
 	var out, errb bytes.Buffer
 	cmd := newRootCommand(&out, &errb)
-	cmd.SetArgs([]string{"--config", configPath, "--api-url", srv.URL + "/api/v1", "login", "--token", "cloudaf_abcd1234_secret"})
+	cmd.SetArgs([]string{"--config", configPath, "--api-url", srv.URL + "/api/v1", "login", "--token", "antfly_cloud_abcd1234_secret"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}

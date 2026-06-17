@@ -80,7 +80,7 @@ eval "$(antfly-cloud env)"
 ```
 
 `antfly-cloud env` exports data-plane connection settings for the Antfly CLI.
-Antfly Cloud management API keys (`cloudaf_*`) cannot be used as Antfly data-plane
+Antfly Cloud management API keys (`antfly_cloud_*`) cannot be used as Antfly data-plane
 tokens; use device login for that flow.
 
 ## Local Colony stacks
@@ -96,5 +96,5 @@ bin/antfly-cloud --config .local/antfly-cloud-cli/config.json usage
 
 The CLI is public/untrusted software. Dev, local, and production access must be
 enforced by the Antfly Cloud API through Antfly authentication, organization
-membership, scoped `cloudaf_*` management keys, and environment-specific RBAC —
+membership, scoped `antfly_cloud_*` management keys, and environment-specific RBAC —
 not by hiding CLI code or flags.
