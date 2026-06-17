@@ -2,6 +2,7 @@
   "name": "@antflydb/antfly-cloud-workspace",
   "private": true,
   "scripts": {
+    "build": "pnpm --filter @antfly/cloud-sdk build",
     "test": "pnpm --filter @antfly/cloud-sdk test",
     "check-types": "pnpm --filter @antfly/cloud-sdk check-types"
   },
@@ -9,4 +10,3 @@
     "typescript": "^5.9.3"
   }
 }
-

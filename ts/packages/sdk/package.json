@@ -2,13 +2,32 @@
   "name": "@antfly/cloud-sdk",
   "version": "0.1.0",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./hooks": "./src/hooks/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "require": "./dist/hooks/index.cjs"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "import": "./dist/constants.js",
+      "require": "./dist/constants.cjs"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
     "generate": "openapi-typescript ../../../openapi.yaml -o ./src/types.ts",
     "lint": "biome lint src",
     "check-types": "tsc --noEmit",
@@ -19,7 +38,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.90.12",
-    "next": "16.0.10",
+    "next": "^16.0.0",
     "react": "^19.2.3",
     "sonner": "^2.0.7"
   },
@@ -36,6 +55,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sonner": "^2.0.7",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.9"
