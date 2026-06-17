@@ -1,0 +1,57 @@
+# Publish packages to npm when tagged
+# - ts/antfly/cloud-sdk/v* tags publish @antfly/cloud-sdk
+#
+# Uses npm Trusted Publishing (OIDC) - no secrets required.
+# Configure trusted publisher at: https://www.npmjs.com/package/@antfly/cloud-sdk/access
+
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "ts/antfly/cloud-sdk/v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # Required for npm provenance / trusted publishing
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org/
+          cache: "pnpm"
+          cache-dependency-path: ts/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ts
+        run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        working-directory: ts
+        run: pnpm build
+
+      - name: Check types
+        working-directory: ts
+        run: pnpm check-types
+
+      - name: Run tests
+        working-directory: ts
+        run: pnpm test
+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
+
+      - name: Publish SDK
+        working-directory: ts
+        run: pnpm --filter @antfly/cloud-sdk publish --access public --no-git-checks --provenance
