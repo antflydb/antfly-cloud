@@ -66,7 +66,7 @@ func (c Config) bearerToken() string {
 }
 
 func isCloudAFManagementToken(token string) bool {
-	return strings.HasPrefix(strings.TrimSpace(token), "cloudaf_")
+	return strings.HasPrefix(strings.TrimSpace(token), "antfly_cloud_")
 }
 
 func configPath(override string) (string, error) {

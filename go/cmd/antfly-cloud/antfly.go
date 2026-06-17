@@ -65,7 +65,7 @@ func antflyContextForCommand(cmd *cobra.Command, stateFor stateFactory, args []s
 func resolveAntflyContext(cmd *cobra.Command, st *appState, instanceRef string) (*antflyContext, error) {
 	token := st.cfg.bearerToken()
 	if isCloudAFManagementToken(token) {
-		return nil, fmt.Errorf("Antfly Cloud management API keys (`cloudaf_*`) cannot be used as Antfly data-plane tokens; run `antfly-cloud login` with device auth")
+		return nil, fmt.Errorf("Antfly Cloud management API keys (`antfly_cloud_*`) cannot be used as Antfly data-plane tokens; run `antfly-cloud login` with device auth")
 	}
 	org, err := resolveOrg(cmd.Context(), st)
 	if err != nil {

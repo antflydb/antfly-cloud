@@ -852,7 +852,7 @@ export interface paths {
         put?: never;
         /**
          * Create Antfly Cloud management API key
-         * @description Create an organization-scoped cloudaf_* key for Antfly Cloud management API calls
+         * @description Create an organization-scoped antfly_cloud_* key for Antfly Cloud management API calls
          */
         post: operations["createCloudManagementAPIKey"];
         delete?: never;
@@ -873,7 +873,7 @@ export interface paths {
         post?: never;
         /**
          * Revoke Antfly Cloud management API key
-         * @description Revoke an organization-scoped cloudaf_* management API key
+         * @description Revoke an organization-scoped antfly_cloud_* management API key
          */
         delete: operations["revokeCloudManagementAPIKey"];
         options?: never;
@@ -1084,7 +1084,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate Antfly Cloud management API key
-         * @description Atomically revoke a cloudaf_* key and create a replacement with the same scopes
+         * @description Atomically revoke an antfly_cloud_* key and create a replacement with the same scopes
          */
         post: operations["rotateCloudManagementAPIKey"];
         delete?: never;
@@ -2378,7 +2378,7 @@ export interface components {
             created_by_user_id?: components["schemas"]["UUID"];
             cloud_instance_id?: components["schemas"]["UUID"];
             /**
-             * @description Key prefix for identification (e.g., "antflydb_abc123" or "cloudaf_abc123")
+             * @description Key prefix for identification (e.g., "antflydb_abc123" or "antfly_cloud_abc123")
              * @example antflydb_abc123
              */
             key_prefix: string;
@@ -2391,7 +2391,7 @@ export interface components {
              * @description Full-token prefix type
              * @enum {string}
              */
-            key_prefix_type?: "antflydb" | "cloudaf";
+            key_prefix_type?: "antflydb" | "antfly_cloud";
             /**
              * @description Human-readable key name
              * @example Production API Key
@@ -2415,7 +2415,7 @@ export interface components {
             } | null;
             /** @description Managed RBAC grants attached to this API-key principal. */
             grants?: components["schemas"]["CloudGrant"][];
-            /** @description Antfly Cloud management actions allowed by cloudaf_* keys. */
+            /** @description Antfly Cloud management actions allowed by antfly_cloud_* keys. */
             management_scopes?: string[];
         };
         /** @description Returned only at creation time. The full key is never shown again. */

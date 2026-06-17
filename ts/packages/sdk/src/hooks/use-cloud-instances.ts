@@ -57,6 +57,10 @@ export type CreateOAuthClientRequest = {
   token_endpoint_auth_method?: "none" | "client_secret_post" | "client_secret_basic";
 };
 
+export type UpdateOAuthClientRedirectURIsRequest = {
+  redirect_uris: string[];
+};
+
 const rawAPIBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
 
 async function fetchCloudJSON<T>(path: string, init?: RequestInit): Promise<T> {
@@ -706,6 +710,32 @@ export function useRotateOAuthClientSecret(orgId: string) {
           clientId
         )}/rotate-secret`,
         { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: oauthClientQueryKey(orgId) });
+    },
+  });
+}
+
+export function useUpdateOAuthClientRedirectURIs(orgId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      clientId,
+      body,
+    }: {
+      clientId: string;
+      body: UpdateOAuthClientRedirectURIsRequest;
+    }) =>
+      fetchCloudJSON<OAuthClientRecord>(
+        `/organizations/${encodeURIComponent(orgId)}/oauth-clients/${encodeURIComponent(
+          clientId
+        )}/redirect-uris`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: oauthClientQueryKey(orgId) });
