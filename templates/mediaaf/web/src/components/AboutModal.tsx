@@ -60,16 +60,10 @@ export function AboutModal({ onClose }: AboutModalProps) {
           </h2>
 
           <p className="text-sm text-[hsl(var(--foreground))]">
-            MediaAF is a semantic media search engine powered by{" "}
-            <a
-              href="https://antfly.io"
-              className="underline hover:opacity-80"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Antfly
-            </a>
-            . It indexes over 106,000 media items and lets you search them by meaning, not just keywords.
+            MediaAF is a locally hostable semantic search starter for image and
+            moving-image corpora. It uses Antfly Cloud as the search backend while
+            keeping the Cloud API key behind a local proxy instead of exposing it
+            in the browser.
           </p>
 
           <div className="space-y-3">
@@ -81,79 +75,26 @@ export function AboutModal({ onClose }: AboutModalProps) {
               <div className="flex gap-3">
                 <span className="text-[hsl(var(--muted-foreground))] font-mono shrink-0">1.</span>
                 <p>
-                  <strong>Data:</strong> media items come from the{" "}
-                  <a
-                    href="https://github.com/raingo/Tmedia-Release"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Tmedia dataset
-                  </a>{" "}
-                  (~100k animated media items originally from Tumblr, created by{" "}
-                  <a
-                    href="https://arxiv.org/abs/1604.02748"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Li et al
-                  </a>
-                  ) and the{" "}
-                  <a
-                    href="http://lucas.maystre.ch/gifgif-data"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    MIT Media Lab GifGif
-                  </a>{" "}
-                  dataset (~6k media items with crowd-sourced emotion ratings).
+                  <strong>Transform:</strong> each media item is converted into a compact
+                  package for a description model, such as representative frames for an
+                  image or short clip.
                 </p>
               </div>
 
               <div className="flex gap-3">
                 <span className="text-[hsl(var(--muted-foreground))] font-mono shrink-0">2.</span>
                 <p>
-                  <strong>AI Descriptions:</strong> Multiple frames are extracted from each media
-                  and sent to{" "}
-                  <strong>Gemini 2.5 Flash Lite</strong> to generate rich structured descriptions
-                  including mood, tags, source identification, use cases, and content ratings.
+                  <strong>Describe:</strong> the model writes structured text about meaning,
+                  mood, tags, visible actions, possible use cases, and safety/rating signals.
                 </p>
               </div>
 
               <div className="flex gap-3">
                 <span className="text-[hsl(var(--muted-foreground))] font-mono shrink-0">3.</span>
                 <p>
-                  <strong>Search:</strong> Descriptions are indexed in{" "}
-                  <a
-                    href="https://antfly.io/docs"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Antfly
-                  </a>{" "}
-                  with text embeddings (
-                  <a
-                    href="https://huggingface.co/BAAI/bge-small-en-v1.5"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    BAAI/bge-small-en-v1.5
-                  </a>
-                  ) via{" "}
-                  <a
-                    href="https://antfly.io/termite"
-                    className="underline hover:opacity-80"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Termite
-                  </a>
-                  . Queries run both semantic vector search and full-text search, merged
-                  with reciprocal rank fusion (RRF).
+                  <strong>Search:</strong> those descriptions are stored in Antfly Cloud with
+                  text embeddings over <code className="px-1 py-0.5 rounded bg-[hsl(var(--muted))] text-xs font-mono">combined_text</code>,
+                  so users can search by meaning as well as exact tags or phrases.
                 </p>
               </div>
             </div>
@@ -196,10 +137,10 @@ export function AboutModal({ onClose }: AboutModalProps) {
             </h3>
             <div className="flex flex-wrap gap-2">
               {[
-                "Antfly",
-                "Termite",
-                "Gemini 2.5 Flash Lite",
-                "BAAI/bge-small-en-v1.5",
+                "Antfly Cloud",
+                "Text embeddings",
+                "Configurable LLM descriptions",
+                "Local API-key proxy",
                 "React",
                 "TypeScript",
                 "Tailwind CSS",

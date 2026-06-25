@@ -7,15 +7,15 @@
 Ingest media descriptions into Antfly via the HTTP API.
 
 Replaces ingest/ingest_text.go — uses httpx directly instead of the Go SDK.
-Creates a table with two vector indexes:
-  - embeddings: embeds combined_text via termite (BGE-small)
-  - summarizer_embeddings: Antfly fetches the media, summarizes via Gemini, embeds result
+Creates a table with one vector index over combined_text. The media description
+step happens before ingest; this script only stores rows and asks Antfly Cloud to
+maintain text embeddings.
 
 Usage:
-    uv run ingest/embed-text-descriptions/embed.py --jsonl gif_descriptions.jsonl --attribution "Tmedia dataset"
+    uv run ingest/embed-text-descriptions/embed.py --jsonl descriptions.jsonl
     uv run ingest/embed-text-descriptions/embed.py --source tgif
     uv run ingest/embed-text-descriptions/embed.py --all-sources
-    uv run ingest/embed-text-descriptions/embed.py --jsonl gif_descriptions.jsonl --limit 100
+    uv run ingest/embed-text-descriptions/embed.py --jsonl descriptions.jsonl --limit 100
 """
 
 import argparse
@@ -33,7 +33,7 @@ load_dotenv()
 
 # Config
 ANTFLY_URL = os.environ.get("ANTFLY_URL", "http://localhost:8080/api/v1")
-TABLE_NAME = os.environ.get("INGEST_TABLE", "honeycomb")
+TABLE_NAME = os.environ.get("INGEST_TABLE", "mediaaf")
 BATCH_SIZE = 50
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_DIMENSION = 384
@@ -78,48 +78,22 @@ def doc_id(desc: dict) -> str:
     return f"gif_{h}"
 
 
-def create_table(client: httpx.Client, table: str, summarizer: bool = False) -> None:
-    """Create Antfly table with vector indexes.
-
-    Args:
-        summarizer: If True, add a summarizer index that uses Gemini to generate
-            descriptions from media media at query time. Requires a valid GEMINI_API_KEY
-            on the Antfly server.
-    """
+def create_table(client: httpx.Client, table: str) -> None:
+    """Create Antfly table with one vector index over combined_text."""
     indexes = {
         "embeddings": {
             "type": "aknn_v0",
             "dimension": EMBED_DIMENSION,
             "field": "combined_text",
             "embedder": {
-                "provider": "termite",
+                "provider": "antfly",
                 "model": EMBED_MODEL,
             },
         },
     }
 
-    if summarizer:
-        indexes["summarizer_embeddings"] = {
-            "type": "aknn_v0",
-            "dimension": EMBED_DIMENSION,
-            "template": (
-                "{{media url=gif_url}}\n\n"
-                "Describe what is happening in this animated image in detail. "
-                "Include the emotional mood, key actions, where it might be from, "
-                "and when someone might use it in conversation."
-            ),
-            "embedder": {
-                "provider": "termite",
-                "model": EMBED_MODEL,
-            },
-            "summarizer": {
-                "provider": "gemini",
-                "model": "gemini-2.0-flash-lite",
-            },
-        }
 
-    label = "text + summarizer" if summarizer else "text embedding"
-    print(f"Creating table '{table}' with {label} indexes (dim={EMBED_DIMENSION})...")
+    print(f"Creating table '{table}' with text embedding index (dim={EMBED_DIMENSION})...")
 
     body = {"indexes": indexes}
 
@@ -263,7 +237,7 @@ def find_sources(source_filter: str | None = None) -> list[Path]:
 
 def main():
     parser = argparse.ArgumentParser(description="Ingest media descriptions into Antfly")
-    parser.add_argument("--jsonl", help="Path to descriptions JSONL file (Tmedia mode)")
+    parser.add_argument("--jsonl", help="Path to descriptions JSONL file")
     parser.add_argument("--source", help="Ingest a specific source")
     parser.add_argument("--all-sources", action="store_true", help="Ingest all sources")
     parser.add_argument("--table", default=TABLE_NAME, help=f"Antfly table name (default: {TABLE_NAME})")
@@ -275,7 +249,6 @@ def main():
     parser.add_argument("--r2-urls", help="Path to R2 URL mapping JSON (from upload_r2.py)")
     parser.add_argument("--media-base-url", default="", help="Base URL for media (e.g., /media or https://cdn.example.com)")
     parser.add_argument("--token", default=os.environ.get("ANTFLYDB_API_KEY") or os.environ.get("ANTFLY_TOKEN") or "", help="Bearer token for Antfly Cloud auth")
-    parser.add_argument("--summarizer", action="store_true", help="Add Gemini summarizer index (requires GEMINI_API_KEY on Antfly server)")
     args = parser.parse_args()
 
     if not any([args.jsonl, args.source, args.all_sources]):
@@ -286,7 +259,7 @@ def main():
 
     # Create table (unless skipped or ingesting additional sources into existing table)
     if not args.skip_create:
-        create_table(client, args.table, summarizer=args.summarizer)
+        create_table(client, args.table)
 
     # Load R2 URL mapping if provided
     r2_urls = None

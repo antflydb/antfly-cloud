@@ -6,7 +6,7 @@ import { AboutModal } from './components/AboutModal';
 import { MoodFilterBar, MOOD_EMOJIS, type MoodValue } from './components/MoodFilterBar';
 import { searchGifs, getRandomGifs, getGifById, type GifResult } from './lib/antfly';
 
-const TABLE_NAME = 'honeycomb';
+const TABLE_NAME = 'mediaaf';
 
 function App() {
   const [gifs, setGifs] = useState<GifResult[]>([]);
@@ -318,7 +318,7 @@ function App() {
           <div className="text-center py-12">
             <p className="text-red-500 mb-2">{error}</p>
             <p className="text-[hsl(var(--muted-foreground))] text-sm">
-              Make sure Antfly is running: <code className="bg-[hsl(var(--muted))] px-2 py-1 rounded">antfly swarm</code>
+              Make sure the local proxy is running and pointed at Antfly Cloud.
             </p>
           </div>
         ) : initialLoadDone && gifs.length === 0 && !lastQuery && !selectedMood ? (
@@ -327,19 +327,20 @@ function App() {
               No media items loaded yet
             </h2>
             <p className="text-[hsl(var(--muted-foreground))] mb-4">
-              You need to import the Tmedia dataset first:
+              You need to describe and ingest a media corpus first:
             </p>
             <div className="bg-[hsl(var(--muted))] rounded-lg p-4 max-w-xl mx-auto text-left">
               <pre className="text-sm overflow-x-auto">
-{`# 1. Make sure Antfly is running
-antfly swarm
+{`# 1. Configure .env.local with Antfly Cloud and inference settings
+cp .env.example .env.local
 
-# 2. Import the dataset (from gif-picker/ingest)
-cd ingest
-go run main.go -tsv /path/to/Tmedia-Release/data/tgif-v1.0.tsv
+# 2. Run a small description job first
+make describe N=10
 
-# For a quick test, limit to 1000 media items:
-go run main.go -tsv /path/to/Tmedia-Release/data/tgif-v1.0.tsv -limit 1000`}
+# 3. Ingest descriptions and start the proxy/UI
+make ingest
+make proxy
+make web`}
               </pre>
             </div>
             <p className="text-[hsl(var(--muted-foreground))] mt-4 text-sm">

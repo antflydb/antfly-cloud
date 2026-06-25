@@ -44,7 +44,7 @@ load_dotenv()
 
 # Config
 SOURCES_DIR = Path(__file__).parent.parent.parent / "sources"
-BUCKET_NAME = "honeycomb-media"
+BUCKET_NAME = os.environ.get("R2_BUCKET", "mediaaf-media")
 MANIFEST_SYNC_INTERVAL = 100  # sync manifest to R2 every N completions
 DEFAULT_WORKERS = 10
 

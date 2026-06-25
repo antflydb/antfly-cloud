@@ -54,7 +54,7 @@ CSV_URL = "https://s3-eu-west-1.amazonaws.com/lum-public/gifgif-dataset-20150121
 TAR_URL = "https://s3-eu-west-1.amazonaws.com/lum-public/gifgif-images-v1.tar"
 SOURCE_PAGE = "http://lucas.maystre.ch/gifgif-data"
 
-BUCKET_NAME = "honeycomb-media"
+BUCKET_NAME = os.environ.get("R2_BUCKET", "mediaaf-media")
 MANIFEST_SYNC_INTERVAL = 50
 
 

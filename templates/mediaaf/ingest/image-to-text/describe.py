@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["google-genai", "google-cloud-aiplatform", "Pillow", "boto3", "httpx", "pyyaml"]
+# dependencies = ["google-genai", "Pillow", "boto3", "httpx", "pyyaml"]
 # ///
 """
-Media description pipeline - generates rich text descriptions using Gemini.
+Media description pipeline - generates rich text descriptions for MediaAF.
 
 Usage:
     # Local media items (from TGIF TSV)
@@ -294,11 +294,11 @@ class ManifestSource(GifSource):
 
 
 # =============================================================================
-# Gemini API Client - Abstracted for future Vertex AI support
+# Description API clients
 # =============================================================================
 
-class GeminiClient(ABC):
-    """Abstract base class for Gemini API clients."""
+class DescriptionClient(ABC):
+    """Abstract base class for media-description clients."""
 
     def __init__(self):
         self.total_input_tokens = 0
@@ -311,7 +311,7 @@ class GeminiClient(ABC):
         pass
 
 
-class GoogleGenAIClient(GeminiClient):
+class GoogleGenAIClient(DescriptionClient):
     """Client using google-genai SDK (current approach)."""
 
     def __init__(self, api_key: str = None, model: str = "gemini-2.0-flash-lite"):
@@ -320,18 +320,19 @@ class GoogleGenAIClient(GeminiClient):
         self.genai = genai
         self.model = model
 
-        # Load API key
+        # Load API key explicitly. Templates should stop and ask the user instead
+        # of silently switching providers or reading unrelated local token files.
         if api_key:
             key = api_key
+        elif os.environ.get("GEMINI_API_KEY"):
+            key = os.environ["GEMINI_API_KEY"]
         elif os.environ.get("GOOGLE_API_KEY"):
             key = os.environ["GOOGLE_API_KEY"]
         else:
-            key_path = Path.home() / ".tokens/gemini_api_key"
-            if key_path.exists():
-                with open(key_path) as f:
-                    key = f.read().strip().split()[0]
-            else:
-                raise ValueError("No Gemini API key found. Set GOOGLE_API_KEY or create ~/.tokens/gemini_api_key")
+            raise ValueError(
+                "No Gemini API key found. Set GEMINI_API_KEY/GOOGLE_API_KEY, "
+                "or choose another DESCRIPTION_PROVIDER after asking the user."
+            )
 
         self.client = genai.Client(api_key=key)
 
@@ -365,90 +366,41 @@ class GoogleGenAIClient(GeminiClient):
             self.last_error = str(e)
             return None
 
-    def generate_batch(self, requests: list[tuple[str, list[bytes]]]) -> list[str | None]:
-        """Submit requests via the Batch API (50% cheaper). Returns list of responses."""
-        inline_requests = []
-        for prompt, images in requests:
-            contents = self._build_contents(prompt, images)
-            inline_requests.append({"contents": [{"parts": c.parts} for c in contents]})
-
-        print(f"  Submitting batch job ({len(inline_requests)} requests)...")
-        batch_job = self.client.batches.create(
-            model=self.model,
-            src=inline_requests,
-            config={"display_name": f"describe-{len(inline_requests)}items"},
-        )
-        print(f"  Batch job: {batch_job.name}")
-
-        completed_states = {
-            "JOB_STATE_SUCCEEDED", "JOB_STATE_FAILED",
-            "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED",
-        }
-
-        while batch_job.state.name not in completed_states:
-            print(f"\r  Batch status: {batch_job.state.name}\033[K", end="", flush=True)
-            time.sleep(15)
-            batch_job = self.client.batches.get(name=batch_job.name)
-
-        print(f"\r  Batch status: {batch_job.state.name}\033[K")
-
-        if batch_job.state.name != "JOB_STATE_SUCCEEDED":
-            print(f"  Batch job failed: {batch_job.state.name}", file=sys.stderr)
-            return [None] * len(requests)
-
-        results = []
-        for resp in batch_job.dest.inlined_responses:
-            if resp.response and resp.response.text:
-                results.append(resp.response.text)
-            else:
-                results.append(None)
-        return results
 
 
-class VertexAIClient(GeminiClient):
-    """Client using Vertex AI SDK (for GCP deployment)."""
+class AntflyCloudInferenceClient(DescriptionClient):
+    """Client for Antfly Cloud Inference's OpenAI-compatible chat endpoint."""
 
-    def __init__(self, project: str = None, location: str = "us-central1", model: str = "gemini-2.0-flash-001"):
-        import vertexai
-        from vertexai.generative_models import GenerativeModel
-
-        self.project = project or os.environ.get("GOOGLE_CLOUD_PROJECT", "honeycomb-488503")
-        self.location = location
-        self.model_name = model
-
-        vertexai.init(project=self.project, location=self.location)
-        self.model = GenerativeModel(self.model_name)
-
-    def generate(self, prompt: str, images: list[bytes]) -> str | None:
-        """Generate text from prompt and images."""
-        from vertexai.generative_models import Part, Image as VertexImage
-
-        parts = [Part.from_text(prompt)]
-        for img_data in images:
-            parts.append(Part.from_image(VertexImage.from_bytes(img_data)))
-
-        try:
-            response = self.model.generate_content(parts)
-            return response.text
-        except Exception as e:
-            print(f"  Vertex AI error: {e}", file=sys.stderr)
-            return None
-
-
-class TermiteClient(GeminiClient):
-    """Client using local Termite for Gemma 3 inference."""
-
-    def __init__(self, url: str = "http://localhost:11433", model: str = "onnxruntime/Gemma-3-ONNX"):
+    def __init__(self, url: str = None, model: str = "gemini-2.5-flash", api_key: str = None):
+        super().__init__()
         import httpx
         self.httpx = httpx
-        self.url = url
+        self.url = (url or os.environ.get("ANTFLY_INFERENCE_URL") or "").rstrip("/")
         self.model = model
+        self.api_key = (
+            api_key
+            or os.environ.get("ANTFLY_INFERENCE_API_KEY")
+            or os.environ.get("ANTFLYDB_API_KEY")
+            or os.environ.get("ANTFLY_TOKEN")
+            or os.environ.get("ANTFLY_CLOUD_TOKEN")
+        )
+        if not self.url:
+            raise ValueError(
+                "ANTFLY_INFERENCE_URL is required for backend=antfly. "
+                "Run `antfly cloud connection <instance> --json` and use "
+                "the antfly_inference_proxy_url value."
+            )
+        if not self.api_key:
+            raise ValueError(
+                "An Antfly Cloud token/key is required for backend=antfly. "
+                "Set ANTFLY_INFERENCE_API_KEY, ANTFLYDB_API_KEY, ANTFLY_TOKEN, "
+                "or ANTFLY_CLOUD_TOKEN."
+            )
 
     def generate(self, prompt: str, images: list[bytes]) -> str | None:
-        """Generate text from prompt and images using Termite's OpenAI-compatible API."""
+        """Generate text via Antfly Cloud Inference using OpenAI vision message shape."""
         import base64
 
-        # Build multimodal message content (OpenAI vision format)
         content = [{"type": "text", "text": prompt}]
         for img_data in images:
             b64 = base64.b64encode(img_data).decode()
@@ -459,62 +411,30 @@ class TermiteClient(GeminiClient):
 
         try:
             resp = self.httpx.post(
-                f"{self.url}/api/generate",
+                f"{self.url}/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 json={
                     "model": self.model,
                     "messages": [{"role": "user", "content": content}],
                     "max_tokens": 2048,
                 },
-                timeout=1800.0  # 30 min timeout for multi-frame CPU vision inference
+                timeout=300.0,
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"]
+            data = resp.json()
+            usage = data.get("usage", {})
+            self.total_input_tokens += usage.get("prompt_tokens", 0)
+            self.total_output_tokens += usage.get("completion_tokens", 0)
+            return data["choices"][0]["message"]["content"]
         except Exception as e:
-            print(f"  Termite error: {e}", file=sys.stderr)
+            self.last_error = str(e)
             return None
 
 
-class OllamaClient(GeminiClient):
-    """Client using local Ollama for Gemma 3 inference."""
-
-    def __init__(self, url: str = "http://localhost:11434", model: str = "gemma3:4b-it-qat"):
-        import httpx
-        self.httpx = httpx
-        self.url = url
-        self.model = model
-
-    def generate(self, prompt: str, images: list[bytes]) -> str | None:
-        """Generate text from prompt and images using Ollama's API."""
-        import base64
-
-        # Build message with images (Ollama format)
-        message = {
-            "role": "user",
-            "content": prompt,
-            "images": [base64.b64encode(img).decode() for img in images]
-        }
-
-        try:
-            resp = self.httpx.post(
-                f"{self.url}/api/chat",
-                json={
-                    "model": self.model,
-                    "messages": [message],
-                    "stream": False,
-                },
-                timeout=300.0  # Longer timeout for CPU inference
-            )
-            resp.raise_for_status()
-            return resp.json()["message"]["content"]
-        except Exception as e:
-            print(f"  Ollama error: {e}", file=sys.stderr)
-            return None
-
-
-class OpenRouterClient(GeminiClient):
+class OpenRouterClient(DescriptionClient):
     """Client using OpenRouter (OpenAI-compatible vision API)."""
 
-    def __init__(self, model: str = "google/gemma-3-4b-it", api_key: str = None):
+    def __init__(self, model: str = "google/gemma-4-4b-it", api_key: str = None):
         super().__init__()
         import httpx
         self.httpx = httpx
@@ -524,11 +444,10 @@ class OpenRouterClient(GeminiClient):
         elif os.environ.get("OPENROUTER_API_KEY"):
             self.api_key = os.environ["OPENROUTER_API_KEY"]
         else:
-            key_path = Path.home() / ".tokens/openrouter_api_key"
-            if key_path.exists():
-                self.api_key = key_path.read_text().strip().split()[0]
-            else:
-                raise ValueError("No OpenRouter API key found. Set OPENROUTER_API_KEY or create ~/.tokens/openrouter_api_key")
+            raise ValueError(
+                "No OpenRouter API key found. Set OPENROUTER_API_KEY, "
+                "or choose another DESCRIPTION_PROVIDER after asking the user."
+            )
 
     def generate(self, prompt: str, images: list[bytes]) -> str | None:
         """Generate text from prompt and images using OpenRouter."""
@@ -652,7 +571,7 @@ def clean_json_response(text: str) -> str:
 
 
 def process_item(
-    client: GeminiClient,
+    client: DescriptionClient,
     source: GifSource,
     item: GifItem,
     prompt: str,
@@ -703,7 +622,7 @@ def process_item(
 # =============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="V2 Media description pipeline")
+    parser = argparse.ArgumentParser(description="MediaAF description pipeline")
     parser.add_argument("--source", choices=["tgif", "r2", "local", "manifest"], default="tgif",
                         help="Data source type")
     parser.add_argument("--tsv", type=Path, default=DEFAULT_TSV,
@@ -727,24 +646,12 @@ def main():
                         help="Number of concurrent workers")
     parser.add_argument("--frames", type=int, default=NUM_FRAMES,
                         help=f"Number of frames to extract from each media (default: {NUM_FRAMES})")
-    parser.add_argument("--model", default="gemini-3.1-flash-lite-preview",
-                        help="Model name (Gemini for vertex/genai, Gemma for termite)")
-    parser.add_argument("--backend", choices=["vertex", "genai", "termite", "ollama", "openrouter"], default="vertex",
-                        help="API backend: vertex (GCP), genai (API key), termite (local Gemma), ollama (local Gemma), or openrouter")
-    parser.add_argument("--batch", action="store_true",
-                        help="Use Batch API for genai backend (50%% cheaper, async processing)")
-    parser.add_argument("--project", default="honeycomb-488503",
-                        help="GCP project ID (for vertex backend)")
-    parser.add_argument("--location", default="us-central1",
-                        help="GCP region (for vertex backend)")
-    parser.add_argument("--termite-url", default="http://localhost:11433",
-                        help="Termite API URL (for termite backend)")
-    parser.add_argument("--termite-model", default="onnxruntime/Gemma-3-ONNX",
-                        help="Termite model name (for termite backend)")
-    parser.add_argument("--ollama-url", default="http://localhost:11434",
-                        help="Ollama API URL (for ollama backend)")
-    parser.add_argument("--ollama-model", default="gemma3:4b-it-qat",
-                        help="Ollama model name (for ollama backend)")
+    parser.add_argument("--model", default="gemini-2.5-flash",
+                        help="Model name for the selected backend")
+    parser.add_argument("--backend", choices=["antfly", "genai", "openrouter"], default="antfly",
+                        help="API backend. Prefer antfly, or choose one direct hosted provider explicitly.")
+    parser.add_argument("--antfly-inference-url", default=os.environ.get("ANTFLY_INFERENCE_URL", ""),
+                        help="Antfly Cloud inference proxy URL, usually antfly_inference_proxy_url from `antfly cloud connection <instance> --json`")
     args = parser.parse_args()
 
     # Ensure output directory exists
@@ -778,26 +685,29 @@ def main():
         if not args.manifest_file:
             print("Error: --manifest-file required for manifest source", file=sys.stderr)
             sys.exit(1)
-        bucket = args.r2_bucket or "honeycomb-media"
+        if not args.r2_bucket:
+            print("Error: --r2-bucket required for manifest source", file=sys.stderr)
+            sys.exit(1)
+        bucket = args.r2_bucket
         source = ManifestSource(args.manifest_file, bucket)
         print(f"Using manifest source: {args.manifest_file} ({len(source.items_data)} items)")
 
-    # Initialize client based on backend
-    if args.backend == "vertex":
-        client = VertexAIClient(project=args.project, location=args.location, model=args.model)
-        print(f"Using Vertex AI: {args.project}/{args.location}, model: {args.model}")
-    elif args.backend == "termite":
-        client = TermiteClient(url=args.termite_url, model=args.termite_model)
-        print(f"Using Termite: {args.termite_url}, model: {args.termite_model}")
-    elif args.backend == "ollama":
-        client = OllamaClient(url=args.ollama_url, model=args.ollama_model)
-        print(f"Using Ollama: {args.ollama_url}, model: {args.ollama_model}")
-    elif args.backend == "openrouter":
-        client = OpenRouterClient(model=args.model)
-        print(f"Using OpenRouter, model: {args.model}")
-    else:
-        client = GoogleGenAIClient(model=args.model)
-        print(f"Using Google GenAI, model: {args.model}")
+    # Initialize client based on backend. Do not silently fall back between
+    # providers; missing access/credentials should be fixed by the user.
+    try:
+        if args.backend == "antfly":
+            client = AntflyCloudInferenceClient(url=args.antfly_inference_url, model=args.model)
+            print(f"Using Antfly Cloud Inference: {args.antfly_inference_url}, model: {args.model}")
+        elif args.backend == "openrouter":
+            client = OpenRouterClient(model=args.model)
+            print(f"Using OpenRouter, model: {args.model}")
+        else:
+            client = GoogleGenAIClient(model=args.model)
+            print(f"Using Google GenAI, model: {args.model}")
+    except Exception as e:
+        print(f"Error configuring inference backend '{args.backend}': {e}", file=sys.stderr)
+        print("Do not silently fall back to another provider; ask the user which provider/model to use.", file=sys.stderr)
+        sys.exit(1)
 
     # Load processing state
     state = ProcessingState()
@@ -842,104 +752,52 @@ def main():
         for m in models_config.get("models", []):
             model_pricing[m["id"]] = (m.get("input_per_m", 0), m.get("output_per_m", 0))
 
-    use_batch = args.batch and isinstance(client, GoogleGenAIClient)
-    if use_batch:
-        print("Using Batch API (50% discount)")
-
     success = 0
     failed = 0
     start = time.time()
     output_mode = "a" if args.resume else "w"
 
-    if use_batch:
-        # Batch mode: download all media items, extract frames, submit as one batch
-        print("Downloading and extracting frames...")
-        batch_requests = []  # (prompt, images)
-        batch_items = []     # corresponding GifItems
-        for i, item in enumerate(to_process):
-            gif_data = source.download(item)
-            if gif_data is None:
-                failed += 1
-                continue
-            try:
-                frames = extract_frames(gif_data, num_frames=args.frames)
-            except Exception as e:
-                print(f"  Frame extraction error for {item.id}: {e}", file=sys.stderr)
-                failed += 1
-                continue
-            batch_requests.append((prompt, frames))
-            batch_items.append(item)
-            if (i + 1) % 10 == 0:
-                print(f"  Prepared {i + 1}/{len(to_process)}")
+    # Standard concurrent mode
+    lock = threading.Lock()
+    with open(args.output, output_mode) as out:
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = {
+                executor.submit(process_item, client, source, item, prompt, args.frames): item
+                for item in to_process
+            }
 
-        print(f"Prepared {len(batch_requests)} requests, submitting batch...")
-        responses = client.generate_batch(batch_requests)
+            last_failed_shown = 0
+            fail_reasons: dict[str, int] = {}
+            for future in as_completed(futures):
+                item = futures[future]
+                result, reason = future.result()
 
-        with open(args.output, output_mode) as out:
-            for item, response in zip(batch_items, responses):
-                if response is None:
-                    failed += 1
-                    continue
-                try:
-                    text = clean_json_response(response)
-                    data = json.loads(text)
-                    data["id"] = item.id
-                    data["dataset"] = item.dataset
-                    data["source_path"] = item.source_path
-                    if item.original_url:
-                        data["original_url"] = item.original_url
-                    if item.original_description:
-                        data["original_description"] = item.original_description
-                    if item.attribution:
-                        data["attribution"] = item.attribution
-                    out.write(json.dumps(data) + "\n")
-                    success += 1
-                    state.mark_processed(item.id)
-                except json.JSONDecodeError as e:
-                    print(f"  JSON parse error for {item.id}: {e}", file=sys.stderr)
-                    failed += 1
-    else:
-        # Standard concurrent mode
-        lock = threading.Lock()
-        with open(args.output, output_mode) as out:
-            with ThreadPoolExecutor(max_workers=args.workers) as executor:
-                futures = {
-                    executor.submit(process_item, client, source, item, prompt, args.frames): item
-                    for item in to_process
-                }
+                with lock:
+                    if result:
+                        out.write(json.dumps(result) + "\n")
+                        out.flush()
+                        success += 1
+                        state.mark_processed(item.id)
+                    else:
+                        failed += 1
+                        # Bucket by reason, truncated for grouping
+                        bucket = (reason or "unknown")[:40]
+                        fail_reasons[bucket] = fail_reasons.get(bucket, 0) + 1
 
-                last_failed_shown = 0
-                fail_reasons: dict[str, int] = {}
-                for future in as_completed(futures):
-                    item = futures[future]
-                    result, reason = future.result()
-
-                    with lock:
-                        if result:
-                            out.write(json.dumps(result) + "\n")
-                            out.flush()
-                            success += 1
-                            state.mark_processed(item.id)
-                        else:
-                            failed += 1
-                            # Bucket by reason, truncated for grouping
-                            bucket = (reason or "unknown")[:40]
-                            fail_reasons[bucket] = fail_reasons.get(bucket, 0) + 1
-
-                        done = success + failed
-                        if done % 10 == 0 or done == len(to_process):
-                            elapsed = time.time() - start
-                            rate = done / elapsed if elapsed > 0 else 0
-                            if done % 100 == 0:
-                                state.save()
-                            msg = (f"  Progress: {done}/{len(to_process)} — "
-                                   f"{success} ok, {failed} failed ({rate:.1f}/sec)")
-                            if client.last_error and failed > last_failed_shown:
-                                err_short = client.last_error[:60]
-                                msg += f"  [err: {err_short}]"
-                                last_failed_shown = failed
-                            print(f"\r{msg}\033[K", end="", flush=True)
-        print()
+                    done = success + failed
+                    if done % 10 == 0 or done == len(to_process):
+                        elapsed = time.time() - start
+                        rate = done / elapsed if elapsed > 0 else 0
+                        if done % 100 == 0:
+                            state.save()
+                        msg = (f"  Progress: {done}/{len(to_process)} — "
+                               f"{success} ok, {failed} failed ({rate:.1f}/sec)")
+                        if client.last_error and failed > last_failed_shown:
+                            err_short = client.last_error[:60]
+                            msg += f"  [err: {err_short}]"
+                            last_failed_shown = failed
+                        print(f"\r{msg}\033[K", end="", flush=True)
+    print()
 
     # Final state save
     state.save()
@@ -963,12 +821,11 @@ def main():
         token_source = "estimated"
 
     input_price, output_price = model_pricing.get(args.model, (0, 0))
-    batch_discount = 0.5 if use_batch else 1.0
     cost = ((input_tokens * input_price / 1_000_000) +
-            (output_tokens * output_price / 1_000_000)) * batch_discount
+            (output_tokens * output_price / 1_000_000))
     print(f"Tokens: {input_tokens:,} in / {output_tokens:,} out ({token_source})")
     if input_price > 0 or output_price > 0:
-        print(f"Cost: ${cost:.4f} ({args.model}, {'batch' if use_batch else 'standard'})")
+        print(f"Cost: ${cost:.4f} ({args.model})")
     else:
         print(f"Cost: unknown (add {args.model} to models.yaml)")
 
@@ -977,7 +834,6 @@ def main():
     summary = {
         "model": args.model,
         "backend": args.backend,
-        "batch": use_batch,
         "items": success,
         "failed": failed,
         "input_tokens": input_tokens,

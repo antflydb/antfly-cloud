@@ -18,13 +18,6 @@ export default defineConfig({
         target: apiTarget,
         changeOrigin: true,
       },
-      ...(!remote && {
-        '/termite': {
-          target: 'http://localhost:11434',
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/termite/, ''),
-        },
-      }),
     },
   },
 })

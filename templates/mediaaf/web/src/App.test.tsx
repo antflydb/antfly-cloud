@@ -87,7 +87,7 @@ describe('App deep link (?gif=ID) under StrictMode', () => {
     renderApp();
 
     await waitFor(() => {
-      expect(antfly.getGifById).toHaveBeenCalledWith('honeycomb', 'nonexistent_id');
+      expect(antfly.getGifById).toHaveBeenCalledWith('mediaaf', 'nonexistent_id');
     });
 
     expect(screen.queryByText('Copy URL')).not.toBeInTheDocument();

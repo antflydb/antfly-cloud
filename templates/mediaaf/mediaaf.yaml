@@ -2,11 +2,13 @@ name: mediaaf
 table: mediaaf
 
 description_model:
-  provider: gemini
+  # Prefer antfly when the selected Cloud instance exposes
+  # antfly_inference_proxy_url and supports this media-description request.
+  provider: antfly
   model: gemini-2.5-flash
 
 embedding:
-  provider: termite
+  provider: antfly
   model: BAAI/bge-small-en-v1.5
   field: combined_text
   dimension: 384

@@ -27,7 +27,7 @@ import httpx
 load_dotenv()
 
 ANTFLY_URL = os.environ.get("ANTFLY_URL", "http://localhost:8080/api/v1")
-TABLE_NAME = os.environ.get("INGEST_TABLE", "honeycomb")
+TABLE_NAME = os.environ.get("INGEST_TABLE", "mediaaf")
 BATCH_SIZE = 200
 
 

@@ -17,7 +17,7 @@ const mockLocalStorage = {
 };
 Object.defineProperty(globalThis, 'localStorage', { value: mockLocalStorage, writable: true });
 
-const TEXT_TABLE = 'honeycomb';
+const TEXT_TABLE = 'mediaaf';
 
 describe('Antfly API Client', () => {
   beforeEach(() => {
@@ -60,7 +60,7 @@ describe('Antfly API Client', () => {
 
       // Verify the request
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/tables/honeycomb/query',
+        '/api/v1/tables/mediaaf/query',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -203,7 +203,7 @@ describe('Antfly API Client', () => {
       const result = await getGifById(TEXT_TABLE, 'sources_abc123');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/tables/honeycomb/query',
+        '/api/v1/tables/mediaaf/query',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({

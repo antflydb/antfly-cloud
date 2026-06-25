@@ -9,10 +9,11 @@ Supports multiple input files for side-by-side model comparison.
 
 import argparse
 import json
+import os
 from collections import OrderedDict
 from pathlib import Path
 
-MEDIA_BASE = "https://media.honeycomb.antfly.io"
+MEDIA_BASE = os.environ.get("MEDIA_BASE_URL", "https://media.example.com")
 
 # Fields that are metadata, not description content
 SKIP_FIELDS = {"id", "dataset", "source_path", "attribution"}
@@ -83,7 +84,7 @@ def main():
     gif_ids = list(seen.keys())
 
     # Header
-    lines = ["# Honeycomb reviewer", ""]
+    lines = ["# MediaAF review", ""]
     lines.append(f"- **GIFs**: {len(gif_ids)}")
     lines.append("")
     if summaries:
