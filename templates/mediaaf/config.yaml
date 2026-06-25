@@ -1,0 +1,20 @@
+storage:
+  local:
+    base_dir: ${HOME}/.antfly
+
+max_shards_per_table: 4
+default_shards_per_table: 2
+
+termite:
+  api_url: http://localhost:11433
+  models_dir: ${HOME}/.termite/models
+  keep_alive: "0"
+  preload:
+    - BAAI/bge-small-en-v1.5
+
+remote_content:
+  s3:
+    r2:
+      endpoint: ${R2_ENDPOINT_URL}
+      access_key_id: ${R2_ACCESS_KEY_ID}
+      secret_access_key: ${R2_SECRET_ACCESS_KEY}

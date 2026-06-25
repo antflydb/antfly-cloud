@@ -1,0 +1,44 @@
+name: mediaaf
+table: mediaaf
+
+description_model:
+  provider: gemini
+  model: gemini-2.5-flash
+
+embedding:
+  provider: termite
+  model: BAAI/bge-small-en-v1.5
+  field: combined_text
+  dimension: 384
+
+# MediaAF routes media types to transform scripts. A transform creates the package
+# the description model will summarize; the summary text is what Antfly embeds.
+media_types:
+  image/gif:
+    transform: transforms/moving_image_frames.py
+    recommended: true
+  video/mp4:
+    transform: transforms/moving_image_frames.py
+    recommended: true
+  video/webm:
+    transform: transforms/moving_image_frames.py
+    recommended: true
+  image/png:
+    transform: transforms/static_image.py
+    recommended: true
+  image/jpeg:
+    transform: transforms/static_image.py
+    recommended: true
+  image/webp:
+    transform: transforms/static_image.py
+    recommended: true
+
+extension_points:
+  audio/*:
+    transform: transforms/audio_transcript.py
+    recommended: false
+    note: "Works only if you add transcription and chunking; not a good default for podcasts."
+  application/vnd.openxmlformats-officedocument.presentationml.presentation:
+    transform: transforms/pptx_pages_ocr.py
+    recommended: false
+    note: "Usually better handled by DocsAF or a document-specific workflow."
