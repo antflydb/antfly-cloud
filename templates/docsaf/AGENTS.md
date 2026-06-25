@@ -31,10 +31,21 @@ Use MediaAF instead for reaction/image/video libraries. Use Cloud structured imp
 ## Workflow
 
 1. Copy `.env.example` to `.env.local` and fill in Cloud settings.
-2. Build or point to a `docsaf` binary with `make build-docsaf` or `DOCSAF_BIN=/path/to/docsaf`.
-3. Run `make prepare` against `sample-corpus` or a real corpus to inspect source rows.
-4. Run `make sync` to create/update the Cloud table.
-5. Run `make query-smoke` and `make web` to inspect search behavior.
+2. Build or locate the existing `docsaf` CLI from the Antfly repo; do not fork or re-home DocsAF.
+3. Run `docsaf prepare` against `sample-corpus` or a real corpus to inspect source-document rows.
+4. Run `docsaf sync` with the Cloud URL/token/table to create or update the Cloud table.
+5. Use `python3 scripts/query_smoke.py` or the static UI in `web/` to inspect search behavior.
+
+Example shape, to adapt after locating `docsaf`:
+
+```sh
+DOCSAF_BIN=/path/to/docsaf
+$DOCSAF_BIN prepare --dir sample-corpus --inline-content --output artifacts/docsaf-source-documents.json
+$DOCSAF_BIN sync --url "$ANTFLY_URL" --token "$ANTFLYDB_API_KEY" --table docsaf --create-table --dir sample-corpus --inline-content
+python3 scripts/query_smoke.py
+python3 scripts/local_proxy.py
+python3 -m http.server 8770 --directory web
+```
 
 ## Jobs note
 

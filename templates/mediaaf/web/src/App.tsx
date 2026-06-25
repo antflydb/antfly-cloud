@@ -335,12 +335,12 @@ function App() {
 cp .env.example .env.local
 
 # 2. Run a small description job first
-make describe N=10
+uv run ingest/image-to-text/describe.py --source local --local-dir ./corpus --limit 10
 
 # 3. Ingest descriptions and start the proxy/UI
-make ingest
-make proxy
-make web`}
+uv run ingest/embed-text-descriptions/embed.py --jsonl ingest/image-to-text/output/descriptions.jsonl
+python3 scripts/local_proxy.py
+cd web && pnpm install && pnpm dev`}
               </pre>
             </div>
             <p className="text-[hsl(var(--muted-foreground))] mt-4 text-sm">

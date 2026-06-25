@@ -6,16 +6,6 @@ A starter pack for building a searchable document corpus on Antfly Cloud using t
 document corpus -> docsaf source rows -> Antfly document extraction -> chunks/vectors/search UI
 ```
 
-## Quick start
+## Implementation
 
-```sh
-cp .env.example .env.local
-make build-docsaf      # or set DOCSAF_BIN=/path/to/docsaf
-make prepare           # inspect source-document rows from sample-corpus
-make sync              # create/update the Cloud table
-make query-smoke
-make proxy
-make web
-```
-
-See `AGENTS.md` for the implementation guide and production notes.
+Start by reading `AGENTS.md`. This template intentionally does not include a Makefile: the agent should locate the existing DocsAF CLI, adapt the corpus source, and then use the included smoke-test/proxy/UI assets as needed.

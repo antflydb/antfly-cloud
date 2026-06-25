@@ -66,11 +66,12 @@ run a small sample first.
 1. Copy `.env.example` to `.env.local` and fill in Cloud/API/model credentials.
 2. Inspect `mediaaf.yaml` and update `media_types` to match the corpus.
 3. Choose `DESCRIPTION_PROVIDER` explicitly. Prefer `antfly` if accessible.
-4. If the corpus has unsupported media, add or edit a transform under `transforms/`.
-5. Run `make describe-sample` before spending money on a full corpus.
-6. Run `make describe` to create normalized description JSONL.
-7. Run `make ingest` to create/update the Antfly table.
-8. Run `make proxy` and `make web` for local search.
+4. Decide how the provided corpus will be represented as a manifest or local/R2 object list. Do not add web scrapers unless the human explicitly wants the template to include a scraper for their corpus.
+5. If the corpus has unsupported media, add or edit a transform under `transforms/`.
+6. Run a tiny description sample before spending money on a full corpus. For example, use `uv run ingest/image-to-text/describe.py --source local --local-dir <corpus-dir> --limit 5 ...` after adapting the script to the corpus.
+7. Generate normalized description JSONL for the corpus.
+8. Ingest the descriptions with `uv run ingest/embed-text-descriptions/embed.py --jsonl <descriptions.jsonl> --url "$ANTFLY_URL" --table mediaaf`.
+9. Run the local proxy with `python3 scripts/local_proxy.py` and the web UI with `cd web && pnpm install && pnpm dev`.
 
 ## API key safety
 

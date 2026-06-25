@@ -4,25 +4,23 @@
 # dependencies = ["boto3", "python-dotenv"]
 # ///
 """
-Upload source media to Cloudflare R2 storage.
+Stage a provided MediaAF manifest into Cloudflare R2 storage.
 
-For each source, resolves the manifest in priority order:
-  1. Local: sources/{name}/manifest.json
-  2. Remote: R2 at sources/{name}/manifest.json
-  3. Not found: run the source's scraper first
+The template expects a corpus or manifest to be provided. This helper takes a
+manifest with `items[]` and uploads any item with `local_file` or `original_url`
+that does not already have `r2_url`. It then syncs the manifest back to R2.
 
-For each item without an r2_url, streams directly from original_url to R2.
-Periodically syncs the manifest back to R2 for durability.
+Default manifest path:
+  corpus/{name}/manifest.json
 
 Bucket path structure:
-  sources/{source_name}/manifest.json
-  sources/{source_name}/media/{item_id}.{ext}
+  corpus/{name}/manifest.json
+  corpus/{name}/media/{item_id}.{ext}
 
 Usage:
-    uv run ingest/save-to-r2/upload_r2.py --source tgif
-    uv run ingest/save-to-r2/upload_r2.py --source tgif
-    uv run ingest/save-to-r2/upload_r2.py --source tgif --workers 20
-    uv run ingest/save-to-r2/upload_r2.py --all-sources
+    uv run ingest/save-to-r2/upload_r2.py --corpus my-corpus
+    uv run ingest/save-to-r2/upload_r2.py --corpus my-corpus --manifest /path/to/manifest.json
+    uv run ingest/save-to-r2/upload_r2.py --corpus my-corpus --workers 20
 """
 
 import argparse
@@ -43,7 +41,7 @@ from botocore.exceptions import ClientError
 load_dotenv()
 
 # Config
-SOURCES_DIR = Path(__file__).parent.parent.parent / "sources"
+CORPUS_DIR = Path(__file__).parent.parent.parent / "corpus"
 BUCKET_NAME = os.environ.get("R2_BUCKET", "mediaaf-media")
 MANIFEST_SYNC_INTERVAL = 100  # sync manifest to R2 every N completions
 DEFAULT_WORKERS = 10
@@ -115,10 +113,19 @@ def content_type_for(ext: str) -> str:
 
 # --- Manifest resolution ---
 
-def resolve_manifest(s3, source_name: str) -> dict | None:
-    """Resolve manifest: local first, then R2, else None."""
-    local_dir = SOURCES_DIR / source_name
+def resolve_manifest(s3, corpus_name: str, manifest_path: Path | None = None) -> dict | None:
+    """Resolve manifest: explicit path, local corpus path, then R2."""
+    local_dir = CORPUS_DIR / corpus_name
     local_path = local_dir / "manifest.json"
+
+    if manifest_path:
+        print(f"  Using provided manifest: {manifest_path}")
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+        local_dir.mkdir(parents=True, exist_ok=True)
+        with open(local_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+        return manifest
 
     # 1. Local manifest
     if local_path.exists():
@@ -127,7 +134,7 @@ def resolve_manifest(s3, source_name: str) -> dict | None:
             return json.load(f)
 
     # 2. Remote manifest from R2
-    r2_key = f"sources/{source_name}/manifest.json"
+    r2_key = f"corpus/{corpus_name}/manifest.json"
     try:
         resp = s3.get_object(Bucket=BUCKET_NAME, Key=r2_key)
         manifest = json.loads(resp["Body"].read())
@@ -143,19 +150,19 @@ def resolve_manifest(s3, source_name: str) -> dict | None:
         raise
 
 
-def save_manifest_local(source_name: str, manifest: dict) -> None:
+def save_manifest_local(corpus_name: str, manifest: dict) -> None:
     """Save manifest to local disk."""
-    source_dir = SOURCES_DIR / source_name
-    source_dir.mkdir(parents=True, exist_ok=True)
-    tmp = (source_dir / "manifest.json").with_suffix(".tmp")
+    corpus_dir = CORPUS_DIR / corpus_name
+    corpus_dir.mkdir(parents=True, exist_ok=True)
+    tmp = (corpus_dir / "manifest.json").with_suffix(".tmp")
     with open(tmp, "w") as f:
         json.dump(manifest, f, indent=2)
-    tmp.rename(source_dir / "manifest.json")
+    tmp.rename(corpus_dir / "manifest.json")
 
 
-def save_manifest_r2(s3, source_name: str, manifest: dict) -> None:
+def save_manifest_r2(s3, corpus_name: str, manifest: dict) -> None:
     """Sync manifest to R2."""
-    key = f"sources/{source_name}/manifest.json"
+    key = f"corpus/{corpus_name}/manifest.json"
     s3.put_object(
         Bucket=BUCKET_NAME,
         Key=key,
@@ -166,7 +173,7 @@ def save_manifest_r2(s3, source_name: str, manifest: dict) -> None:
 
 # --- Upload ---
 
-def process_item(s3, source_name: str, item: dict) -> str:
+def process_item(s3, corpus_name: str, item: dict) -> str:
     """Process a single item: download + upload. Returns 'uploaded', 'skipped', or 'failed'.
 
     On success, sets item['r2_url'] as a side effect.
@@ -174,7 +181,7 @@ def process_item(s3, source_name: str, item: dict) -> str:
     item_id = item["id"]
     fmt = item.get("format", "gif")
     ext = fmt if fmt in ("gif", "mp4", "webm") else "gif"
-    key = f"sources/{source_name}/media/{item_id}.{ext}"
+    key = f"corpus/{corpus_name}/media/{item_id}.{ext}"
 
     # Check R2 directly (in case manifest is stale)
     if object_exists(s3, key):
@@ -185,7 +192,7 @@ def process_item(s3, source_name: str, item: dict) -> str:
     data = None
     local_file = item.get("local_file")
     if local_file:
-        local_path = SOURCES_DIR / source_name / local_file
+        local_path = CORPUS_DIR / corpus_name / local_file
         if local_path.exists():
             data = local_path.read_bytes()
 
@@ -202,17 +209,17 @@ def process_item(s3, source_name: str, item: dict) -> str:
     return "uploaded"
 
 
-def upload_source(s3, source_name: str, workers: int = DEFAULT_WORKERS) -> int:
-    """Upload media for a source using a thread pool. Returns count uploaded."""
-    manifest = resolve_manifest(s3, source_name)
+def upload_corpus(s3, corpus_name: str, workers: int = DEFAULT_WORKERS, manifest_path: Path | None = None) -> int:
+    """Upload media for a corpus using a thread pool. Returns count uploaded."""
+    manifest = resolve_manifest(s3, corpus_name, manifest_path=manifest_path)
     if manifest is None:
-        print(f"  No manifest found for {source_name} (local or R2).")
-        print(f"  Run the scraper first: uv run sources/{source_name}/scrape.py")
+        print(f"  No manifest found for {corpus_name} (local or R2).")
+        print(f"  Provide a manifest with --manifest or create corpus/{corpus_name}/manifest.json")
         return 0
 
     items = manifest.get("items", [])
     if not items:
-        print(f"  No items in manifest for {source_name}")
+        print(f"  No items in manifest for {corpus_name}")
         return 0
 
     # Count what needs uploading
@@ -254,7 +261,7 @@ def upload_source(s3, source_name: str, workers: int = DEFAULT_WORKERS) -> int:
     def worker(item):
         s3_t = get_thread_s3()
         try:
-            return process_item(s3_t, source_name, item)
+            return process_item(s3_t, corpus_name, item)
         except Exception as e:
             print(f"\n  Error uploading {item.get('id', '?')}: {e}", file=sys.stderr)
             return "failed"
@@ -272,47 +279,48 @@ def upload_source(s3, source_name: str, workers: int = DEFAULT_WORKERS) -> int:
 
                 # Periodic local save for crash recovery
                 if since_last_sync >= MANIFEST_SYNC_INTERVAL:
-                    save_manifest_local(source_name, manifest)
+                    save_manifest_local(corpus_name, manifest)
                     since_last_sync = 0
 
                 if done % 25 == 0 or done == len(to_upload):
                     elapsed = time.time() - start
                     rate = done / elapsed if elapsed > 0 else 0
                     fail_str = f", {failed} failed" if failed else ""
-                    print(f"\r  [{source_name}] {total_on_r2}/{len(items)} on R2 "
+                    print(f"\r  [{corpus_name}] {total_on_r2}/{len(items)} on R2 "
                           f"(+{uploaded + skipped} this run{fail_str}) {rate:.1f}/sec",
                           end="", flush=True)
 
     # Final sync
-    save_manifest_local(source_name, manifest)
+    save_manifest_local(corpus_name, manifest)
     try:
-        save_manifest_r2(s3, source_name, manifest)
+        save_manifest_r2(s3, corpus_name, manifest)
     except Exception as e:
         print(f"\n  Warning: final R2 manifest sync failed ({e}), local saved", file=sys.stderr)
     print()
     return uploaded
 
 
-def find_sources() -> list[str]:
-    """Find all source directories with a manifest.json (local only)."""
-    sources = []
-    if not SOURCES_DIR.exists():
-        return sources
-    for d in sorted(SOURCES_DIR.iterdir()):
+def find_corpora() -> list[str]:
+    """Find all corpus directories with a manifest.json (local only)."""
+    corpora = []
+    if not CORPUS_DIR.exists():
+        return corpora
+    for d in sorted(CORPUS_DIR.iterdir()):
         if d.is_dir() and not d.name.startswith("_") and (d / "manifest.json").exists():
-            sources.append(d.name)
-    return sources
+            corpora.append(d.name)
+    return corpora
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Upload source media to Cloudflare R2")
-    parser.add_argument("--source", help="Upload media for a specific source")
-    parser.add_argument("--all-sources", action="store_true", help="Upload all sources with manifests")
+    parser = argparse.ArgumentParser(description="Upload corpus media to Cloudflare R2")
+    parser.add_argument("--corpus", help="Upload media for a specific corpus")
+    parser.add_argument("--manifest", type=Path, help="Manifest JSON path for --corpus")
+    parser.add_argument("--all-corpora", action="store_true", help="Upload all corpora with manifests")
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help=f"Concurrent uploads (default {DEFAULT_WORKERS})")
     args = parser.parse_args()
 
-    if not any([args.source, args.all_sources]):
-        parser.error("Specify --source NAME or --all-sources")
+    if not any([args.corpus, args.all_corpora]):
+        parser.error("Specify --corpus NAME or --all-corpora")
 
     # Validate env vars
     for var in ["R2_ENDPOINT_URL", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]:
@@ -322,21 +330,21 @@ def main():
 
     s3 = get_s3_client()
 
-    if args.source:
-        print(f"Uploading source: {args.source}")
-        count = upload_source(s3, args.source, workers=args.workers)
-        print(f"Uploaded {count} files for {args.source}")
+    if args.corpus:
+        print(f"Uploading corpus: {args.corpus}")
+        count = upload_corpus(s3, args.corpus, workers=args.workers, manifest_path=args.manifest)
+        print(f"Uploaded {count} files for {args.corpus}")
 
-    if args.all_sources:
-        sources = find_sources()
-        if not sources:
-            print("No sources found (check local sources/ directory)")
+    if args.all_corpora:
+        corpora = find_corpora()
+        if not corpora:
+            print("No corpus manifests found (check local corpus/ directory)")
             return
-        print(f"Uploading {len(sources)} sources: {', '.join(sources)}")
+        print(f"Uploading {len(corpora)} corpora: {', '.join(corpora)}")
         total = 0
-        for name in sources:
+        for name in corpora:
             print(f"\n=== {name} ===")
-            total += upload_source(s3, name, workers=args.workers)
+            total += upload_corpus(s3, name, workers=args.workers)
         print(f"\nTotal uploaded: {total}")
 
 

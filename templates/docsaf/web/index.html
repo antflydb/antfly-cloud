@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8"><title>DocsAF Search</title><style>body{font-family:system-ui;margin:2rem;max-width:900px}input{width:70%;padding:.6rem}button{padding:.6rem}.hit{border-top:1px solid #ddd;padding:1rem 0}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}</style></head><body>
-<h1>DocsAF Search</h1><p>Run <code>make proxy</code>, then search your DocsAF table.</p>
+<h1>DocsAF Search</h1><p>Run <code>python3 scripts/local_proxy.py</code>, then search your DocsAF table.</p>
 <input id="q" value="source-document rows hierarchy artifacts"><button id="go">Search</button><div id="out"></div>
 <script>
 const table = new URLSearchParams(location.search).get('table') || 'docsaf';
