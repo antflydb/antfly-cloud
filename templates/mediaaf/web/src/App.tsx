@@ -334,10 +334,10 @@ function App() {
 {`# 1. Configure .env.local with Antfly Cloud and inference settings
 cp .env.example .env.local
 
-# 2. Run a small description job first
-uv run ingest/image-to-text/describe.py --source local --local-dir ./corpus --limit 10
+# 2. Describe a small local sample first
+uv run ingest/image-to-text/describe.py --source local --local-dir ./corpus --limit 10 --output ingest/image-to-text/output/descriptions.jsonl
 
-# 3. Ingest descriptions and start the proxy/UI
+# 3. Ingest descriptions and start local search
 uv run ingest/embed-text-descriptions/embed.py --jsonl ingest/image-to-text/output/descriptions.jsonl
 python3 scripts/local_proxy.py
 cd web && pnpm install && pnpm dev`}

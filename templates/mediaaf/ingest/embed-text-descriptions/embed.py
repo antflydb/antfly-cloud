@@ -13,8 +13,6 @@ maintain text embeddings.
 
 Usage:
     uv run ingest/embed-text-descriptions/embed.py --jsonl descriptions.jsonl
-    uv run ingest/embed-text-descriptions/embed.py --source tgif
-    uv run ingest/embed-text-descriptions/embed.py --all-sources
     uv run ingest/embed-text-descriptions/embed.py --jsonl descriptions.jsonl --limit 100
 """
 
@@ -37,7 +35,6 @@ TABLE_NAME = os.environ.get("INGEST_TABLE", "mediaaf")
 BATCH_SIZE = 50
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_DIMENSION = 384
-SOURCES_DIR = Path(__file__).parent.parent.parent / "sources"
 
 
 def combined_text(desc: dict) -> str:
@@ -142,18 +139,14 @@ def flush_batch(client: httpx.Client, table: str, batch: dict) -> None:
     resp.raise_for_status()
 
 
-def build_doc(desc: dict, default_attribution: str, r2_urls: dict | None = None, media_base_url: str = "") -> dict:
+def build_doc(desc: dict, default_attribution: str, media_base_url: str = "") -> dict:
     """Build an Antfly document from a description record."""
     url = desc.get("url", "")
 
-    # Use R2 URL if available, or construct from source_path
+    # Use the original URL if present, or construct a public media URL from source_path.
     gif_url = url
-    if r2_urls and url in r2_urls:
-        gif_url = r2_urls[url]
-    elif desc.get("r2_url"):
-        gif_url = desc["r2_url"]
-    elif desc.get("source_path") and media_base_url:
-        gif_url = f"{media_base_url}/{desc['source_path']}"
+    if desc.get("source_path") and media_base_url:
+        gif_url = f"{media_base_url.rstrip('/')}/{desc['source_path'].lstrip('/')}"
 
     action = desc.get("action", "")
     if isinstance(action, list):
@@ -173,8 +166,7 @@ def build_doc(desc: dict, default_attribution: str, r2_urls: dict | None = None,
 
 
 def ingest_jsonl(client: httpx.Client, table: str, jsonl_path: str,
-                 attribution: str, limit: int, r2_urls: dict | None = None,
-                 media_base_url: str = "") -> int:
+                 attribution: str, limit: int, media_base_url: str = "") -> int:
     """Ingest documents from a JSONL file. Returns count imported."""
     batch: dict = {}
     imported = 0
@@ -187,7 +179,7 @@ def ingest_jsonl(client: httpx.Client, table: str, jsonl_path: str,
         for line in f:
             desc = json.loads(line)
             did = doc_id(desc)
-            doc = build_doc(desc, attribution, r2_urls, media_base_url)
+            doc = build_doc(desc, attribution, media_base_url)
             batch[did] = doc
 
             if len(batch) >= BATCH_SIZE:
@@ -220,39 +212,21 @@ def ingest_jsonl(client: httpx.Client, table: str, jsonl_path: str,
     return imported
 
 
-def find_sources(source_filter: str | None = None) -> list[Path]:
-    """Find source directories with descriptions.jsonl."""
-    sources = []
-    if not SOURCES_DIR.exists():
-        return sources
-    for d in sorted(SOURCES_DIR.iterdir()):
-        if not d.is_dir() or d.name.startswith("_"):
-            continue
-        if source_filter and d.name != source_filter:
-            continue
-        if (d / "descriptions.jsonl").exists():
-            sources.append(d)
-    return sources
-
-
 def main():
     parser = argparse.ArgumentParser(description="Ingest media descriptions into Antfly")
     parser.add_argument("--jsonl", help="Path to descriptions JSONL file")
-    parser.add_argument("--source", help="Ingest a specific source")
-    parser.add_argument("--all-sources", action="store_true", help="Ingest all sources")
     parser.add_argument("--table", default=TABLE_NAME, help=f"Antfly table name (default: {TABLE_NAME})")
     parser.add_argument("--url", default=ANTFLY_URL, help=f"Antfly API URL (default: {ANTFLY_URL})")
     parser.add_argument("--attribution", default="", help="Default attribution for docs missing one")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of docs to import (0=all)")
     parser.add_argument("--skip-create", action="store_true", help="Skip table creation")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help=f"Batch size (default: {BATCH_SIZE})")
-    parser.add_argument("--r2-urls", help="Path to R2 URL mapping JSON (from upload_r2.py)")
     parser.add_argument("--media-base-url", default="", help="Base URL for media (e.g., /media or https://cdn.example.com)")
     parser.add_argument("--token", default=os.environ.get("ANTFLYDB_API_KEY") or os.environ.get("ANTFLY_TOKEN") or "", help="Bearer token for Antfly Cloud auth")
     args = parser.parse_args()
 
-    if not any([args.jsonl, args.source, args.all_sources]):
-        parser.error("Specify --jsonl PATH, --source NAME, or --all-sources")
+    if not args.jsonl:
+        parser.error("Specify --jsonl PATH")
 
     headers = {"Authorization": f"Bearer {args.token}"} if args.token else {}
     client = httpx.Client(base_url=args.url, headers=headers, timeout=30.0)
@@ -261,39 +235,5 @@ def main():
     if not args.skip_create:
         create_table(client, args.table)
 
-    # Load R2 URL mapping if provided
-    r2_urls = None
-    if args.r2_urls:
-        with open(args.r2_urls) as f:
-            r2_urls = json.load(f)
-        print(f"Loaded {len(r2_urls)} R2 URL mappings")
-
     if args.jsonl:
-        ingest_jsonl(client, args.table, args.jsonl, args.attribution, args.limit, r2_urls, args.media_base_url)
-
-    if args.source:
-        sources = find_sources(args.source)
-        if not sources:
-            print(f"Error: no descriptions.jsonl found for source '{args.source}'", file=sys.stderr)
-            sys.exit(1)
-        for source_dir in sources:
-            jsonl_path = str(source_dir / "descriptions.jsonl")
-            print(f"\n=== {source_dir.name} ===")
-            ingest_jsonl(client, args.table, jsonl_path, args.attribution, args.limit, r2_urls, args.media_base_url)
-
-    if args.all_sources:
-        sources = find_sources()
-        if not sources:
-            print("No sources with descriptions found")
-            return
-        print(f"Ingesting {len(sources)} sources: {', '.join(s.name for s in sources)}")
-        total = 0
-        for source_dir in sources:
-            jsonl_path = str(source_dir / "descriptions.jsonl")
-            print(f"\n=== {source_dir.name} ===")
-            total += ingest_jsonl(client, args.table, jsonl_path, args.attribution, args.limit, r2_urls, args.media_base_url)
-        print(f"\nTotal ingested: {total}")
-
-
-if __name__ == "__main__":
-    main()
+        ingest_jsonl(client, args.table, args.jsonl, args.attribution, args.limit, args.media_base_url)

@@ -8,4 +8,6 @@ document corpus -> docsaf source rows -> Antfly document extraction -> chunks/ve
 
 ## Implementation
 
-Start by reading `AGENTS.md`. This template intentionally does not include a Makefile: the agent should locate the existing DocsAF CLI, adapt the corpus source, and then use the included smoke-test/proxy/UI assets as needed.
+Start by reading `AGENTS.md`. The agent should locate the existing DocsAF CLI, sync `sample-corpus` or the user's corpus into Antfly Cloud, then use the included smoke-test script or browser UI to verify search.
+
+After syncing `sample-corpus`, try searches such as `source-document rows`, `hierarchy artifacts`, or `hosted Antfly instances`.

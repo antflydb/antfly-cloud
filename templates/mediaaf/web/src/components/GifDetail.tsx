@@ -296,7 +296,7 @@ export function GifDetail({ gif, onClose, hasActiveSearch, onTagClick, onMoodCli
 
         {/* Attribution + ID */}
         <div className="px-5 pb-4 space-y-2">
-          {gif.attribution && !gif.attribution.startsWith("R2:") && (
+          {gif.attribution && (
             <div className="text-xs text-[hsl(var(--muted-foreground))]">
               Dataset:{" "}
               {gif.attribution.startsWith("http") ? (

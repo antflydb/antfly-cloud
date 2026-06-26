@@ -34,7 +34,8 @@ Use MediaAF instead for reaction/image/video libraries. Use Cloud structured imp
 2. Build or locate the existing `docsaf` CLI from the Antfly repo; do not fork or re-home DocsAF.
 3. Run `docsaf prepare` against `sample-corpus` or a real corpus to inspect source-document rows.
 4. Run `docsaf sync` with the Cloud URL/token/table to create or update the Cloud table.
-5. Use `python3 scripts/query_smoke.py` or the static UI in `web/` to inspect search behavior.
+5. Use `python3 scripts/query_smoke.py` to run a direct smoke query, or use the static UI in `web/` with `scripts/local_proxy.py` for browser-based search. The proxy is only for the browser UI; it keeps `ANTFLYDB_API_KEY` local instead of putting it in browser code.
+6. After syncing `sample-corpus`, try searches such as `source-document rows`, `hierarchy artifacts`, or `hosted Antfly instances`.
 
 Example shape, to adapt after locating `docsaf`:
 
@@ -53,4 +54,4 @@ Cloud import Jobs are excellent for structured object imports. DocsAF's default 
 
 ## API key safety
 
-Keep `ANTFLYDB_API_KEY` in `.env.local`. The browser UI uses `scripts/local_proxy.py` so the key stays server-side on your machine.
+Keep `ANTFLYDB_API_KEY` in `.env.local`. `scripts/query_smoke.py` can call Antfly Cloud directly from the local process. The browser UI should go through `scripts/local_proxy.py` so the key stays server-side on your machine.

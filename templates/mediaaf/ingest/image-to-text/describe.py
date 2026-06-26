@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["google-genai", "Pillow", "boto3", "httpx", "pyyaml"]
+# dependencies = ["google-genai", "Pillow", "httpx"]
 # ///
 """
 Media description pipeline - generates rich text descriptions for MediaAF.
 
 Usage:
-    # Local media items (from TGIF TSV)
-    uv run ingest/image-to-text/describe.py --source tgif --limit 100
+    # Local corpus directory
+    uv run ingest/image-to-text/describe.py --source local --local-dir ./corpus --limit 10
 
-    # From R2 bucket (requires R2 credentials)
-    uv run ingest/image-to-text/describe.py --source r2 --limit 100
+    # Manifest with local paths or URLs
+    uv run ingest/image-to-text/describe.py --source manifest --manifest-file ./corpus/manifest.json
 
     # Resume from checkpoint
-    uv run ingest/image-to-text/describe.py --source r2 --resume
-
-    # Use custom prompt
-    uv run ingest/image-to-text/describe.py --prompt my_prompt.txt --limit 10
+    uv run ingest/image-to-text/describe.py --source local --local-dir ./corpus --resume
 """
 
 import argparse
@@ -32,7 +29,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 
 from PIL import Image
 
@@ -43,7 +40,6 @@ MAX_FRAME_DIM = 512
 # Default paths
 DEFAULT_PROMPT_FILE = Path(__file__).parent / "prompt.txt"
 DEFAULT_OUTPUT_DIR = Path(__file__).parent / "output"
-DEFAULT_TSV = Path(__file__).parent.parent.parent / "../datasets/TGIF-Release/data/tgif-v1.0.tsv"
 
 
 # =============================================================================
@@ -54,7 +50,7 @@ DEFAULT_TSV = Path(__file__).parent.parent.parent / "../datasets/TGIF-Release/da
 class GifItem:
     """A media to be processed."""
     id: str
-    source_path: str  # R2 path, URL, or local path
+    source_path: str  # URL or local path
     dataset: str
     original_url: str = ""
     original_description: str = ""
@@ -91,7 +87,7 @@ class ProcessingState:
 
 
 # =============================================================================
-# media Sources - Abstract interface for different data sources
+# Media sources
 # =============================================================================
 
 class GifSource(ABC):
@@ -104,119 +100,33 @@ class GifSource(ABC):
 
     @abstractmethod
     def download(self, item: GifItem) -> bytes | None:
-        """Download media data for an item."""
+        """Download or read media data for an item."""
         pass
 
 
-class TGIFSource(GifSource):
-    """Load media items from TGIF dataset TSV file."""
-
-    def __init__(self, tsv_path: Path):
-        self.tsv_path = Path(tsv_path)
-        if not self.tsv_path.exists():
-            raise FileNotFoundError(f"TGIF TSV not found: {tsv_path}")
-
-    def _fix_tumblr_url(self, url: str) -> str:
-        """Update old Tumblr CDN URLs to new domain."""
-        for old in ["38.media", "33.media", "31.media"]:
-            url = url.replace(f"{old}.tumblr.com", "64.media.tumblr.com")
-        return url
-
-    def list_items(self, limit: int = 0) -> Iterator[GifItem]:
-        """List media items from TSV file."""
-        import hashlib
-        count = 0
-        with open(self.tsv_path) as f:
-            for line in f:
-                parts = line.strip().split("\t", 1)
-                if len(parts) != 2:
-                    continue
-                url, desc = parts
-                url = self._fix_tumblr_url(url)
-                # Generate stable ID from URL
-                url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
-                yield GifItem(
-                    id=f"tgif_{url_hash}",
-                    source_path=url,
-                    dataset="tgif",
-                    original_url=url,
-                    original_description=desc,
-                    attribution="TGIF dataset",
-                )
-                count += 1
-                if limit and count >= limit:
-                    break
-
-    def download(self, item: GifItem) -> bytes | None:
-        """Download media from URL."""
-        try:
-            req = Request(item.source_path, headers={"User-Agent": "Mozilla/5.0"})
-            with urlopen(req, timeout=30) as resp:
-                # Detect Tumblr removal redirects
-                if "assets.tumblr.com/images/media_violation/" in resp.url:
-                    return None
-                return resp.read()
-        except Exception as e:
-            print(f"  Download error: {e}", file=sys.stderr)
-            return None
+def _stable_id(value: str, prefix: str = "media") -> str:
+    import hashlib
+    return f"{prefix}_{hashlib.md5(value.encode()).hexdigest()[:10]}"
 
 
-class R2Source(GifSource):
-    """Load media items from Cloudflare R2 bucket."""
+def _is_url(value: str) -> bool:
+    return value.startswith("http://") or value.startswith("https://")
 
-    def __init__(self, bucket: str, prefix: str = "", endpoint_url: str = None):
-        import boto3
-        self.bucket = bucket
-        self.prefix = prefix
 
-        # R2 uses S3-compatible API
-        self.s3 = boto3.client(
-            "s3",
-            endpoint_url=endpoint_url or os.environ.get("R2_ENDPOINT_URL"),
-            aws_access_key_id=os.environ.get("R2_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.environ.get("R2_SECRET_ACCESS_KEY"),
-        )
-
-    def list_items(self, limit: int = 0) -> Iterator[GifItem]:
-        """List media items in R2 bucket."""
-        import hashlib
-        paginator = self.s3.get_paginator("list_objects_v2")
-        count = 0
-
-        for page in paginator.paginate(Bucket=self.bucket, Prefix=self.prefix):
-            for obj in page.get("Contents", []):
-                key = obj["Key"]
-                if not key.lower().endswith((".gif", ".mp4", ".webm")):
-                    continue
-
-                # Extract dataset from path (e.g., "tgif/abc.gif" -> "tgif")
-                parts = key.split("/")
-                dataset = parts[0] if len(parts) > 1 else "unknown"
-
-                # Generate stable ID
-                key_hash = hashlib.md5(key.encode()).hexdigest()[:8]
-                yield GifItem(
-                    id=f"{dataset}_{key_hash}",
-                    source_path=key,
-                    dataset=dataset,
-                    attribution=f"R2: {self.bucket}/{key}",
-                )
-                count += 1
-                if limit and count >= limit:
-                    return
-
-    def download(self, item: GifItem) -> bytes | None:
-        """Download media from R2."""
-        try:
-            response = self.s3.get_object(Bucket=self.bucket, Key=item.source_path)
-            return response["Body"].read()
-        except Exception as e:
-            print(f"  R2 download error: {e}", file=sys.stderr)
-            return None
+def _download_url(url: str) -> bytes | None:
+    try:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except Exception as e:
+        print(f"  Download error for {url[:80]}: {e}", file=sys.stderr)
+        return None
 
 
 class LocalSource(GifSource):
-    """Load media items from local directory."""
+    """Load media items from a local directory."""
+
+    EXTENSIONS = (".gif", ".png", ".jpg", ".jpeg", ".webp")
 
     def __init__(self, directory: Path):
         self.directory = Path(directory)
@@ -224,13 +134,12 @@ class LocalSource(GifSource):
             raise FileNotFoundError(f"Directory not found: {directory}")
 
     def list_items(self, limit: int = 0) -> Iterator[GifItem]:
-        """List media items in directory."""
-        import hashlib
         count = 0
-        for path in self.directory.rglob("*.gif"):
-            path_hash = hashlib.md5(str(path).encode()).hexdigest()[:8]
+        for path in sorted(self.directory.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in self.EXTENSIONS:
+                continue
             yield GifItem(
-                id=f"local_{path_hash}",
+                id=_stable_id(str(path), "local"),
                 source_path=str(path),
                 dataset="local",
                 attribution=str(path),
@@ -240,43 +149,49 @@ class LocalSource(GifSource):
                 break
 
     def download(self, item: GifItem) -> bytes | None:
-        """Read media from local file."""
         try:
-            with open(item.source_path, "rb") as f:
-                return f.read()
+            return Path(item.source_path).read_bytes()
         except Exception as e:
             print(f"  Local read error: {e}", file=sys.stderr)
             return None
 
 
 class ManifestSource(GifSource):
-    """Load a fixed list of media items from a JSON manifest, downloading from R2."""
+    """Load media items from a JSON manifest with local paths or URLs.
 
-    def __init__(self, manifest_path: Path, bucket: str, endpoint_url: str = None):
-        import boto3
+    Supported item fields: id, path/source_path/local_path/url/original_url,
+    dataset, description, attribution. Relative paths are resolved relative to
+    the manifest file.
+    """
+
+    def __init__(self, manifest_path: Path):
         self.manifest_path = Path(manifest_path)
         if not self.manifest_path.exists():
             raise FileNotFoundError(f"Manifest not found: {manifest_path}")
-        self.bucket = bucket
-
-        self.s3 = boto3.client(
-            "s3",
-            endpoint_url=endpoint_url or os.environ.get("R2_ENDPOINT_URL"),
-            aws_access_key_id=os.environ.get("R2_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.environ.get("R2_SECRET_ACCESS_KEY"),
-        )
-
         with open(self.manifest_path) as f:
-            self.items_data = json.load(f)
+            data = json.load(f)
+        self.items_data = data.get("items", data if isinstance(data, list) else [])
 
     def list_items(self, limit: int = 0) -> Iterator[GifItem]:
-        """Yield GifItems from manifest."""
         count = 0
+        base = self.manifest_path.parent
         for entry in self.items_data:
+            source = (
+                entry.get("source_path")
+                or entry.get("path")
+                or entry.get("local_path")
+                or entry.get("url")
+                or entry.get("original_url")
+            )
+            if not source:
+                continue
+            source_path = source if _is_url(source) else str((base / source).resolve())
             yield GifItem(
-                id=entry["id"],
-                source_path=entry["source_path"],
-                dataset=entry.get("dataset", "unknown"),
+                id=entry.get("id") or _stable_id(source_path, "manifest"),
+                source_path=source_path,
+                dataset=entry.get("dataset", "manifest"),
+                original_url=entry.get("original_url", source if _is_url(source) else ""),
+                original_description=entry.get("description", ""),
                 attribution=entry.get("attribution", ""),
             )
             count += 1
@@ -284,12 +199,12 @@ class ManifestSource(GifSource):
                 break
 
     def download(self, item: GifItem) -> bytes | None:
-        """Download from R2 by key."""
+        if _is_url(item.source_path):
+            return _download_url(item.source_path)
         try:
-            response = self.s3.get_object(Bucket=self.bucket, Key=item.source_path)
-            return response["Body"].read()
+            return Path(item.source_path).read_bytes()
         except Exception as e:
-            print(f"  R2 download error: {e}", file=sys.stderr)
+            print(f"  Manifest read error: {e}", file=sys.stderr)
             return None
 
 
@@ -623,12 +538,8 @@ def process_item(
 
 def main():
     parser = argparse.ArgumentParser(description="MediaAF description pipeline")
-    parser.add_argument("--source", choices=["tgif", "r2", "local", "manifest"], default="tgif",
+    parser.add_argument("--source", choices=["local", "manifest"], default="local",
                         help="Data source type")
-    parser.add_argument("--tsv", type=Path, default=DEFAULT_TSV,
-                        help="Path to TGIF TSV file (for tgif source)")
-    parser.add_argument("--r2-bucket", help="R2 bucket name (for r2 source)")
-    parser.add_argument("--r2-prefix", default="", help="R2 key prefix filter")
     parser.add_argument("--local-dir", type=Path, help="Local directory (for local source)")
     parser.add_argument("--manifest-file", type=Path,
                         help="Path to manifest JSON file (for manifest source)")
@@ -666,16 +577,7 @@ def main():
     print(f"Loaded prompt from {args.prompt} ({len(prompt)} chars)")
 
     # Initialize source
-    if args.source == "tgif":
-        source = TGIFSource(args.tsv)
-        print(f"Using TGIF source: {args.tsv}")
-    elif args.source == "r2":
-        if not args.r2_bucket:
-            print("Error: --r2-bucket required for r2 source", file=sys.stderr)
-            sys.exit(1)
-        source = R2Source(args.r2_bucket, args.r2_prefix)
-        print(f"Using R2 source: {args.r2_bucket}/{args.r2_prefix}")
-    elif args.source == "local":
+    if args.source == "local":
         if not args.local_dir:
             print("Error: --local-dir required for local source", file=sys.stderr)
             sys.exit(1)
@@ -685,11 +587,7 @@ def main():
         if not args.manifest_file:
             print("Error: --manifest-file required for manifest source", file=sys.stderr)
             sys.exit(1)
-        if not args.r2_bucket:
-            print("Error: --r2-bucket required for manifest source", file=sys.stderr)
-            sys.exit(1)
-        bucket = args.r2_bucket
-        source = ManifestSource(args.manifest_file, bucket)
+        source = ManifestSource(args.manifest_file)
         print(f"Using manifest source: {args.manifest_file} ({len(source.items_data)} items)")
 
     # Initialize client based on backend. Do not silently fall back between
@@ -741,16 +639,6 @@ def main():
     if not to_process:
         print("Nothing to do!")
         return
-
-    # Load model pricing config
-    import yaml
-    pricing_path = Path(__file__).parent / "models.yaml"
-    model_pricing = {}
-    if pricing_path.exists():
-        with open(pricing_path) as f:
-            models_config = yaml.safe_load(f)
-        for m in models_config.get("models", []):
-            model_pricing[m["id"]] = (m.get("input_per_m", 0), m.get("output_per_m", 0))
 
     success = 0
     failed = 0
@@ -810,26 +698,19 @@ def main():
     print(f"Output: {args.output}")
     print(f"State: {state_file}")
 
-    # Cost estimate
+    # Token usage
     input_tokens = client.total_input_tokens
     output_tokens = client.total_output_tokens
     token_source = "actual"
     if input_tokens == 0 and success > 0:
-        # Fallback estimate if API didn't return usage
+        # Fallback estimate if API did not return usage.
         input_tokens = success * 1500
         output_tokens = success * 200
         token_source = "estimated"
 
-    input_price, output_price = model_pricing.get(args.model, (0, 0))
-    cost = ((input_tokens * input_price / 1_000_000) +
-            (output_tokens * output_price / 1_000_000))
     print(f"Tokens: {input_tokens:,} in / {output_tokens:,} out ({token_source})")
-    if input_price > 0 or output_price > 0:
-        print(f"Cost: ${cost:.4f} ({args.model})")
-    else:
-        print(f"Cost: unknown (add {args.model} to models.yaml)")
 
-    # Write summary alongside JSONL for review.py to pick up
+    # Write summary alongside JSONL.
     summary_path = args.output.with_suffix(".summary.json")
     summary = {
         "model": args.model,
@@ -839,7 +720,6 @@ def main():
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "token_source": token_source,
-        "cost": round(cost, 6),
         "elapsed_s": round(elapsed, 1),
     }
     with open(summary_path, "w") as f:
