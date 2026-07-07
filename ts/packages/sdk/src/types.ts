@@ -878,7 +878,11 @@ export interface paths {
         delete: operations["revokeCloudManagementAPIKey"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Antfly Cloud management API key
+         * @description Update mutable settings for an organization-scoped antfly_cloud_* management API key
+         */
+        patch: operations["updateCloudManagementAPIKey"];
         trace?: never;
     };
     "/organizations/{org_id}/cloud/instances/{instance_id}/api-keys": {
@@ -2417,6 +2421,22 @@ export interface components {
             grants?: components["schemas"]["CloudGrant"][];
             /** @description Antfly Cloud management actions allowed by antfly_cloud_* keys. */
             management_scopes?: string[];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+        };
+        /** @description Optional hosted inference spend and rate limits for an API key or organization. */
+        HostedInferenceLimits: {
+            /** @description Optional public hosted inference model IDs this key may invoke. Empty inherits from the broader policy layer. */
+            allowed_models?: string[];
+            /** @description External hosted inference requests per minute. Null or 0 inherits from the broader policy layer. */
+            requests_per_minute?: number;
+            /** @description Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer. */
+            tokens_per_minute?: number;
+            /** @description Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer. */
+            concurrent_requests?: number;
+            /** @description Daily Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            managed_spend_cents_per_day?: number;
+            /** @description Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            managed_spend_cents_per_month?: number;
         };
         /** @description Returned only at creation time. The full key is never shown again. */
         CloudAPIKeyCreated: {
@@ -2443,6 +2463,7 @@ export interface components {
             quota_queries_per_month?: number | null;
             /** @description Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted. */
             grants?: components["schemas"]["UpsertCloudGrantRequest"][];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
         };
         CreateCloudManagementAPIKeyRequest: {
             /**
@@ -2453,6 +2474,11 @@ export interface components {
             /** @description Antfly Cloud management actions allowed by the key. Defaults to read-only Antfly Cloud management scopes. */
             scopes?: string[];
             expires_at?: components["schemas"]["Timestamp"];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+        };
+        UpdateCloudAPIKeyRequest: {
+            /** @description Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits. */
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"] | null;
         };
         ProvisioningEvent: {
             id: components["schemas"]["UUID"];
@@ -5119,6 +5145,37 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCloudManagementAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description API key ID */
+                key_id: components["parameters"]["CloudKeyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCloudAPIKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Management API key updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
