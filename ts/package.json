@@ -1,6 +1,10 @@
 {
   "name": "@antflydb/antfly-cloud-workspace",
   "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "pnpm": "11.9.0"
+  },
   "scripts": {
     "build": "pnpm --filter @antfly/cloud-sdk build",
     "test": "pnpm --filter @antfly/cloud-sdk test",

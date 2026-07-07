@@ -1574,6 +1574,175 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: List S3 objects for a cloud instance credential
+      description: Lists immediate prefixes and objects for a bucket/prefix authorized by the selected S3 credential. Responses may be truncated when the requested limit is reached.
+      operationId: listCloudInstanceProviderAuthObjects
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+        - name: bucket
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Allowed bucket name to list.
+        - name: prefix
+          in: query
+          schema:
+            type: string
+          description: Optional object key prefix.
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to list recursively instead of returning immediate prefixes.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+          description: Maximum number of object entries to return.
+      responses:
+        '200':
+          description: Bucket object listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/S3ObjectListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Pause import job
+      operationId: pauseImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Resume import job
+      operationId: resumeImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Archive import job
+      operationId: archiveImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    delete:
+      summary: Archive import job
+      description: Archives the import job while retaining run history. This is an alias for the archive action.
+      operationId: deleteImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provision:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -2217,6 +2386,34 @@ paths:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    patch:
+      summary: Update Antfly Cloud management API key
+      description: Update mutable settings for an organization-scoped antfly_cloud_* management API key
+      operationId: updateCloudManagementAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: Management API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke Antfly Cloud management API key
       description: Revoke an organization-scoped antfly_cloud_* management API key
@@ -2308,6 +2505,35 @@ paths:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    patch:
+      summary: Update cloud API key
+      description: Update mutable settings for an instance-scoped antflydb_* API key
+      operationId: updateCloudAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke cloud API key
       description: Revoke an API key for a cloud instance
@@ -3643,6 +3869,20 @@ components:
         maximum: 100
         default: 20
       description: Maximum number of items to return
+    AuthId:
+      name: auth_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Provider credential ID
+    JobId:
+      name: job_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Import job ID
     GroupId:
       name: group_id
       in: path
@@ -5094,6 +5334,28 @@ components:
           items:
             type: string
           description: Antfly Cloud management actions allowed by antfly_cloud_* keys.
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    HostedInferenceLimits:
+      type: object
+      description: Optional hosted inference spend and rate limits for an API key or organization.
+      properties:
+        requests_per_minute:
+          type: integer
+          minimum: 0
+          description: External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
+        tokens_per_minute:
+          type: integer
+          minimum: 0
+          description: Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer.
+        concurrent_requests:
+          type: integer
+          minimum: 0
+          description: Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
+        managed_spend_cents_per_month:
+          type: integer
+          minimum: 0
+          description: Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -5141,6 +5403,8 @@ components:
           description: Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted.
           items:
             $ref: '#/components/schemas/UpsertCloudGrantRequest'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
     CreateCloudManagementAPIKeyRequest:
       type: object
       required:
@@ -5159,6 +5423,17 @@ components:
             type: string
         expires_at:
           $ref: '#/components/schemas/Timestamp'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    UpdateCloudAPIKeyRequest:
+      type: object
+      properties:
+        hosted_inference_limits:
+          nullable: true
+          x-go-type-skip-optional-pointer: false
+          description: Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits.
+          allOf:
+            - $ref: '#/components/schemas/HostedInferenceLimits'
     ProvisioningEvent:
       type: object
       required:
@@ -5836,6 +6111,48 @@ components:
           type: string
         updated_at:
           $ref: '#/components/schemas/Timestamp'
+    S3ObjectSummary:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+        size:
+          type: integer
+          format: int64
+        etag:
+          type: string
+        last_modified:
+          $ref: '#/components/schemas/Timestamp'
+    S3ObjectListResponse:
+      type: object
+      required:
+        - data
+        - objects
+        - prefixes
+        - truncated
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+          description: Backward-compatible alias for objects.
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+        prefixes:
+          type: array
+          items:
+            type: string
+        truncated:
+          type: boolean
+          description: True when the listing reached the server-side object limit.
+    ImportJob:
+      type: object
+      additionalProperties: true
+      description: Structured import job configuration and status.
     UpdateCloudUserAttributesRequest:
       type: object
       required:
@@ -6286,6 +6603,9 @@ components:
         email:
           type: string
           format: email
+        redirect_url:
+          type: string
+          description: Optional post-login redirect to preserve after password reset
     ResetPasswordRequest:
       type: object
       required:
