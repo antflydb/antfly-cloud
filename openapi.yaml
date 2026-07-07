@@ -12,1351 +12,22 @@ servers:
   - url: https://platform.antfly.io/api/v1
     description: Production
 tags:
-  - name: Users
-    description: User account management
-    x-displayName: Users
-  - name: Organizations
-    description: Organization management
-    x-displayName: Organizations
-  - name: Audit
-    description: Audit log access
-    x-displayName: Audit
-  - name: Authentication
-    x-displayName: Authentication
-  - name: Subscriptions
-    description: Subscription management
-    x-displayName: Subscriptions
-  - name: Billing
-    description: Billing state and entitlement decisions
-    x-displayName: Billing
-  - name: Usage
-    description: Usage tracking and quotas
-    x-displayName: Usage
   - name: Instances
     description: Cloud instance lifecycle management
-    x-displayName: Instances
   - name: CloudAPIKeys
     description: API key management for cloud instances
-    x-displayName: CloudAPIKeys
   - name: CloudTables
     description: Logical table registry for cloud instances
-    x-displayName: CloudTables
   - name: CloudMetrics
     description: Instance metrics and events
-    x-displayName: CloudMetrics
   - name: CloudBackups
     description: Backup and restore management for cloud instances
-    x-displayName: CloudBackups
   - name: CloudRBAC
     description: Cloud instance groups and grants
-    x-displayName: CloudRBAC
   - name: CloudBilling
     description: Cloud committed-capacity billing and credits
-    x-displayName: CloudBilling
-  - name: CloudObservability
-    description: Observability metrics for cloud instances
-    x-displayName: CloudObservability
-  - name: Login
-    description: Email/password and OAuth login
-    x-displayName: Login
-  - name: Signup
-    description: User registration and email verification
-    x-displayName: Signup
-  - name: TwoFactor
-    description: Two-factor authentication setup and verification
-    x-displayName: TwoFactor
-  - name: Password
-    description: Password management (forgot, reset, change, set)
-    x-displayName: Password
-  - name: Email
-    description: Email change flow
-    x-displayName: Email
-  - name: Profile
-    description: User profile and auth methods
-    x-displayName: Profile
 paths:
-  /auth/signout:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    post:
-      summary: Sign out user
-      description: Clears authentication cookies (access_token and refresh_token)
-      operationId: signOut
-      tags:
-        - Authentication
-      security: []
-      responses:
-        '200':
-          description: Successfully signed out
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-        '204':
-          description: Successfully signed out, cookies cleared
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  /users/me:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get current user
-      description: Returns authenticated user profile
-      operationId: getCurrentUser
-      tags:
-        - Users
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    patch:
-      summary: Update current user
-      description: Update authenticated user profile
-      operationId: updateCurrentUser
-      tags:
-        - Users
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                display_name:
-                  type: string
-                  minLength: 1
-                  maxLength: 100
-                avatar_url:
-                  type: string
-                  format: uri
-                  nullable: true
-                settings:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '200':
-          description: User updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /users/me/invitations:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get pending invitations
-      description: List pending invitations for the authenticated user
-      operationId: getUserInvitations
-      tags:
-        - Users
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Pending invitations list
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - invitation_id
-                        - token
-                        - email
-                        - organization_id
-                        - organization_name
-                        - role
-                        - invited_by
-                        - invited_at
-                        - expires_at
-                      properties:
-                        invitation_id:
-                          $ref: '#/components/schemas/UUID'
-                        token:
-                          type: string
-                          minLength: 64
-                          maxLength: 64
-                        email:
-                          type: string
-                          format: email
-                        organization_id:
-                          $ref: '#/components/schemas/UUID'
-                        organization_name:
-                          type: string
-                        role:
-                          type: string
-                        invited_by:
-                          type: object
-                          required:
-                            - user_id
-                            - display_name
-                          properties:
-                            user_id:
-                              $ref: '#/components/schemas/UUID'
-                            display_name:
-                              type: string
-                        invited_at:
-                          $ref: '#/components/schemas/Timestamp'
-                        expires_at:
-                          $ref: '#/components/schemas/Timestamp'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /organizations/check-slug:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Check organization slug availability
-      description: Check if an organization slug is available and get suggestions if not
-      operationId: checkOrganizationSlug
-      tags:
-        - Organizations
-      security: []
-      parameters:
-        - name: slug
-          in: query
-          required: true
-          schema:
-            type: string
-            pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-          description: The slug to check
-      responses:
-        '200':
-          description: Slug availability result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SlugCheckResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  /organizations:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List organizations
-      description: List organizations where user is a member
-      operationId: listOrganizations
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Organizations list
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Organization'
-                  meta:
-                    $ref: '#/components/schemas/PaginationMeta'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    post:
-      summary: Create organization
-      description: Create new organization (user becomes owner)
-      operationId: createOrganization
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - slug
-                - billing_email
-              properties:
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 100
-                slug:
-                  type: string
-                  pattern: ^[a-z0-9-]+$
-                  minLength: 1
-                  maxLength: 50
-                billing_email:
-                  type: string
-                  format: email
-                settings:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '201':
-          description: Organization created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '409':
-          $ref: '#/components/responses/Conflict'
-  /organizations/{org_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get organization
-      description: Get organization details
-      operationId: getOrganization
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '200':
-          description: Organization details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    patch:
-      summary: Update organization
-      description: Update organization (requires admin+ role)
-      operationId: updateOrganization
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 100
-                billing_email:
-                  type: string
-                  format: email
-                settings:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '200':
-          description: Organization updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      summary: Delete organization
-      description: Delete organization (requires owner role)
-      operationId: deleteOrganization
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '204':
-          description: Organization deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/members:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List organization members
-      description: List all members of organization
-      operationId: listOrganizationMembers
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Members list
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/OrganizationMember'
-                  meta:
-                    $ref: '#/components/schemas/PaginationMeta'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      summary: Invite member
-      description: Invite user to organization (requires admin+ role)
-      operationId: inviteOrganizationMember
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - role
-              properties:
-                email:
-                  type: string
-                  format: email
-                role:
-                  $ref: '#/components/schemas/OrganizationRole'
-      responses:
-        '201':
-          description: Member invited
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitationResponse-2'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/members/{member_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    patch:
-      summary: Update member role
-      description: Update organization member role (requires admin+ role, cannot change owner)
-      operationId: updateMemberRole
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/MemberId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - role
-              properties:
-                role:
-                  type: string
-                  enum:
-                    - admin
-                    - developer
-                  description: New role for the member (cannot set to owner via this endpoint)
-      responses:
-        '200':
-          description: Member role updated
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - user_id
-                  - organization_id
-                  - role
-                  - updated_at
-                properties:
-                  user_id:
-                    $ref: '#/components/schemas/UUID'
-                  organization_id:
-                    $ref: '#/components/schemas/UUID'
-                  role:
-                    type: string
-                  updated_at:
-                    $ref: '#/components/schemas/Timestamp'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Remove member
-      description: Remove user from organization (requires admin+ role)
-      operationId: removeOrganizationMember
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/MemberId'
-      responses:
-        '204':
-          description: Member removed
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/members/{member_id}/metadata:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    patch:
-      summary: Update member metadata
-      description: Replace organization-scoped metadata for a member's role context.
-      operationId: updateMemberMetadata
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/MemberId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - metadata
-              properties:
-                metadata:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '200':
-          description: Member metadata updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationMember'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /organizations/{org_id}/transfer-ownership:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    post:
-      summary: Transfer organization ownership
-      description: Transfer organization ownership to another admin (requires owner role + password confirmation or OAuth re-authentication)
-      operationId: transferOrganizationOwnership
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - new_owner_id
-              properties:
-                new_owner_id:
-                  $ref: '#/components/schemas/UUID'
-                  description: User ID of the new owner (must be an admin)
-                password:
-                  type: string
-                  format: password
-                  description: Current owner's password for confirmation (required if not using reauth_verified)
-                reauth_verified:
-                  type: boolean
-                  description: Set to true after OAuth re-authentication (alternative to password)
-      responses:
-        '200':
-          description: Ownership transferred successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - organization_id
-                  - old_owner_id
-                  - new_owner_id
-                  - transferred_at
-                properties:
-                  organization_id:
-                    $ref: '#/components/schemas/UUID'
-                  old_owner_id:
-                    $ref: '#/components/schemas/UUID'
-                  new_owner_id:
-                    $ref: '#/components/schemas/UUID'
-                  transferred_at:
-                    $ref: '#/components/schemas/Timestamp'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /invitations/{token}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get invitation details
-      description: Retrieve invitation details by token (public endpoint)
-      operationId: getInvitation
-      tags:
-        - Organizations
-      security: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 64
-            maxLength: 64
-          description: Invitation token
-      responses:
-        '200':
-          description: Invitation details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetInvitationResponse-2'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      summary: Revoke invitation
-      description: Revoke an invitation token (requires authentication - only inviter or org admin/owner can revoke)
-      operationId: revokeInvitation
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 64
-            maxLength: 64
-          description: Invitation token
-      responses:
-        '204':
-          description: Invitation revoked successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /invitations/{token}/accept:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    post:
-      summary: Accept invitation
-      description: Accept an invitation token and create membership (requires authenticated user)
-      operationId: acceptInvitation
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 64
-            maxLength: 64
-          description: Invitation token
-      responses:
-        '200':
-          description: Invitation accepted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AcceptInvitationResponse-2'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /invitations/{token}/resend:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    post:
-      summary: Resend invitation
-      description: Resend invitation email with a new token (requires authentication - only inviter or org admin/owner can resend)
-      operationId: resendInvitation
-      tags:
-        - Organizations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
-            minLength: 64
-            maxLength: 64
-          description: Original invitation token
-      responses:
-        '200':
-          description: Invitation resent successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResendInvitationResponse-2'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /organizations/{org_id}/audit-logs:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List audit logs
-      description: List audit logs for organization (requires admin+ role)
-      operationId: listAuditLogs
-      tags:
-        - Audit
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-        - name: entity_type
-          in: query
-          schema:
-            $ref: '#/components/schemas/EntityType'
-        - name: entity_id
-          in: query
-          schema:
-            $ref: '#/components/schemas/UUID'
-        - name: action
-          in: query
-          schema:
-            $ref: '#/components/schemas/AuditAction'
-      responses:
-        '200':
-          description: Audit logs list
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AuditLog'
-                  meta:
-                    $ref: '#/components/schemas/PaginationMeta'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/billing/state:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get billing state
-      description: Get normalized billing state, including plan, limits, and entitlement decisions.
-      operationId: getBillingState
-      tags:
-        - Billing
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '200':
-          description: Billing state
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillingState'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/billing/credit-ledger:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List credit ledger entries
-      description: Get credit ledger entries for an organization, newest first.
-      operationId: getCreditLedger
-      tags:
-        - Billing
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - name: product_family
-          in: query
-          schema:
-            type: string
-          description: Optional product-family filter, for example `ai`
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Credit ledger entries
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillingCreditLedgerList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/billing/spend-limits:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List spend limits
-      description: Get configured spend limits for an organization.
-      operationId: getSpendLimits
-      tags:
-        - Billing
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '200':
-          description: Spend limits
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/BillingSpendLimit'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    put:
-      summary: Upsert spend limit
-      description: Create or update a spend limit for an organization. Requires owner or admin role.
-      operationId: upsertSpendLimit
-      tags:
-        - Billing
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - product_family
-                - period
-                - limit_cents
-              properties:
-                product_family:
-                  type: string
-                  example: cloud
-                period:
-                  type: string
-                  enum:
-                    - monthly
-                limit_cents:
-                  type: integer
-                  minimum: 0
-                alert_threshold_cents:
-                  type: integer
-                  minimum: 0
-                enforcement_enabled:
-                  type: boolean
-                  description: Defaults to true when omitted
-      responses:
-        '200':
-          description: Spend limit upserted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillingSpendLimit'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/billing/spend-records:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: List spend records
-      description: Get monetary spend records for an organization, newest first.
-      operationId: getSpendRecords
-      tags:
-        - Billing
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - name: product_family
-          in: query
-          schema:
-            type: string
-          description: Optional product-family filter, for example `cloud` or `ai`
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Spend records
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillingSpendRecordList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/subscription:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get subscription
-      description: Get organization subscription details
-      operationId: getSubscription
-      tags:
-        - Subscriptions
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '200':
-          description: Subscription details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      summary: Create subscription
-      description: Create Stripe subscription for organization (requires admin+ role)
-      operationId: createSubscription
-      tags:
-        - Subscriptions
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - plan_type
-                - payment_method_id
-              properties:
-                plan_type:
-                  $ref: '#/components/schemas/PurchasablePlanType'
-                payment_method_id:
-                  type: string
-                  description: Stripe payment method ID
-                  example: pm_1234567890
-      responses:
-        '201':
-          description: Subscription created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    patch:
-      summary: Update subscription
-      description: Update subscription plan (requires admin+ role)
-      operationId: updateSubscription
-      tags:
-        - Subscriptions
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                plan_type:
-                  $ref: '#/components/schemas/PurchasablePlanType'
-                payment_method_id:
-                  type: string
-                  description: New Stripe payment method ID
-      responses:
-        '200':
-          description: Subscription updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      summary: Cancel subscription
-      description: Cancel subscription (requires admin+ role, downgrades to free)
-      operationId: cancelSubscription
-      tags:
-        - Subscriptions
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '204':
-          description: Subscription canceled
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/subscription/portal:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    post:
-      summary: Create billing/checkout session
-      description: |
-        Smart billing endpoint that automatically routes users based on their subscription status:
-        - **Paid plan users** → Redirected to Stripe Billing Portal (manage payment, view invoices, cancel)
-        - **Free plan users** → Redirected to Stripe Checkout (upgrade to paid plan)
-
-        The response includes a `type` field indicating which flow was used.
-      operationId: createBillingSession
-      tags:
-        - Subscriptions
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - return_url
-              properties:
-                return_url:
-                  type: string
-                  format: uri
-                  description: URL to return to after session completes
-                  example: https://platform.antfly.io/settings/billing
-                plan:
-                  type: string
-                  enum:
-                    - growth
-                    - enterprise
-                  description: |
-                    Plan to upgrade to (only used for free plan users).
-                    Defaults to "growth" if not specified.
-                  example: growth
-                intent:
-                  type: string
-                  enum:
-                    - setup_payment_method
-                    - start_subscription
-                    - manage_billing
-                  description: Billing action requested by the caller. Defaults to smart routing.
-                  example: setup_payment_method
-      responses:
-        '200':
-          description: Session created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - url
-                  - type
-                properties:
-                  url:
-                    type: string
-                    format: uri
-                    description: Redirect URL for Stripe session
-                    example: https://checkout.stripe.com/c/pay/cs_test_...
-                  type:
-                    type: string
-                    enum:
-                      - portal
-                      - checkout
-                      - setup
-                    description: Type of session created
-                    example: checkout
-              examples:
-                checkout:
-                  summary: Free user upgrade flow
-                  value:
-                    url: https://checkout.stripe.com/c/pay/cs_test_...
-                    type: checkout
-                portal:
-                  summary: Paid user billing portal
-                  value:
-                    url: https://billing.stripe.com/p/session/test_...
-                    type: portal
-                setup:
-                  summary: Payment method setup flow
-                  value:
-                    url: https://checkout.stripe.com/c/setup/cs_test_...
-                    type: setup
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/usage:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get current usage
-      description: Get current billing cycle usage and quotas
-      operationId: getCurrentUsage
-      tags:
-        - Usage
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-      responses:
-        '200':
-          description: Usage summary
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsageSummary'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/usage/history:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-    get:
-      summary: Get usage history
-      description: Get historical usage data by billing cycle
-      operationId: getUsageHistory
-      tags:
-        - Usage
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - name: start_date
-          in: query
-          schema:
-            $ref: '#/components/schemas/Date'
-          description: Start date (YYYY-MM-DD)
-        - name: end_date
-          in: query
-          schema:
-            $ref: '#/components/schemas/Date'
-          description: End date (YYYY-MM-DD)
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Usage history
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/UsageHistory'
-                  meta:
-                    $ref: '#/components/schemas/PaginationMeta'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/estimate:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     post:
       summary: Estimate cloud credits
       description: Estimate cloud credit usage and spend-limit impact for a prospective cloud operation.
@@ -1387,9 +58,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/commitments:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud billing commitments
       description: List committed-capacity charges and refunds for cloud instances.
@@ -1419,9 +87,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/instances:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud instances
       description: List all cloud instances for an organization
@@ -1492,9 +157,6 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
   /organizations/{org_id}/cloud/instances/{instance_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get cloud instance
       description: Get cloud instance details including status and connection info
@@ -1574,10 +236,161 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects:
+    get:
+      summary: List S3 objects for a cloud instance credential
+      description: Lists immediate prefixes and objects for a bucket/prefix authorized by the selected S3 credential. Responses may be truncated when the requested limit is reached.
+      operationId: listCloudInstanceProviderAuthObjects
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+        - name: bucket
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Allowed bucket name to list.
+        - name: prefix
+          in: query
+          schema:
+            type: string
+          description: Optional object key prefix.
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to list recursively instead of returning immediate prefixes.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+          description: Maximum number of object entries to return.
+      responses:
+        '200':
+          description: Bucket object listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/S3ObjectListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause:
+    post:
+      summary: Pause import job
+      operationId: pauseImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume:
+    post:
+      summary: Resume import job
+      operationId: resumeImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive:
+    post:
+      summary: Archive import job
+      operationId: archiveImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}:
+    delete:
+      summary: Archive import job
+      description: Archives the import job while retaining run history. This is an alias for the archive action.
+      operationId: deleteImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provision:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     post:
       summary: Provision cloud instance
       description: |
@@ -1613,10 +426,39 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/instances/{instance_id}/ha/status-sync:
+    post:
+      summary: Sync hot-standby HA status
+      description: |
+        Queue an immediate Cloud reconciliation pass so Cloud pulls the latest
+        operator-observed hot-standby HA status, planned actions, fencing state,
+        route state, and promotion blockers into the public instance status.
+      operationId: syncCloudInstanceHAStatus
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '202':
+          description: HA status sync queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudHAStatusSyncResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /organizations/{org_id}/cloud/instances/{instance_id}/tables:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud instance tables
       description: List logical tables registered for a cloud instance.
@@ -1679,9 +521,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/groups:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud groups
       operationId: listCloudGroups
@@ -1739,9 +578,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/groups/{group_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     patch:
       summary: Update cloud group
       operationId: updateCloudGroup
@@ -1774,9 +610,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/users/{user_id}/attributes:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get cloud user attributes
       operationId: getCloudUserAttributes
@@ -1840,9 +673,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/scim/groups:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     put:
       summary: Sync SCIM cloud groups
       description: Upsert SCIM-managed groups and replace their membership snapshots for an organization.
@@ -1873,9 +703,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/groups/{group_id}/members:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud group members
       operationId: listCloudGroupMembers
@@ -1939,9 +766,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/groups/{group_id}/members/{user_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     delete:
       summary: Remove cloud group member
       operationId: removeCloudGroupMember
@@ -1967,9 +791,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/grants:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud grants
       operationId: listCloudGrants
@@ -2029,9 +850,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/instances/{instance_id}/grants/{grant_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     delete:
       summary: Delete cloud grant
       operationId: deleteCloudGrant
@@ -2057,9 +875,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/connection:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get connection details
       description: Get connection URL and instructions for connecting to the instance
@@ -2085,9 +900,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/events:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List provisioning events
       description: Get provisioning and lifecycle events for a cloud instance
@@ -2125,9 +937,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get instance metrics
       description: Get storage, query, and node health metrics for a cloud instance
@@ -2153,9 +962,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/api-keys:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List Antfly Cloud management API keys
       description: List organization-scoped Antfly Cloud management API keys
@@ -2214,9 +1020,34 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/api-keys/{key_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
+    patch:
+      summary: Update Antfly Cloud management API key
+      description: Update mutable settings for an organization-scoped antfly_cloud_* management API key
+      operationId: updateCloudManagementAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: Management API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke Antfly Cloud management API key
       description: Revoke an organization-scoped antfly_cloud_* management API key
@@ -2238,9 +1069,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/api-keys:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud API keys
       description: List API keys for a cloud instance
@@ -2305,9 +1133,35 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/api-keys/{key_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
+    patch:
+      summary: Update cloud API key
+      description: Update mutable settings for an instance-scoped antflydb_* API key
+      operationId: updateCloudAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke cloud API key
       description: Revoke an API key for a cloud instance
@@ -2330,9 +1184,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/backups:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud backups
       description: List backups for a cloud instance
@@ -2396,9 +1247,6 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
   /organizations/{org_id}/cloud/instances/{instance_id}/backups/{backup_record_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get cloud backup
       description: Get details of a specific backup
@@ -2446,9 +1294,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/restore:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     post:
       summary: Restore from backup
       description: Restore a cloud instance from a backup using overwrite mode
@@ -2484,9 +1329,6 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
   /organizations/{org_id}/cloud/instances/{instance_id}/restores:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: List cloud restores
       description: List restore operations for a cloud instance
@@ -2524,9 +1366,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/restores/{restore_id}:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get cloud restore
       description: Get details of a specific restore operation
@@ -2553,9 +1392,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/usage:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get cloud usage
       description: Get current billing cycle usage for all cloud instances in an organization
@@ -2578,9 +1414,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /organizations/{org_id}/cloud/instances/{instance_id}/api-keys/{key_id}/rotate:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     post:
       summary: Rotate cloud API key
       description: Revoke the existing key and create a new one with the same name and permissions
@@ -2607,9 +1440,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/api-keys/{key_id}/rotate:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     post:
       summary: Rotate Antfly Cloud management API key
       description: Atomically revoke an antfly_cloud_* key and create a replacement with the same scopes
@@ -2635,9 +1465,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/backups/{backup_record_id}/download:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get backup download URL
       description: Get a presigned URL to download a completed backup
@@ -2664,9 +1491,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/backup-schedule:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
     get:
       summary: Get backup schedule
       description: Get the backup schedule configuration for a cloud instance
@@ -2723,1919 +1547,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-      - url: http://localhost:8082/api/v1
-        description: Local Development
-    get:
-      tags:
-        - CloudObservability
-      operationId: listMetricPanels
-      summary: List available metric panels for a cloud instance
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/InstanceId'
-      responses:
-        '200':
-          description: Available panels
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - panels
-                properties:
-                  panels:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/MetricPanel'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
-      security:
-        - BearerAuth: []
-  /organizations/{org_id}/cloud/instances/{instance_id}/metrics/query:
-    servers:
-      - url: https://platform.antfly.io/api/v1
-        description: Production
-      - url: http://localhost:8082/api/v1
-        description: Local Development
-    get:
-      tags:
-        - CloudObservability
-      operationId: queryMetricPanel
-      summary: Query one metric panel for a cloud instance
-      parameters:
-        - $ref: '#/components/parameters/OrgId'
-        - $ref: '#/components/parameters/InstanceId'
-        - name: panel
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: from
-          in: query
-          required: true
-          schema:
-            type: string
-            format: date-time
-        - name: to
-          in: query
-          required: true
-          schema:
-            type: string
-            format: date-time
-        - name: step
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Time-series query response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MetricQueryResponse'
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
-      security:
-        - BearerAuth: []
-  /login:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Login with email and password
-      operationId: postAuthLogin
-      tags:
-        - Login
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
-          description: Login successful or 2FA required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '403':
-          description: Account inactive or email not verified
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /signup:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Sign up with email and password
-      operationId: postAuthSignup
-      tags:
-        - Signup
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SignupRequest'
-      responses:
-        '201':
-          description: Account created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignupResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: User already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /verify-email:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Verify email address
-      operationId: postAuthVerifyEmail
-      tags:
-        - Signup
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyEmailRequest'
-      responses:
-        '200':
-          description: Email verified
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /resend-verification:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Resend verification email
-      operationId: postAuthResendVerification
-      tags:
-        - Signup
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResendVerificationRequest'
-      responses:
-        '200':
-          description: Verification email sent (always returns success for anti-enumeration)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /oauth/{provider}/login:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    get:
-      summary: Initiate OAuth login
-      description: Redirects to OAuth provider login page
-      operationId: getAuthOauthProviderLogin
-      tags:
-        - Login
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/OAuthProvider'
-        - name: return_to
-          in: query
-          schema:
-            type: string
-          description: URL to return to after OAuth flow
-      responses:
-        '200':
-          description: OAuth URL generated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '302':
-          description: Redirect to OAuth provider
-        '400':
-          description: Unsupported provider
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /oauth/{provider}/callback:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    get:
-      summary: OAuth callback handler
-      description: Handles OAuth provider callback, creates session, and redirects
-      operationId: getAuthOauthProviderCallback
-      tags:
-        - Login
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/OAuthProvider'
-        - name: code
-          in: query
-          required: true
-          schema:
-            type: string
-          description: OAuth authorization code
-        - name: state
-          in: query
-          required: true
-          schema:
-            type: string
-          description: CSRF protection state
-      responses:
-        '200':
-          description: Authentication successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '302':
-          description: Redirect after successful authentication
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '403':
-          description: State mismatch
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /oauth/{provider}/link:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    get:
-      summary: Link OAuth provider to account
-      description: Initiates OAuth flow to link a provider to the authenticated user's account
-      operationId: getAuthOauthProviderLink
-      tags:
-        - Login
-      security:
-        - CookieAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OAuthProvider'
-      responses:
-        '200':
-          description: Redirect initiated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '302':
-          description: Redirect to OAuth provider
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /oauth/{provider}/unlink:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Unlink OAuth provider from account
-      operationId: postAuthOauthProviderUnlink
-      tags:
-        - Login
-      security:
-        - CookieAuth: []
-      parameters:
-        - $ref: '#/components/parameters/OAuthProvider'
-      responses:
-        '200':
-          description: Provider unlinked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Cannot remove last auth method
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/verify:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Verify 2FA code during login
-      operationId: postAuth2faVerify
-      tags:
-        - TwoFactor
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TwoFactorVerifyRequest'
-      responses:
-        '200':
-          description: 2FA verification successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwoFactorRedirectResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid code or token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/verify-backup:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Verify backup code during login
-      operationId: postAuth2faVerifyBackup
-      tags:
-        - TwoFactor
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TwoFactorVerifyBackupRequest'
-      responses:
-        '200':
-          description: Backup code verification successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwoFactorRedirectResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid code or token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/setup:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Setup 2FA
-      description: Generate TOTP secret and QR code URL for setting up 2FA
-      operationId: postAuth2faSetup
-      tags:
-        - TwoFactor
-      security:
-        - CookieAuth: []
-      responses:
-        '200':
-          description: 2FA setup initiated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwoFactorSetupResponse'
-        '400':
-          description: 2FA already enabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/verify-setup:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Verify and enable 2FA
-      description: Verify TOTP code and enable 2FA, returns backup codes
-      operationId: postAuth2faVerifySetup
-      tags:
-        - TwoFactor
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TwoFactorVerifySetupRequest'
-      responses:
-        '200':
-          description: 2FA enabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwoFactorVerifySetupResponse'
-        '400':
-          description: Bad request or already enabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid code or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/disable:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Disable 2FA
-      description: Disable 2FA (requires password and TOTP code)
-      operationId: postAuth2faDisable
-      tags:
-        - TwoFactor
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TwoFactorDisableRequest'
-      responses:
-        '200':
-          description: 2FA disabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: 2FA not enabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid password, code, or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /2fa/backup-codes:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Regenerate backup codes
-      description: Generate new backup codes (requires password, invalidates old ones)
-      operationId: postAuth2faBackupCodes
-      tags:
-        - TwoFactor
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegenerateBackupCodesRequest'
-      responses:
-        '200':
-          description: Backup codes regenerated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BackupCodesResponse'
-        '400':
-          description: 2FA not enabled
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid password or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /password/forgot:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Request password reset
-      operationId: postAuthPasswordForgot
-      tags:
-        - Password
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
-      responses:
-        '200':
-          description: Reset email sent (always returns success for anti-enumeration)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /password/reset:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Reset password with token
-      description: Reset password using token from email. If 2FA is enabled, requires TOTP or backup code.
-      operationId: postAuthPasswordReset
-      tags:
-        - Password
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
-      responses:
-        '200':
-          description: Password reset or 2FA required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResetPasswordResponse'
-        '400':
-          description: Bad request or weak password
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid 2FA code
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '404':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /password/change:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Change password
-      description: Change password for authenticated user (session-authed)
-      operationId: postAuthPasswordChange
-      tags:
-        - Password
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-      responses:
-        '200':
-          description: Password changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request or weak password
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid current password or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /password/set:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Set initial password
-      description: Set password for OAuth-only users who don't have one yet (session-authed)
-      operationId: postAuthPasswordSet
-      tags:
-        - Password
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetPasswordRequest'
-      responses:
-        '200':
-          description: Password set
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request, weak password, or password already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /email/change:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Initiate email change
-      description: Start email change flow (session-authed, requires password)
-      operationId: postAuthEmailChange
-      tags:
-        - Email
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeEmailRequest'
-      responses:
-        '200':
-          description: Confirmation email sent
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request or invalid email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid password or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /email/confirm:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    post:
-      summary: Confirm email change
-      description: Confirm email change with token from verification email
-      operationId: postAuthEmailConfirm
-      tags:
-        - Email
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmEmailChangeRequest'
-      responses:
-        '200':
-          description: Email changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /me:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    get:
-      summary: Get current user profile
-      operationId: getAuthMe
-      tags:
-        - Profile
-      security:
-        - CookieAuth: []
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-    patch:
-      summary: Update profile
-      operationId: patchAuthMe
-      tags:
-        - Profile
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProfileRequest'
-      responses:
-        '200':
-          description: Profile updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-  /me/auth-methods:
-    servers:
-      - url: https://auth.antfly.io/auth/v1
-        description: Production
-    get:
-      summary: Get authentication methods
-      description: Returns password status and linked OAuth providers
-      operationId: getAuthMeAuthMethods
-      tags:
-        - Profile
-      security:
-        - CookieAuth: []
-      responses:
-        '200':
-          description: Authentication methods
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthMethodsResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
 components:
-  parameters:
-    OrgId:
-      name: org_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Organization ID
-    InstanceId:
-      name: instance_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Cloud instance ID
-    MemberId:
-      name: member_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Member ID
-    Offset:
-      name: offset
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
-      description: Number of items to skip
-    Limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-      description: Maximum number of items to return
-    GroupId:
-      name: group_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Cloud group ID
-    CloudKeyId:
-      name: key_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: API key ID
-    BackupRecordId:
-      name: backup_record_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Backup record ID
-    RestoreId:
-      name: restore_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/UUID'
-      description: Restore operation ID
-    OAuthProvider:
-      name: provider
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/AuthOAuthProviderType'
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from OAuth flow or API key
   schemas:
-    UUID:
-      type: string
-      format: uuid
-      description: RFC 4122 UUID identifier
-      example: 550e8400-e29b-41d4-a716-446655440000
-    Timestamp:
-      type: string
-      format: date-time
-      description: ISO 8601 timestamp
-      example: '2025-10-02T15:30:00Z'
-    Date:
-      type: string
-      format: date
-      description: ISO 8601 date
-      example: '2025-10-02'
-    PaginationMeta:
-      type: object
-      required:
-        - offset
-        - limit
-        - total
-      properties:
-        offset:
-          type: integer
-          minimum: 0
-        limit:
-          type: integer
-          minimum: 1
-        total:
-          type: integer
-          minimum: 0
-          description: Total number of items available
-    Error:
-      type: object
-      required:
-        - type
-        - title
-        - status
-      properties:
-        type:
-          type: string
-          format: uri
-          description: URI identifying the problem type
-          example: https://platform.antfly.io/errors/validation-error
-        title:
-          type: string
-          description: Short, human-readable summary
-          example: Validation Error
-        status:
-          type: integer
-          description: HTTP status code
-          example: 400
-        detail:
-          type: string
-          description: Human-readable explanation specific to this occurrence
-          example: Email address is required
-        instance:
-          type: string
-          format: uri
-          description: URI reference identifying the specific occurrence
-          example: https://platform.antfly.io/api/v1/users/550e8400-e29b-41d4-a716-446655440000
-        errors:
-          type: array
-          description: Additional validation errors
-          items:
-            type: object
-            required:
-              - field
-              - message
-            properties:
-              field:
-                type: string
-                description: Field name causing the error
-              message:
-                type: string
-                description: Error message for this field
-    UserStatus:
-      type: string
-      enum:
-        - active
-        - suspended
-        - deleted
-      description: User account status
-    User:
-      type: object
-      required:
-        - id
-        - email
-        - display_name
-        - status
-        - created_at
-        - updated_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        email:
-          type: string
-          format: email
-          maxLength: 255
-          description: User email address
-          example: user@example.com
-        display_name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          description: User display name
-          example: John Doe
-        avatar_url:
-          type: string
-          format: uri
-          nullable: true
-          x-go-type-skip-optional-pointer: false
-          description: Profile picture URL
-          example: https://example.com/avatar.jpg
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-        last_login_at:
-          $ref: '#/components/schemas/Timestamp'
-          nullable: true
-        status:
-          $ref: '#/components/schemas/UserStatus'
-        settings:
-          type: object
-          nullable: true
-          description: Extensible user settings
-          additionalProperties: true
-    OrganizationStatus:
-      type: string
-      enum:
-        - active
-        - frozen
-        - deleted
-      description: Organization status
-    Organization:
-      type: object
-      required:
-        - id
-        - name
-        - slug
-        - owner_id
-        - billing_email
-        - status
-        - created_at
-        - updated_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          description: Organization display name
-          example: Acme Corp
-        slug:
-          type: string
-          pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-          minLength: 1
-          maxLength: 50
-          description: URL-safe identifier (lowercase alphanumeric with hyphens, no underscores or colons)
-          example: acme-corp
-        owner_id:
-          $ref: '#/components/schemas/UUID'
-        billing_email:
-          type: string
-          format: email
-          description: Email for billing notifications
-          example: billing@acme.com
-        status:
-          $ref: '#/components/schemas/OrganizationStatus'
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-        settings:
-          type: object
-          nullable: true
-          description: Extensible organization settings
-          additionalProperties: true
-    OrganizationRole:
-      type: string
-      enum:
-        - owner
-        - admin
-        - developer
-      description: Organization-level role
-    MembershipStatus:
-      type: string
-      enum:
-        - invited
-        - active
-        - removed
-      description: Membership status
-    OrganizationMember:
-      type: object
-      required:
-        - id
-        - user_id
-        - organization_id
-        - role
-        - invited_at
-        - status
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        user_id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        role:
-          $ref: '#/components/schemas/OrganizationRole'
-        invited_by:
-          $ref: '#/components/schemas/UUID'
-          nullable: true
-        invited_at:
-          $ref: '#/components/schemas/Timestamp'
-        joined_at:
-          $ref: '#/components/schemas/Timestamp'
-          nullable: true
-        status:
-          $ref: '#/components/schemas/MembershipStatus'
-        metadata:
-          type: object
-          additionalProperties: true
-          description: Organization-scoped metadata for this membership and role context.
-        user:
-          $ref: '#/components/schemas/User'
-          nullable: true
-          description: Populated in list responses
-    EntityType:
-      type: string
-      enum:
-        - user
-        - organization
-        - organization_member
-        - organization_invitation
-        - subscription
-        - cloud_instance
-        - cloud_api_key
-        - cloud_backup
-        - cloud_restore
-        - cloud_backup_schedule
-        - cloud_group
-        - cloud_grant
-        - cloud_authorization
-        - identity_provider
-        - identity_domain
-        - scim_token
-        - scim_user
-        - scim_group
-        - identity_group_mapping
-      description: Type of entity being audited
-    AuditAction:
-      type: string
-      enum:
-        - create
-        - read
-        - update
-        - delete
-        - accept
-        - verify
-        - enable
-        - disable
-        - revoke
-        - login
-        - deprovision
-      description: Type of action performed
-    AuditLog:
-      type: object
-      required:
-        - id
-        - organization_id
-        - entity_type
-        - entity_id
-        - action
-        - created_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        user_id:
-          $ref: '#/components/schemas/UUID'
-          nullable: true
-          description: Null for system actions
-        entity_type:
-          $ref: '#/components/schemas/EntityType'
-        entity_id:
-          $ref: '#/components/schemas/UUID'
-        action:
-          $ref: '#/components/schemas/AuditAction'
-        changes:
-          type: object
-          nullable: true
-          description: Before/after state
-          properties:
-            old_value:
-              type: object
-              additionalProperties: true
-            new_value:
-              type: object
-              additionalProperties: true
-        ip_address:
-          type: string
-          nullable: true
-          description: Request IP address
-          example: 192.168.1.1
-        user_agent:
-          type: string
-          nullable: true
-          description: Request user agent
-          example: Mozilla/5.0...
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-    SlugCheckResult:
-      type: object
-      required:
-        - available
-        - slug
-      properties:
-        available:
-          type: boolean
-          description: Whether the slug is available
-          example: false
-        slug:
-          type: string
-          description: The checked slug
-          example: my-company
-        suggestions:
-          type: array
-          items:
-            type: string
-          description: Alternative slugs if unavailable
-          example:
-            - my-company-2
-            - my-company-inc
-            - my-company-io
-        error:
-          type: string
-          nullable: true
-          description: Validation error if slug is invalid
-          example: 'Slug must match pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$'
-    InvitationResponse-2:
-      type: object
-      required:
-        - invitation_id
-        - email
-        - role
-        - expires_at
-        - status
-        - token
-      properties:
-        invitation_id:
-          $ref: '#/components/schemas/UUID'
-          description: Unique invitation identifier
-        email:
-          type: string
-          format: email
-          description: Email address of the invited user
-        role:
-          $ref: '#/components/schemas/OrganizationRole'
-          description: Role the user will have when they accept
-        expires_at:
-          $ref: '#/components/schemas/Timestamp'
-          description: When the invitation expires
-        status:
-          type: string
-          enum:
-            - invited
-          description: Invitation status
-        token:
-          type: string
-          description: Invitation token for accepting the invitation
-    GetInvitationResponse-2:
-      type: object
-      required:
-        - invitation_id
-        - email
-        - organization_id
-        - organization_name
-        - role
-        - expires_at
-      properties:
-        invitation_id:
-          $ref: '#/components/schemas/UUID'
-        email:
-          type: string
-          format: email
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        organization_name:
-          type: string
-        role:
-          type: string
-        expires_at:
-          $ref: '#/components/schemas/Timestamp'
-    AcceptInvitationResponse-2:
-      type: object
-      required:
-        - user_id
-        - organization_id
-        - role
-        - joined_at
-      properties:
-        user_id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        role:
-          type: string
-        joined_at:
-          $ref: '#/components/schemas/Timestamp'
-    ResendInvitationResponse-2:
-      type: object
-      required:
-        - message
-        - new_token
-        - expires_at
-      properties:
-        message:
-          type: string
-          example: Invitation email resent successfully
-        new_token:
-          type: string
-          minLength: 64
-          maxLength: 64
-          description: New invitation token
-        expires_at:
-          $ref: '#/components/schemas/Timestamp'
-    SubscriptionStatus:
-      type: string
-      enum:
-        - active
-        - trial
-        - past_due
-        - canceled
-      description: Subscription status
-    PlanType:
-      type: string
-      enum:
-        - free
-        - growth
-        - enterprise
-      description: Subscription plan returned by the API.
-    PurchasablePlanType:
-      type: string
-      enum:
-        - free
-        - growth
-        - enterprise
-      description: Customer-selectable subscription plan. Does not include internal admin-managed plans.
-    Subscription:
-      type: object
-      required:
-        - id
-        - organization_id
-        - status
-        - plan_type
-        - billing_cycle_start
-        - billing_cycle_end
-        - created_at
-        - updated_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        stripe_customer_id:
-          type: string
-          nullable: true
-          description: Stripe customer ID
-        stripe_default_payment_method_id:
-          type: string
-          nullable: true
-          description: Stripe default payment method ID
-        stripe_subscription_id:
-          type: string
-          nullable: true
-          description: Stripe subscription ID
-        status:
-          $ref: '#/components/schemas/SubscriptionStatus'
-        plan_type:
-          $ref: '#/components/schemas/PlanType'
-        billing_cycle_start:
-          $ref: '#/components/schemas/Timestamp'
-        billing_cycle_end:
-          $ref: '#/components/schemas/Timestamp'
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingEntitlementDecision:
-      type: object
-      required:
-        - key
-        - allowed
-      properties:
-        key:
-          type: string
-          description: Stable entitlement key
-          example: cloud.instance.create
-        allowed:
-          type: boolean
-          description: Whether the organization currently has the entitlement
-        limit:
-          type: integer
-          description: Entitlement limit (-1 = unlimited)
-          example: 10
-        used:
-          type: integer
-          description: Current entitlement usage
-          example: 2
-        remaining:
-          type: integer
-          description: Remaining entitlement capacity (-1 = unlimited)
-          example: 8
-        reason:
-          type: string
-          description: Machine-readable denial reason when not allowed
-          example: quota_exceeded
-    BillingState:
-      type: object
-      required:
-        - organization_id
-        - plan
-        - has_active_plan
-        - has_paid_plan
-        - has_stripe_customer
-        - has_default_payment_method
-        - has_stripe_subscription
-        - payment_health
-        - entitlements
-      properties:
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        plan:
-          $ref: '#/components/schemas/PlanType'
-        has_active_plan:
-          type: boolean
-          description: Whether the organization has an active subscription row
-        has_paid_plan:
-          type: boolean
-          description: Whether the active plan is a paid/non-free plan
-        has_stripe_customer:
-          type: boolean
-          description: Whether the organization has a Stripe customer
-        has_default_payment_method:
-          type: boolean
-          description: Whether the organization has a saved default payment method
-        has_stripe_subscription:
-          type: boolean
-          description: Whether the organization has a Stripe subscription
-        payment_health:
-          $ref: '#/components/schemas/BillingPaymentHealth'
-        subscription:
-          $ref: '#/components/schemas/BillingSubscriptionSummary'
-        entitlements:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/BillingEntitlementDecision'
-        credit_balances:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillingCreditBalance'
-        spend_limits:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillingSpendLimit'
-        spend_limit_statuses:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillingSpendLimitStatus'
-    BillingPaymentHealth:
-      type: string
-      description: Compact payment/subscription health status for billing UI
-      enum:
-        - none
-        - active
-        - trial
-        - past_due
-        - canceled
-    BillingSubscriptionSummary:
-      type: object
-      required:
-        - id
-        - organization_id
-        - plan_type
-        - status
-        - billing_cycle_start
-        - billing_cycle_end
-        - has_stripe_customer
-        - has_default_payment_method
-        - has_stripe_subscription
-        - payment_health
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        plan_type:
-          $ref: '#/components/schemas/PlanType'
-        status:
-          $ref: '#/components/schemas/SubscriptionStatus'
-        billing_cycle_start:
-          $ref: '#/components/schemas/Timestamp'
-        billing_cycle_end:
-          $ref: '#/components/schemas/Timestamp'
-        has_stripe_customer:
-          type: boolean
-          description: Whether a Stripe customer is linked without exposing the customer ID
-        has_default_payment_method:
-          type: boolean
-          description: Whether a reusable default payment method is linked
-        has_stripe_subscription:
-          type: boolean
-          description: Whether a Stripe subscription is linked without exposing the subscription ID
-        payment_method:
-          $ref: '#/components/schemas/BillingPaymentMethodSummary'
-        payment_health:
-          $ref: '#/components/schemas/BillingPaymentHealth'
-    BillingPaymentMethodSummary:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          type: string
-          description: Sanitized Stripe payment method type
-          example: card
-        brand:
-          type: string
-          description: Card network or display brand
-          example: visa
-        last4:
-          type: string
-          description: Last four digits for card payment methods
-          example: '4242'
-        exp_month:
-          type: integer
-          minimum: 1
-          maximum: 12
-          description: Card expiration month
-          example: 12
-        exp_year:
-          type: integer
-          minimum: 2000
-          description: Card expiration year
-          example: 2028
-    BillingCreditBalance:
-      type: object
-      required:
-        - product_family
-        - balance
-        - updated_at
-      properties:
-        product_family:
-          type: string
-          description: Product family for the balance
-          example: ai
-        balance:
-          type: integer
-          minimum: 0
-          description: Current available credit balance
-          example: 2500
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingSpendLimit:
-      type: object
-      required:
-        - id
-        - organization_id
-        - product_family
-        - period
-        - limit_cents
-        - enforcement_enabled
-        - created_at
-        - updated_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        product_family:
-          type: string
-          example: cloud
-        period:
-          type: string
-          enum:
-            - monthly
-        limit_cents:
-          type: integer
-          minimum: 0
-          description: Spend cap in cents
-        alert_threshold_cents:
-          type: integer
-          minimum: 0
-          description: Optional alert threshold in cents
-        enforcement_enabled:
-          type: boolean
-          description: Whether operations should be blocked after the cap is exceeded
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingSpendLimitStatus:
-      type: object
-      required:
-        - id
-        - organization_id
-        - product_family
-        - period
-        - period_start
-        - limit_cents
-        - current_spend_cents
-        - remaining_cents
-        - alert_threshold_met
-        - over_limit
-        - enforcement_enabled
-        - allowed
-        - created_at
-        - updated_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        product_family:
-          type: string
-          example: cloud
-        period:
-          type: string
-          enum:
-            - monthly
-        period_start:
-          $ref: '#/components/schemas/Timestamp'
-        limit_cents:
-          type: integer
-          minimum: 0
-        current_spend_cents:
-          type: integer
-          minimum: 0
-        remaining_cents:
-          type: integer
-          minimum: 0
-        alert_threshold_cents:
-          type: integer
-          minimum: 0
-        alert_threshold_met:
-          type: boolean
-        over_limit:
-          type: boolean
-        enforcement_enabled:
-          type: boolean
-        allowed:
-          type: boolean
-        reason:
-          type: string
-          example: spend_limit_exceeded
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-        updated_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingCreditLedgerEntry:
-      type: object
-      required:
-        - id
-        - account_id
-        - organization_id
-        - product_family
-        - entry_type
-        - amount_delta
-        - balance_after
-        - created_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        account_id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        product_family:
-          type: string
-          example: ai
-        entry_type:
-          type: string
-          enum:
-            - grant
-            - consume
-            - refund
-            - expire
-            - adjust
-        amount_delta:
-          type: integer
-          description: Signed balance delta for this ledger entry
-        balance_after:
-          type: integer
-          minimum: 0
-          description: Account balance after this entry
-        idempotency_key:
-          type: string
-        source_type:
-          type: string
-        source_id:
-          type: string
-        expires_at:
-          $ref: '#/components/schemas/Timestamp'
-        created_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingSpendRecord:
-      type: object
-      required:
-        - id
-        - organization_id
-        - product_family
-        - amount_cents
-        - period_start
-        - recorded_at
-      properties:
-        id:
-          $ref: '#/components/schemas/UUID'
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        product_family:
-          type: string
-          example: cloud
-        amount_cents:
-          type: integer
-          description: Signed spend amount in cents
-        period_start:
-          $ref: '#/components/schemas/Timestamp'
-        source_type:
-          type: string
-        source_id:
-          type: string
-        idempotency_key:
-          type: string
-        recorded_at:
-          $ref: '#/components/schemas/Timestamp'
-    BillingSpendRecordList:
-      type: object
-      required:
-        - data
-        - meta
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillingSpendRecord'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    BillingCreditLedgerList:
-      type: object
-      required:
-        - data
-        - meta
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillingCreditLedgerEntry'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    MetricType:
-      type: string
-      enum:
-        - search_query
-        - index_entry
-        - rag_request
-        - answer_request
-        - generation_request
-        - text_token
-        - image_token
-        - audio_token
-        - ai_credit_unit
-        - cloud_credit_unit
-      description: Usage metric type
-    UsageMetric:
-      type: object
-      required:
-        - metric_type
-        - current
-        - limit
-        - remaining
-      properties:
-        metric_type:
-          $ref: '#/components/schemas/MetricType'
-        current:
-          type: integer
-          minimum: 0
-          description: Current usage this billing cycle
-          example: 5000
-        limit:
-          type: integer
-          minimum: -1
-          description: Usage limit for this metric (-1 = unlimited)
-          example: 10000
-        remaining:
-          type: integer
-          minimum: -1
-          description: Remaining quota (-1 = unlimited)
-          example: 5000
-        percentage:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 100
-          description: Usage percentage
-          example: 50
-    UsageSummary:
-      type: object
-      required:
-        - organization_id
-        - billing_cycle_start
-        - billing_cycle_end
-        - metrics
-        - is_frozen
-      properties:
-        organization_id:
-          $ref: '#/components/schemas/UUID'
-        billing_cycle_start:
-          $ref: '#/components/schemas/Timestamp'
-        billing_cycle_end:
-          $ref: '#/components/schemas/Timestamp'
-        metrics:
-          type: array
-          items:
-            $ref: '#/components/schemas/UsageMetric'
-        is_frozen:
-          type: boolean
-          description: Whether organization is frozen due to quota exceeded
-        frozen_reason:
-          type: string
-          nullable: true
-          description: Reason for freeze (if applicable)
-          example: Quota exceeded without billing configured
-    UsageHistory:
-      type: object
-      required:
-        - billing_cycle
-        - metrics
-      properties:
-        billing_cycle:
-          $ref: '#/components/schemas/Date'
-        metrics:
-          type: array
-          items:
-            type: object
-            required:
-              - metric_type
-              - total
-            properties:
-              metric_type:
-                $ref: '#/components/schemas/MetricType'
-              total:
-                type: integer
-                minimum: 0
-                description: Total usage for this billing cycle
     CloudInstanceStatus:
       type: string
       enum:
@@ -4670,8 +1589,384 @@ components:
       type: string
       enum:
         - single
-        - replicated
-      description: Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+        - distributed
+      description: Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
+    CloudHAFencingAuthority:
+      type: string
+      enum:
+        - none
+        - kubernetes_lease
+      description: Fencing authority used for hot-standby promotion decisions.
+    CloudHASyncMode:
+      type: string
+      enum:
+        - async
+        - remote_write
+        - remote_apply
+      description: Standby durability mode for hot-standby replication.
+    CloudHAHealth:
+      type: string
+      enum:
+        - disabled
+        - provisioning
+        - healthy
+        - degraded
+        - unhealthy
+        - lagging
+        - reseed_required
+        - promoting
+      description: Cloud-visible hot-standby health state.
+    CloudHAConfig:
+      type: object
+      description: Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology.
+      properties:
+        enabled:
+          type: boolean
+          default: false
+          description: Enables one primary with hot standby replica nodes.
+        standby_count:
+          type: integer
+          minimum: 1
+          maximum: 26
+          default: 1
+          description: Desired hot standby replica count when HA is enabled.
+        automatic_failover_enabled:
+          type: boolean
+          default: false
+          description: Allows fenced operator-managed automatic promotion when prerequisites are satisfied.
+        fencing_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+          default: kubernetes_lease
+        sync_mode:
+          $ref: '#/components/schemas/CloudHASyncMode'
+          default: remote_apply
+        maximum_lag_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+          description: Maximum tolerated standby lag for automatic promotion. Zero uses operator/runtime defaults.
+    CloudHAStandbyStatus:
+      type: object
+      description: Observed hot-standby replica status.
+      properties:
+        name:
+          type: string
+        slot_name:
+          type: string
+        node_id:
+          type: string
+        health:
+          $ref: '#/components/schemas/CloudHAHealth'
+        received_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        applied_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        safe_read_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        lag_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        reseed_required:
+          type: boolean
+    CloudHAPlannedActionStatus:
+      type: object
+      description: Cloud-visible summary of one operator-planned HA workflow action.
+      properties:
+        kind:
+          type: string
+        phase:
+          type: string
+        executor:
+          type: string
+        depends_on:
+          type: string
+        reason:
+          type: string
+        standby_name:
+          type: string
+        slot_name:
+          type: string
+        target_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_from_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        route_from:
+          type: string
+        route_to:
+          type: string
+        fence_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fence_holder:
+          type: string
+        fence_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        admin_method:
+          type: string
+        admin_path:
+          type: string
+        admin_job_name:
+          type: string
+        admin_job_phase:
+          type: string
+        admin_error:
+          type: string
+        rejoin_action:
+          type: string
+          description: Former-primary rejoin action reported by the typed HA admin workflow, such as rewind or reseed.
+        rejoin_reason:
+          type: string
+          description: Reason the operator/admin workflow selected the former-primary rejoin action.
+        former_node_id:
+          type: string
+          description: Former primary node ID reported by the typed HA admin workflow.
+    CloudHAFormerPrimaryStatus:
+      type: object
+      description: Cloud-visible former-primary rejoin/rewind/reseed disposition after a hot-standby promotion.
+      properties:
+        node_id:
+          type: string
+        fenced:
+          type: boolean
+        rejoin_required:
+          type: boolean
+        rewind_possible:
+          type: boolean
+        reseed_required:
+          type: boolean
+        diverged:
+          type: boolean
+        parent_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        new_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        switch_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        fence_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fence_holder:
+          type: string
+        fence_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        target_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        target_epoch:
+          type: integer
+          format: int64
+          minimum: 0
+        fork_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        former_last_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_from_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        data_loss_discarded:
+          type: boolean
+        assessed_action:
+          type: string
+          description: Operator-assessed former-primary rejoin action, such as rewind or reseed.
+        assessed_reason:
+          type: string
+          description: Operator-assessed reason for the former-primary rejoin action.
+        action:
+          type: string
+          description: Current former-primary workflow action.
+        reason:
+          type: string
+          description: Current former-primary workflow reason.
+    CloudHASyncStatus:
+      type: object
+      description: Observed hot-standby synchronous durability policy state.
+      properties:
+        mode:
+          type: string
+          description: Observed durability mode reported by the operator.
+        selection:
+          type: string
+          description: Standby selection policy used by the sync policy.
+        required:
+          type: integer
+          format: int32
+          minimum: 0
+        satisfied:
+          type: integer
+          format: int32
+          minimum: 0
+        candidates:
+          type: integer
+          format: int32
+          minimum: 0
+        failure_policy:
+          type: string
+        degraded:
+          type: boolean
+        action:
+          type: string
+    CloudHARetentionStatus:
+      type: object
+      description: Observed HA WAL retention pressure from standby replication slots.
+      properties:
+        oldest_restart_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_lsn_count:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_byte_count:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_age_ns:
+          type: integer
+          format: int64
+          minimum: 0
+        active_slots:
+          type: integer
+          format: int32
+          minimum: 0
+        reseed_recommended:
+          type: integer
+          format: int32
+          minimum: 0
+    CloudHAStatus:
+      type: object
+      description: Cloud-visible hot-standby state observed from the operator/runtime.
+      properties:
+        health:
+          $ref: '#/components/schemas/CloudHAHealth'
+        identity:
+          type: object
+          additionalProperties: true
+          description: Current HA identity, including cluster/timeline/epoch/current primary when observed.
+        current_primary_id:
+          type: string
+        primary_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        primary_admin_reachable:
+          type: boolean
+          description: Whether the operator most recently reached the primary HA admin endpoint.
+        primary_admin_last_error:
+          type: string
+          description: Latest primary HA admin observation error, when the primary could not be observed.
+        primary_admin_status_code:
+          type: integer
+          format: int32
+          description: Latest typed primary HA admin status-observation HTTP status code.
+        desired_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standby count reported by the operator.
+        healthy_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys caught up to apply.
+        unhealthy_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys missing, inactive, or reporting replication errors.
+        lagging_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys with non-zero replication lag.
+        read_safe_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys safe for bounded-staleness reads.
+        reseed_required_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys requiring reseed.
+        automatic_promotion_allowed:
+          type: boolean
+          description: Whether the operator planner currently allows automatic promotion.
+        fencing_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fencing_state:
+          type: string
+        primary_route_state:
+          type: string
+        sync:
+          $ref: '#/components/schemas/CloudHASyncStatus'
+        retention:
+          $ref: '#/components/schemas/CloudHARetentionStatus'
+        planned_actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudHAPlannedActionStatus'
+        last_promotion:
+          type: object
+          additionalProperties: true
+        former_primary:
+          $ref: '#/components/schemas/CloudHAFormerPrimaryStatus'
+        standbys:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudHAStandbyStatus'
+    CloudHAStatusSyncResponse:
+      type: object
+      required:
+        - queued
+        - ha_config
+        - ha_status
+      properties:
+        queued:
+          type: boolean
+          description: Whether an immediate Cloud reconcile job was queued to refresh HA state.
+        ha_config:
+          $ref: '#/components/schemas/CloudHAConfig'
+        ha_status:
+          $ref: '#/components/schemas/CloudHAStatus'
     CloudInstanceTier:
       type: string
       enum:
@@ -4688,18 +1983,18 @@ components:
       description: API key permission level
     NodeConfig:
       type: object
-      description: Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+      description: Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
       properties:
         metadata_nodes:
           type: integer
           minimum: 0
           default: 0
-          description: Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+          description: Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
         data_nodes:
           type: integer
           minimum: 1
           default: 1
-          description: Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+          description: Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
         cpu:
           type: string
           description: CPU request per node (e.g., "500m", "1000m")
@@ -4767,6 +2062,10 @@ components:
           $ref: '#/components/schemas/CloudInstanceTier'
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
+        ha_config:
+          $ref: '#/components/schemas/CloudHAConfig'
+        ha_status:
+          $ref: '#/components/schemas/CloudHAStatus'
         status:
           $ref: '#/components/schemas/CloudInstanceStatus'
         region:
@@ -4854,6 +2153,13 @@ components:
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
           default: single
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
+          description: Optional hot-standby HA add-on for single topology instances.
         node_config:
           $ref: '#/components/schemas/NodeConfigUpdate'
           description: Optional initial capacity overrides. When omitted, the tier and mode defaults are used.
@@ -4918,7 +2224,14 @@ components:
           description: New display name
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
-          description: Change the instance deployment mode. Switching to replicated HA is billed before provisioning.
+          description: Change the instance deployment mode. Switching to distributed topology is billed before provisioning.
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
+          description: Enable, disable, or update the hot-standby HA add-on for single topology instances.
         tier:
           $ref: '#/components/schemas/CloudInstanceTier'
           description: Change the committed-capacity package baseline.
@@ -4944,16 +2257,16 @@ components:
           description: Clear a pending or failed manual Antfly runtime target without changing the live cluster image.
     NodeConfigUpdate:
       type: object
-      description: Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+      description: Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
       properties:
         metadata_nodes:
           type: integer
           minimum: 0
-          description: Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+          description: Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
         data_nodes:
           type: integer
           minimum: 1
-          description: Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+          description: Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
         cpu:
           type: string
           description: CPU request per node (e.g., "500m", "1000m")
@@ -5094,6 +2407,28 @@ components:
           items:
             type: string
           description: Antfly Cloud management actions allowed by antfly_cloud_* keys.
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    HostedInferenceLimits:
+      type: object
+      description: Optional hosted inference spend and rate limits for an API key or organization.
+      properties:
+        requests_per_minute:
+          type: integer
+          minimum: 0
+          description: External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
+        tokens_per_minute:
+          type: integer
+          minimum: 0
+          description: Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer.
+        concurrent_requests:
+          type: integer
+          minimum: 0
+          description: Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
+        managed_spend_cents_per_month:
+          type: integer
+          minimum: 0
+          description: Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -5141,6 +2476,8 @@ components:
           description: Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted.
           items:
             $ref: '#/components/schemas/UpsertCloudGrantRequest'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
     CreateCloudManagementAPIKeyRequest:
       type: object
       required:
@@ -5159,6 +2496,17 @@ components:
             type: string
         expires_at:
           $ref: '#/components/schemas/Timestamp'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    UpdateCloudAPIKeyRequest:
+      type: object
+      properties:
+        hosted_inference_limits:
+          nullable: true
+          x-go-type-skip-optional-pointer: false
+          description: Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits.
+          allOf:
+            - $ref: '#/components/schemas/HostedInferenceLimits'
     ProvisioningEvent:
       type: object
       required:
@@ -5521,6 +2869,12 @@ components:
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
           default: single
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
         node_config:
           $ref: '#/components/schemas/NodeConfigUpdate'
         region:
@@ -5836,6 +3190,48 @@ components:
           type: string
         updated_at:
           $ref: '#/components/schemas/Timestamp'
+    S3ObjectSummary:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+        size:
+          type: integer
+          format: int64
+        etag:
+          type: string
+        last_modified:
+          $ref: '#/components/schemas/Timestamp'
+    S3ObjectListResponse:
+      type: object
+      required:
+        - data
+        - objects
+        - prefixes
+        - truncated
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+          description: Backward-compatible alias for objects.
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+        prefixes:
+          type: array
+          items:
+            type: string
+        truncated:
+          type: boolean
+          description: True when the listing reached the server-side object limit.
+    ImportJob:
+      type: object
+      additionalProperties: true
+      description: Structured import job configuration and status.
     UpdateCloudUserAttributesRequest:
       type: object
       required:
@@ -6010,409 +3406,151 @@ components:
         metadata:
           type: object
           additionalProperties: true
-    MetricPanel:
+    UUID:
+      type: string
+      format: uuid
+      description: RFC 4122 UUID identifier
+      example: 550e8400-e29b-41d4-a716-446655440000
+    Error:
       type: object
       required:
-        - id
+        - type
         - title
-        - unit
+        - status
       properties:
-        id:
+        type:
           type: string
+          format: uri
+          description: URI identifying the problem type
+          example: https://platform.antfly.io/errors/validation-error
         title:
           type: string
-        unit:
+          description: Short, human-readable summary
+          example: Validation Error
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
           type: string
-        group_by:
+          description: Human-readable explanation specific to this occurrence
+          example: Email address is required
+        instance:
           type: string
-          nullable: true
-    MetricPoint:
-      type: object
-      required:
-        - t
-        - v
-      properties:
-        t:
-          type: string
-          format: date-time
-        v:
-          type: number
-          nullable: true
-    MetricSeries:
-      type: object
-      required:
-        - labels
-        - points
-      properties:
-        labels:
-          type: object
-          additionalProperties:
-            type: string
-        points:
+          format: uri
+          description: URI reference identifying the specific occurrence
+          example: https://platform.antfly.io/api/v1/users/550e8400-e29b-41d4-a716-446655440000
+        errors:
           type: array
+          description: Additional validation errors
           items:
-            $ref: '#/components/schemas/MetricPoint'
-    MetricRange:
-      type: object
-      required:
-        - from
-        - to
-        - step
-      properties:
-        from:
-          type: string
-          format: date-time
-        to:
-          type: string
-          format: date-time
-        step:
-          type: string
-    MetricQueryResponse:
-      type: object
-      required:
-        - panel_id
-        - unit
-        - group_by
-        - range
-        - series
-      properties:
-        panel_id:
-          type: string
-        unit:
-          type: string
-        group_by:
-          type: string
-          nullable: true
-        range:
-          $ref: '#/components/schemas/MetricRange'
-        series:
-          type: array
-          items:
-            $ref: '#/components/schemas/MetricSeries'
-    AuthOAuthProviderType:
+            type: object
+            required:
+              - field
+              - message
+            properties:
+              field:
+                type: string
+                description: Field name causing the error
+              message:
+                type: string
+                description: Error message for this field
+    Timestamp:
       type: string
-      enum:
-        - google
-        - github
-    AuthError:
+      format: date-time
+      description: ISO 8601 timestamp
+      example: '2025-10-02T15:30:00Z'
+    PaginationMeta:
       type: object
       required:
-        - error
-        - message
+        - offset
+        - limit
+        - total
       properties:
-        error:
-          type: string
-          description: Error code
-        message:
-          type: string
-          description: Human-readable error message
-    SuccessResponse:
-      type: object
-      required:
-        - success
-      properties:
-        success:
-          type: boolean
-    LoginRequest:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-        redirect_url:
-          type: string
-          description: Post-login redirect URL
-    LoginResponse:
-      type: object
-      properties:
-        requires_two_factor:
-          type: boolean
-          description: Whether 2FA verification is needed
-        temp_token:
-          type: string
-          description: Temporary token for 2FA verification
-        redirect_url:
-          type: string
-          description: URL to redirect to after login
-    SignupRequest:
-      type: object
-      required:
-        - email
-        - password
-        - display_name
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-          minLength: 15
-        display_name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        redirect_url:
-          type: string
-          description: Post-signup redirect URL
-    SignupResponse:
-      type: object
-      required:
-        - user_id
-      properties:
-        user_id:
-          type: string
-        redirect_url:
-          type: string
-    VerifyEmailRequest:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
-    ResendVerificationRequest:
-      type: object
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-    TwoFactorVerifyRequest:
-      type: object
-      required:
-        - temp_token
-        - code
-      properties:
-        temp_token:
-          type: string
-        code:
-          type: string
-          pattern: ^\d{6}$
-        redirect_url:
-          type: string
-    TwoFactorVerifyBackupRequest:
-      type: object
-      required:
-        - temp_token
-        - backup_code
-      properties:
-        temp_token:
-          type: string
-        backup_code:
-          type: string
-        redirect_url:
-          type: string
-    TwoFactorRedirectResponse:
-      type: object
-      required:
-        - redirect_url
-      properties:
-        redirect_url:
-          type: string
-    TwoFactorSetupResponse:
-      type: object
-      required:
-        - secret
-        - qr_url
-      properties:
-        secret:
-          type: string
-          description: TOTP secret
-        qr_url:
-          type: string
-          description: otpauth:// URL for QR code
-    TwoFactorVerifySetupRequest:
-      type: object
-      required:
-        - code
-      properties:
-        code:
-          type: string
-          pattern: ^\d{6}$
-    TwoFactorVerifySetupResponse:
-      type: object
-      required:
-        - enabled
-        - backup_codes
-      properties:
-        enabled:
-          type: boolean
-        backup_codes:
-          type: array
-          items:
-            type: string
-    TwoFactorDisableRequest:
-      type: object
-      required:
-        - password
-        - code
-      properties:
-        password:
-          type: string
-          format: password
-        code:
-          type: string
-          pattern: ^\d{6}$
-    RegenerateBackupCodesRequest:
-      type: object
-      required:
-        - password
-      properties:
-        password:
-          type: string
-          format: password
-    BackupCodesResponse:
-      type: object
-      required:
-        - backup_codes
-      properties:
-        backup_codes:
-          type: array
-          items:
-            type: string
-    ForgotPasswordRequest:
-      type: object
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-    ResetPasswordRequest:
-      type: object
-      required:
-        - token
-        - new_password
-      properties:
-        token:
-          type: string
-        new_password:
-          type: string
-          format: password
-          minLength: 15
-        code:
-          type: string
-          description: TOTP code (if 2FA enabled)
-        backup_code:
-          type: string
-          description: Backup code (if 2FA enabled, alternative to code)
-    ResetPasswordResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        requires_two_factor:
-          type: boolean
-    ChangePasswordRequest:
-      type: object
-      required:
-        - current_password
-        - new_password
-      properties:
-        current_password:
-          type: string
-          format: password
-        new_password:
-          type: string
-          format: password
-          minLength: 15
-    SetPasswordRequest:
-      type: object
-      required:
-        - new_password
-      properties:
-        new_password:
-          type: string
-          format: password
-          minLength: 15
-    ChangeEmailRequest:
-      type: object
-      required:
-        - new_email
-        - password
-      properties:
-        new_email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-    ConfirmEmailChangeRequest:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
-    UpdateProfileRequest:
-      type: object
-      required:
-        - display_name
-      properties:
-        display_name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        avatar_url:
-          type: string
-          format: uri
-    UserProfile:
-      type: object
-      required:
-        - email
-        - display_name
-        - two_factor_enabled
-        - email_verified
-      properties:
-        email:
-          type: string
-          format: email
-        display_name:
-          type: string
-        avatar_url:
-          type: string
-          format: uri
-        two_factor_enabled:
-          type: boolean
-        email_verified:
-          type: boolean
-    AuthMethodsResponse:
-      type: object
-      required:
-        - has_password
-        - oauth_providers
-      properties:
-        has_password:
-          type: boolean
-        oauth_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/OAuthProviderInfo'
-    OAuthProviderInfo:
-      type: object
-      required:
-        - provider
-        - provider_email
-        - linked_at
-      properties:
-        provider:
-          type: string
-        provider_email:
-          type: string
-        linked_at:
-          type: string
-          format: date-time
-        last_used_at:
-          type: string
-          format: date-time
+        offset:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items available
+  parameters:
+    OrgId:
+      name: org_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Organization ID
+    InstanceId:
+      name: instance_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Cloud instance ID
+    AuthId:
+      name: auth_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Provider credential ID
+    JobId:
+      name: job_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Import job ID
+    GroupId:
+      name: group_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Cloud group ID
+    CloudKeyId:
+      name: key_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: API key ID
+    BackupRecordId:
+      name: backup_record_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Backup record ID
+    RestoreId:
+      name: restore_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Restore operation ID
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Maximum number of items to return
   responses:
     BadRequest:
       description: Bad request
@@ -6426,20 +3564,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    PaymentRequired:
-      description: Payment required
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
     Forbidden:
       description: Forbidden
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Not found
+    PaymentRequired:
+      description: Payment required
       content:
         application/json:
           schema:
@@ -6450,59 +3582,9 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    InternalServerError:
-      description: Internal server error
+    NotFound:
+      description: Not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Error:
-      description: Error response
-      content:
-        application/json:
-          schema:
-            type: object
-            additionalProperties: true
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT token from OAuth flow or API key
-    CookieAuth:
-      type: apiKey
-      in: cookie
-      name: access_token
-      description: Session cookie set during login
-x-tagGroups:
-  - name: Antfly Cloud User Management API
-    tags:
-      - Users
-      - Organizations
-      - Audit
-      - Authentication
-  - name: Antfly Cloud Billing API
-    tags:
-      - Subscriptions
-      - Billing
-      - Usage
-  - name: Antfly Cloud API
-    tags:
-      - Instances
-      - CloudAPIKeys
-      - CloudTables
-      - CloudMetrics
-      - CloudBackups
-      - CloudRBAC
-      - CloudBilling
-  - name: Colony Cloud Metrics API
-    tags:
-      - CloudObservability
-  - name: Antfly Auth API
-    tags:
-      - Login
-      - Signup
-      - TwoFactor
-      - Password
-      - Email
-      - Profile

@@ -2132,10 +2132,106 @@ export interface components {
          */
         CloudInstanceVersionUpgradeStatus: "idle" | "pending" | "rolling" | "failed" | "blocked";
         /**
-         * @description Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+         * @description Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
          * @enum {string}
          */
-        CloudInstanceMode: "single" | "replicated";
+        CloudInstanceMode: "single" | "distributed";
+        /**
+         * @description Fencing authority used for hot-standby promotion decisions.
+         * @enum {string}
+         */
+        CloudHAFencingAuthority: "none" | "kubernetes_lease";
+        /**
+         * @description Standby durability mode for hot-standby replication.
+         * @enum {string}
+         */
+        CloudHASyncMode: "async" | "remote_write" | "remote_apply";
+        /**
+         * @description Cloud-visible hot-standby health state.
+         * @enum {string}
+         */
+        CloudHAHealth: "disabled" | "provisioning" | "healthy" | "degraded" | "unhealthy" | "lagging" | "reseed_required" | "promoting";
+        /** @description Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology. */
+        CloudHAConfig: {
+            /** @default false */
+            enabled?: boolean;
+            /** @default 1 */
+            standby_count?: number;
+            /** @default false */
+            automatic_failover_enabled?: boolean;
+            /** @default kubernetes_lease */
+            fencing_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            /** @default remote_apply */
+            sync_mode?: components["schemas"]["CloudHASyncMode"];
+            /** @default 0 */
+            maximum_lag_lsn?: number;
+        };
+        /** @description Cloud-visible summary of one operator-planned HA workflow action. */
+        CloudHAPlannedActionStatus: {
+            kind?: string;
+            phase?: string;
+            executor?: string;
+            depends_on?: string;
+            reason?: string;
+            standby_name?: string;
+            slot_name?: string;
+            target_lsn?: number;
+            observed_lsn?: number;
+            retained_from_lsn?: number;
+            route_from?: string;
+            route_to?: string;
+            fence_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            fence_holder?: string;
+            fence_generation?: number;
+            admin_method?: string;
+            admin_path?: string;
+            admin_job_name?: string;
+            admin_job_phase?: string;
+            admin_error?: string;
+            rejoin_action?: string;
+            rejoin_reason?: string;
+            former_node_id?: string;
+        };
+        /** @description Observed hot-standby replica status. */
+        CloudHAStandbyStatus: {
+            name?: string;
+            slot_name?: string;
+            node_id?: string;
+            health?: components["schemas"]["CloudHAHealth"];
+            received_lsn?: number;
+            applied_lsn?: number;
+            safe_read_lsn?: number;
+            lag_lsn?: number;
+            reseed_required?: boolean;
+        };
+        /** @description Former-primary rejoin workflow status after a promotion. */
+        CloudHAFormerPrimaryStatus: Record<string, unknown>;
+        /** @description Observed hot-standby HA state for a Cloud instance. */
+        CloudHAStatus: {
+            health?: components["schemas"]["CloudHAHealth"];
+            identity?: Record<string, unknown>;
+            current_primary_id?: string;
+            primary_lsn?: number;
+            primary_admin_reachable?: boolean;
+            primary_admin_last_error?: string;
+            primary_admin_status_code?: number;
+            desired_standby_count?: number;
+            healthy_standby_count?: number;
+            unhealthy_standby_count?: number;
+            lagging_standby_count?: number;
+            read_safe_standby_count?: number;
+            reseed_required_count?: number;
+            automatic_promotion_allowed?: boolean;
+            fencing_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            fencing_state?: string;
+            primary_route_state?: string;
+            sync?: Record<string, unknown>;
+            retention?: Record<string, unknown>;
+            planned_actions?: components["schemas"]["CloudHAPlannedActionStatus"][];
+            last_promotion?: Record<string, unknown>;
+            former_primary?: components["schemas"]["CloudHAFormerPrimaryStatus"];
+            standbys?: components["schemas"]["CloudHAStandbyStatus"][];
+        };
         /**
          * @description Customer-facing cloud package baseline used for committed-capacity billing.
          * @enum {string}
@@ -2146,15 +2242,15 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
-        /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
             /**
-             * @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+             * @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
              * @default 0
              */
             metadata_nodes: number;
             /**
-             * @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+             * @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
              * @default 1
              */
             data_nodes: number;
@@ -2212,6 +2308,8 @@ export interface components {
             slug: string;
             tier: components["schemas"]["CloudInstanceTier"];
             mode: components["schemas"]["CloudInstanceMode"];
+            ha_config?: components["schemas"]["CloudHAConfig"];
+            ha_status?: components["schemas"]["CloudHAStatus"];
             status: components["schemas"]["CloudInstanceStatus"];
             /**
              * @description Deployment region
@@ -2270,6 +2368,8 @@ export interface components {
             tier: components["schemas"]["CloudInstanceTier"];
             /** @default single */
             mode: components["schemas"]["CloudInstanceMode"];
+            /** @description Optional hot-standby HA add-on for single topology instances. */
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Optional initial capacity overrides. When omitted, the tier and mode defaults are used. */
             node_config?: components["schemas"]["NodeConfigUpdate"];
             /** @description Initial Antfly runtime upgrade policy. Defaults to patch_auto. */
@@ -2299,8 +2399,10 @@ export interface components {
         UpdateCloudInstanceRequest: {
             /** @description New display name */
             name?: string;
-            /** @description Change the instance deployment mode. Switching to replicated HA is billed before provisioning. */
+            /** @description Change the instance deployment mode. Switching to distributed topology is billed before provisioning. */
             mode?: components["schemas"]["CloudInstanceMode"];
+            /** @description Enable, disable, or update the hot-standby HA add-on for single topology instances. */
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Change the committed-capacity package baseline. */
             tier?: components["schemas"]["CloudInstanceTier"];
             node_config?: components["schemas"]["NodeConfigUpdate"];
@@ -2324,11 +2426,11 @@ export interface components {
             /** @description Clear a pending or failed manual Antfly runtime target without changing the live cluster image. */
             clear_antfly_version_target?: boolean;
         };
-        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfigUpdate: {
-            /** @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode. */
+            /** @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode. */
             metadata_nodes?: number;
-            /** @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node. */
+            /** @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node. */
             data_nodes?: number;
             /** @description CPU request per node (e.g., "500m", "1000m") */
             cpu?: string;
@@ -2643,6 +2745,7 @@ export interface components {
             tier: components["schemas"]["CloudInstanceTier"];
             /** @default single */
             mode: components["schemas"]["CloudInstanceMode"];
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             node_config?: components["schemas"]["NodeConfigUpdate"];
             /**
              * @description Cloud region for the estimate
