@@ -610,6 +610,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/ha/status-sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync hot-standby HA status
+         * @description Queue an immediate Cloud reconciliation pass so Cloud pulls the latest
+         *     operator-observed hot-standby HA status, planned actions, fencing state,
+         *     route state, and promotion blockers into the public instance status.
+         */
+        post: operations["syncCloudInstanceHAStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/tables": {
         parameters: {
             query?: never;
@@ -2132,10 +2154,549 @@ export interface components {
          */
         CloudInstanceVersionUpgradeStatus: "idle" | "pending" | "rolling" | "failed" | "blocked";
         /**
-         * @description Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+         * @description Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
          * @enum {string}
          */
-        CloudInstanceMode: "single" | "replicated";
+        CloudInstanceMode: "single" | "distributed";
+        /**
+         * @description Fencing authority used for hot-standby promotion decisions.
+         * @enum {string}
+         */
+        CloudHAFencingAuthority: "none" | "kubernetes_lease";
+        /**
+         * @description Standby durability mode for hot-standby replication.
+         * @enum {string}
+         */
+        CloudHASyncMode: "async" | "remote_write" | "remote_apply";
+        /**
+         * @description Cloud-visible hot-standby health state.
+         * @enum {string}
+         */
+        CloudHAHealth: "disabled" | "provisioning" | "healthy" | "degraded" | "unhealthy" | "lagging" | "reseed_required" | "promoting";
+        /** @description Bounded repair-before-replace policy for restoring hot-standby redundancy. */
+        CloudHAReplacementPolicy: {
+            /**
+             * @description Maximum time to prefer repair before allocating replacement capacity.
+             * @default 900
+             */
+            repair_timeout_seconds: number;
+            /**
+             * @description Maximum distinct failed repair actions before replacement is allowed.
+             * @default 3
+             */
+            repair_attempt_limit: number;
+            /**
+             * @description Minimum retention window for superseded replacement resources and diagnostics.
+             * @default 86400
+             */
+            diagnostic_retention_seconds: number;
+            /**
+             * @description Bypass the remaining repair budget and allocate replacement capacity on the next reconcile.
+             * @default false
+             */
+            force_replacement: boolean;
+            /**
+             * @description Operator override that extends the current repair deadline without mutating runtime data.
+             * @default 0
+             */
+            extend_repair_seconds: number;
+        };
+        /** @description Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology. */
+        CloudHAConfig: {
+            /**
+             * @description Enables one primary with hot standby replica nodes.
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * @description Desired hot standby replica count when HA is enabled.
+             * @default 1
+             */
+            standby_count: number;
+            /**
+             * @description Allows fenced operator-managed automatic promotion when prerequisites are satisfied.
+             * @default false
+             */
+            automatic_failover_enabled: boolean;
+            /** @default kubernetes_lease */
+            fencing_authority: components["schemas"]["CloudHAFencingAuthority"];
+            /** @default remote_apply */
+            sync_mode: components["schemas"]["CloudHASyncMode"];
+            /**
+             * Format: int64
+             * @description Maximum tolerated standby lag for automatic promotion. Zero uses operator/runtime defaults.
+             * @default 0
+             */
+            maximum_lag_lsn: number;
+            replacement_policy?: components["schemas"]["CloudHAReplacementPolicy"];
+        };
+        /** @description Durable progress for one generation-safe replacement standby allocation. */
+        CloudHAReplacementStatus: {
+            /** Format: int32 */
+            ordinal?: number;
+            /** Format: int64 */
+            generation?: number;
+            /** Format: int64 */
+            topology_generation?: number;
+            /** Format: int64 */
+            source_promotion_generation?: number;
+            /** @description Stable digest identifying the fenced promotion authority used by this replacement. */
+            source_promotion_receipt_id?: string;
+            replaces_node_id?: string;
+            node_id?: string;
+            slot_name?: string;
+            resource_name?: string;
+            storage_identity?: string;
+            source_primary_id?: string;
+            /** @description Exact immutable portable-seed generation assigned to this replacement. */
+            seed_artifact_generation?: string;
+            /** @description Scheduling isolation contract applied to this replacement generation. */
+            placement_policy?: string;
+            /** @description requested, provisioning, seeding, catching_up, healthy, failed, superseded, or retired. */
+            phase?: string;
+            decision?: string;
+            reason?: string;
+            /** Format: int64 */
+            boundary_lsn?: number;
+            /** Format: int64 */
+            received_lsn?: number;
+            /** Format: int64 */
+            applied_lsn?: number;
+            /** Format: int64 */
+            safe_read_lsn?: number;
+            /** Format: int32 */
+            attempt_count?: number;
+            retryable?: boolean;
+            last_error?: string;
+            /** Format: date-time */
+            last_attempt_at?: string;
+            /** Format: date-time */
+            next_retry_at?: string;
+            /** Format: date-time */
+            phase_started_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        /** @description Observed hot-standby replica status. */
+        CloudHAStandbyStatus: {
+            name?: string;
+            slot_name?: string;
+            node_id?: string;
+            health?: components["schemas"]["CloudHAHealth"];
+            /** Format: int64 */
+            received_lsn?: number;
+            /** Format: int64 */
+            applied_lsn?: number;
+            /** Format: int64 */
+            safe_read_lsn?: number;
+            /** Format: int64 */
+            lag_lsn?: number;
+            reseed_required?: boolean;
+            seed?: components["schemas"]["CloudHASeedStatus"];
+        };
+        /** @description Public, credential-free progress and immutable identity for the seed generation currently assigned to one standby. Empty fields mean the corresponding authority has not yet been durably observed. */
+        CloudHASeedStatus: {
+            generation?: string;
+            phase?: string;
+            /** @description Stable operator identity for the currently authoritative seed action. */
+            operation_id?: string;
+            topology_id?: string;
+            /** Format: int64 */
+            topology_generation?: number;
+            node_id?: string;
+            slot_name?: string;
+            source_primary_id?: string;
+            source_pvc_name?: string;
+            source_pvc_uid?: string;
+            target_pvc_name?: string;
+            target_pvc_uid?: string;
+            /** Format: int64 */
+            timeline_id?: number;
+            /** Format: int64 */
+            epoch?: number;
+            /** Format: int64 */
+            backup_lsn?: number;
+            /** Format: int64 */
+            checkpoint_lsn?: number;
+            capture_receipt_sha256?: string;
+            manifest_sha256?: string;
+            aggregate_sha256?: string;
+            seed_receipt_sha256?: string;
+            /** Format: int32 */
+            attempt_count?: number;
+            /** Format: int32 */
+            retry_budget_used?: number;
+            retryable?: boolean;
+            error_class?: string;
+            /** Format: date-time */
+            first_attempt_at?: string;
+            /** Format: date-time */
+            last_attempt_at?: string;
+            /** Format: date-time */
+            next_retry_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+        };
+        /** @description Cloud-visible summary of one operator-planned HA workflow action. */
+        CloudHAPlannedActionStatus: {
+            kind?: string;
+            phase?: string;
+            executor?: string;
+            depends_on?: string;
+            reason?: string;
+            standby_name?: string;
+            slot_name?: string;
+            /** Format: int64 */
+            target_lsn?: number;
+            /** Format: int64 */
+            observed_lsn?: number;
+            /** Format: int64 */
+            retained_from_lsn?: number;
+            route_from?: string;
+            route_to?: string;
+            fence_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            fence_holder?: string;
+            /** Format: int64 */
+            fence_generation?: number;
+            admin_method?: string;
+            admin_path?: string;
+            admin_job_name?: string;
+            admin_job_phase?: string;
+            admin_error?: string;
+            /** Format: int32 */
+            admin_status_code?: number;
+            /** @description Former-primary rejoin action reported by the typed HA admin workflow, such as rewind or reseed. */
+            rejoin_action?: string;
+            /** @description Reason the operator/admin workflow selected the former-primary rejoin action. */
+            rejoin_reason?: string;
+            /** @description Former primary node ID reported by the typed HA admin workflow. */
+            former_node_id?: string;
+            /** @description Stable identity for this exact desired operator action. */
+            operation_id?: string;
+            /**
+             * Format: int32
+             * @description Version of the operator's durable bounded-retry execution state.
+             */
+            execution_state_version?: number;
+            /**
+             * Format: int64
+             * @description Explicit recovery nonce frozen into this exact action identity.
+             */
+            retry_generation?: number;
+            topology_id?: string;
+            /** Format: int64 */
+            topology_generation?: number;
+            topology_node_id?: string;
+            source_pvc_name?: string;
+            source_pvc_uid?: string;
+            target_pvc_name?: string;
+            target_pvc_uid?: string;
+            /** Format: int64 */
+            target_local_node_id?: number;
+            /** Format: int64 */
+            target_replica_id?: number;
+            seed_artifact_generation?: string;
+            /** @description Digest of the exact runtime capture receipt authorizing this portable seed action. */
+            seed_capture_receipt_sha256?: string;
+            /** Format: int32 */
+            attempt_count?: number;
+            /** Format: int32 */
+            retry_budget_used?: number;
+            retryable?: boolean;
+            error_class?: string;
+            /** Format: int32 */
+            in_flight_attempt?: number;
+            attempt_id?: string;
+            /** Format: date-time */
+            first_attempt_at?: string;
+            /** Format: date-time */
+            last_attempt_at?: string;
+            /** Format: date-time */
+            next_retry_at?: string;
+            /** Format: date-time */
+            reservation_expires_at?: string;
+            /** Format: date-time */
+            prerequisite_deadline_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+            seed_artifact_receipt?: components["schemas"]["CloudHASeedArtifactReceiptStatus"];
+        };
+        /** @description Credential-free immutable receipt for one portable-seed action. */
+        CloudHASeedArtifactReceiptStatus: {
+            action_kind?: string;
+            scope?: string;
+            /** Format: int32 */
+            format_version?: number;
+            generation?: string;
+            topology_id?: string;
+            /** Format: int64 */
+            topology_generation?: number;
+            node_id?: string;
+            slot_name?: string;
+            source_pvc_name?: string;
+            source_pvc_uid?: string;
+            target_pvc_name?: string;
+            target_pvc_uid?: string;
+            /** Format: int64 */
+            cluster_id?: number;
+            /** Format: int64 */
+            shard_id?: number;
+            /** Format: int64 */
+            table_id?: number;
+            /** Format: int64 */
+            timeline_id?: number;
+            /** Format: int64 */
+            epoch?: number;
+            manifest_id?: string;
+            /** Format: int64 */
+            backup_lsn?: number;
+            /** Format: int64 */
+            checkpoint_lsn?: number;
+            manifest_sha256?: string;
+            aggregate_sha256?: string;
+            seed_receipt_sha256?: string;
+            capture_receipt_sha256?: string;
+            generation_path?: string;
+            raw_generation_path?: string;
+            materialized_receipt_sha256?: string;
+            materialized_aggregate_sha256?: string;
+            /** Format: int64 */
+            target_local_node_id?: number;
+            /** Format: int64 */
+            target_replica_id?: number;
+            /** Format: int64 */
+            total_bytes?: number;
+            /** Format: int32 */
+            file_count?: number;
+            /** Format: int32 */
+            retained_count?: number;
+            /** Format: int32 */
+            deleted_count?: number;
+            /** Format: int32 */
+            protected_count?: number;
+            /** Format: int32 */
+            resumed_tombstone_count?: number;
+            /** Format: int32 */
+            skipped_ineligible_count?: number;
+            checkpoint_sha256?: string;
+        };
+        /** @description Cloud-visible former-primary rejoin/rewind/reseed disposition after a hot-standby promotion. */
+        CloudHAFormerPrimaryStatus: {
+            node_id?: string;
+            fenced?: boolean;
+            rejoin_required?: boolean;
+            rewind_possible?: boolean;
+            reseed_required?: boolean;
+            diverged?: boolean;
+            /** Format: int64 */
+            parent_timeline_id?: number;
+            /** Format: int64 */
+            new_timeline_id?: number;
+            /** Format: int64 */
+            observed_timeline_id?: number;
+            /** Format: int64 */
+            switch_lsn?: number;
+            /** Format: int64 */
+            observed_lsn?: number;
+            fence_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            fence_holder?: string;
+            /** Format: int64 */
+            fence_generation?: number;
+            /** Format: int64 */
+            target_timeline_id?: number;
+            /** Format: int64 */
+            target_epoch?: number;
+            /** Format: int64 */
+            fork_lsn?: number;
+            /** Format: int64 */
+            former_last_lsn?: number;
+            /** Format: int64 */
+            retained_from_lsn?: number;
+            data_loss_discarded?: boolean;
+            /** @description Operator-assessed former-primary rejoin action, such as rewind or reseed. */
+            assessed_action?: string;
+            /** @description Operator-assessed reason for the former-primary rejoin action. */
+            assessed_reason?: string;
+            /** @description Current former-primary workflow action. */
+            action?: string;
+            /** @description Current former-primary workflow reason. */
+            reason?: string;
+        };
+        /**
+         * @description Durable Colony-owned phase for one post-promotion topology generation.
+         * @enum {string}
+         */
+        CloudHATopologyPhase: "PromotionObserved" | "PrimaryAdopted" | "FormerPrimaryAssessed" | "FormerPrimaryPreparing" | "FormerPrimaryFollowing" | "CatchingUp" | "RedundancyRestored" | "ReplacementRequired";
+        /** @description Durable, generation-checked post-promotion topology and former-primary repair progress. */
+        CloudHATopologyStatus: {
+            /**
+             * Format: int64
+             * @description Monotonic Colony topology generation.
+             */
+            generation?: number;
+            /**
+             * Format: int64
+             * @description Monotonic state revision within one topology generation.
+             */
+            revision?: number;
+            phase?: components["schemas"]["CloudHATopologyPhase"];
+            /** @description Stable digest of the typed promotion receipt; never contains the fence token. */
+            promotion_receipt_id?: string;
+            desired_primary_id?: string;
+            current_primary_id?: string;
+            former_primary_id?: string;
+            /** Format: int64 */
+            parent_timeline_id?: number;
+            /** Format: int64 */
+            timeline_id?: number;
+            /** Format: int64 */
+            epoch?: number;
+            /** Format: int64 */
+            switch_lsn?: number;
+            /** Format: int64 */
+            fence_generation?: number;
+            /** @description SHA-256 digest of the opaque typed fence token. */
+            fence_token_digest?: string;
+            /** Format: int64 */
+            route_generation?: number;
+            /** @description Exact repair disposition for this generation, normally rewind or reseed. */
+            assessment?: string;
+            assessment_receipt_id?: string;
+            repair_receipt_id?: string;
+            seed_artifact_id?: string;
+            /** Format: int64 */
+            received_lsn?: number;
+            /** Format: int64 */
+            applied_lsn?: number;
+            /** Format: int64 */
+            safe_read_lsn?: number;
+            /** Format: int64 */
+            lag_lsn?: number;
+            /** Format: int32 */
+            attempt_count?: number;
+            retryable?: boolean;
+            last_error_class?: string;
+            last_error?: string;
+            /** Format: date-time */
+            last_transition_at?: string;
+            /** @description Whether RemoteApply/Block remains fail-closed while redundancy is absent. */
+            synchronous_acknowledgements_blocked?: boolean;
+        };
+        /** @description Observed hot-standby synchronous durability policy state. */
+        CloudHASyncStatus: {
+            /** @description Observed durability mode reported by the operator. */
+            mode?: string;
+            /** @description Standby selection policy used by the sync policy. */
+            selection?: string;
+            /** Format: int32 */
+            required?: number;
+            /** Format: int32 */
+            satisfied?: number;
+            /** Format: int32 */
+            candidates?: number;
+            failure_policy?: string;
+            degraded?: boolean;
+            action?: string;
+        };
+        /** @description Observed HA WAL retention pressure from standby replication slots. */
+        CloudHARetentionStatus: {
+            /** Format: int64 */
+            oldest_restart_lsn?: number;
+            /** Format: int64 */
+            retained_lsn_count?: number;
+            /** Format: int64 */
+            retained_byte_count?: number;
+            /** Format: int64 */
+            retained_age_ns?: number;
+            /** Format: int32 */
+            active_slots?: number;
+            /** Format: int32 */
+            reseed_recommended?: number;
+        };
+        /** @description Cloud-visible hot-standby state observed from the operator/runtime. */
+        CloudHAStatus: {
+            health?: components["schemas"]["CloudHAHealth"];
+            /** @description Current HA identity, including cluster/timeline/epoch/current primary when observed. */
+            identity?: {
+                [key: string]: unknown;
+            };
+            current_primary_id?: string;
+            /** Format: int64 */
+            primary_lsn?: number;
+            /** @description Whether the operator most recently reached the primary HA admin endpoint. */
+            primary_admin_reachable?: boolean;
+            /** @description Latest primary HA admin observation error, when the primary could not be observed. */
+            primary_admin_last_error?: string;
+            /**
+             * Format: int32
+             * @description Latest typed primary HA admin status-observation HTTP status code.
+             */
+            primary_admin_status_code?: number;
+            /**
+             * Format: int32
+             * @description Desired standby count reported by the operator.
+             */
+            desired_standby_count?: number;
+            /**
+             * Format: int32
+             * @description Desired standbys caught up to apply.
+             */
+            healthy_standby_count?: number;
+            /**
+             * Format: int32
+             * @description Desired standbys missing, inactive, or reporting replication errors.
+             */
+            unhealthy_standby_count?: number;
+            /**
+             * Format: int32
+             * @description Desired standbys with non-zero replication lag.
+             */
+            lagging_standby_count?: number;
+            /**
+             * Format: int32
+             * @description Desired standbys safe for bounded-staleness reads.
+             */
+            read_safe_standby_count?: number;
+            /**
+             * Format: int32
+             * @description Desired standbys requiring reseed.
+             */
+            reseed_required_count?: number;
+            /** @description Whether the operator planner currently allows automatic promotion. */
+            automatic_promotion_allowed?: boolean;
+            fencing_authority?: components["schemas"]["CloudHAFencingAuthority"];
+            fencing_state?: string;
+            primary_route_state?: string;
+            sync?: components["schemas"]["CloudHASyncStatus"];
+            retention?: components["schemas"]["CloudHARetentionStatus"];
+            planned_actions?: components["schemas"]["CloudHAPlannedActionStatus"][];
+            last_promotion?: {
+                [key: string]: unknown;
+            };
+            former_primary?: components["schemas"]["CloudHAFormerPrimaryStatus"];
+            topology?: components["schemas"]["CloudHATopologyStatus"];
+            /**
+             * Format: int64
+             * @description Monotonic Colony topology generation used to reject stale replacement work.
+             */
+            topology_generation?: number;
+            /** Format: int64 */
+            time_without_sync_redundancy_seconds?: number;
+            /** @description Whether synchronous writes remain fail-closed while no qualifying standby exists. */
+            writes_blocked_waiting_for_durability?: boolean;
+            replacements?: components["schemas"]["CloudHAReplacementStatus"][];
+            standbys?: components["schemas"]["CloudHAStandbyStatus"][];
+        };
+        CloudHAStatusSyncResponse: {
+            /** @description Whether an immediate Cloud reconcile job was queued to refresh HA state. */
+            queued: boolean;
+            ha_config: components["schemas"]["CloudHAConfig"];
+            ha_status: components["schemas"]["CloudHAStatus"];
+        };
         /**
          * @description Customer-facing cloud package baseline used for committed-capacity billing.
          * @enum {string}
@@ -2146,15 +2707,15 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
-        /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
             /**
-             * @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+             * @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
              * @default 0
              */
             metadata_nodes: number;
             /**
-             * @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+             * @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
              * @default 1
              */
             data_nodes: number;
@@ -2212,6 +2773,8 @@ export interface components {
             slug: string;
             tier: components["schemas"]["CloudInstanceTier"];
             mode: components["schemas"]["CloudInstanceMode"];
+            ha_config?: components["schemas"]["CloudHAConfig"];
+            ha_status?: components["schemas"]["CloudHAStatus"];
             status: components["schemas"]["CloudInstanceStatus"];
             /**
              * @description Deployment region
@@ -2270,6 +2833,8 @@ export interface components {
             tier: components["schemas"]["CloudInstanceTier"];
             /** @default single */
             mode: components["schemas"]["CloudInstanceMode"];
+            /** @description Optional hot-standby HA add-on for single topology instances. */
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Optional initial capacity overrides. When omitted, the tier and mode defaults are used. */
             node_config?: components["schemas"]["NodeConfigUpdate"];
             /** @description Initial Antfly runtime upgrade policy. Defaults to patch_auto. */
@@ -2299,8 +2864,10 @@ export interface components {
         UpdateCloudInstanceRequest: {
             /** @description New display name */
             name?: string;
-            /** @description Change the instance deployment mode. Switching to replicated HA is billed before provisioning. */
+            /** @description Change the instance deployment mode. Switching to distributed topology is billed before provisioning. */
             mode?: components["schemas"]["CloudInstanceMode"];
+            /** @description Enable, disable, or update the hot-standby HA add-on for single topology instances. */
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Change the committed-capacity package baseline. */
             tier?: components["schemas"]["CloudInstanceTier"];
             node_config?: components["schemas"]["NodeConfigUpdate"];
@@ -2324,11 +2891,11 @@ export interface components {
             /** @description Clear a pending or failed manual Antfly runtime target without changing the live cluster image. */
             clear_antfly_version_target?: boolean;
         };
-        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfigUpdate: {
-            /** @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode. */
+            /** @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode. */
             metadata_nodes?: number;
-            /** @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node. */
+            /** @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node. */
             data_nodes?: number;
             /** @description CPU request per node (e.g., "500m", "1000m") */
             cpu?: string;
@@ -2643,6 +3210,7 @@ export interface components {
             tier: components["schemas"]["CloudInstanceTier"];
             /** @default single */
             mode: components["schemas"]["CloudInstanceMode"];
+            ha_config?: components["schemas"]["CloudHAConfig"] | null;
             node_config?: components["schemas"]["NodeConfigUpdate"];
             /**
              * @description Cloud region for the estimate
@@ -4515,6 +5083,36 @@ export interface operations {
                     "application/json": components["schemas"]["CloudInstance"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    syncCloudInstanceHAStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description HA status sync queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudHAStatusSyncResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
