@@ -588,6 +588,97 @@ export interface paths {
         patch: operations["updateCloudInstance"];
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List S3 objects for a cloud instance credential
+         * @description Lists immediate prefixes and objects for a bucket/prefix authorized by the selected S3 credential. Responses may be truncated when the requested limit is reached.
+         */
+        get: operations["listCloudInstanceProviderAuthObjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause import job */
+        post: operations["pauseImportJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume import job */
+        post: operations["resumeImportJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive import job */
+        post: operations["archiveImportJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Archive import job
+         * @description Archives the import job while retaining run history. This is an alias for the archive action.
+         */
+        delete: operations["deleteImportJob"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/provision": {
         parameters: {
             query?: never;
@@ -900,7 +991,11 @@ export interface paths {
         delete: operations["revokeCloudManagementAPIKey"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Antfly Cloud management API key
+         * @description Update mutable settings for an organization-scoped antfly_cloud_* management API key
+         */
+        patch: operations["updateCloudManagementAPIKey"];
         trace?: never;
     };
     "/organizations/{org_id}/cloud/instances/{instance_id}/api-keys": {
@@ -944,7 +1039,11 @@ export interface paths {
         delete: operations["revokeCloudAPIKey"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update cloud API key
+         * @description Update mutable settings for an instance-scoped antflydb_* API key
+         */
+        patch: operations["updateCloudAPIKey"];
         trace?: never;
     };
     "/organizations/{org_id}/cloud/instances/{instance_id}/backups": {
@@ -2154,10 +2253,10 @@ export interface components {
          */
         CloudInstanceVersionUpgradeStatus: "idle" | "pending" | "rolling" | "failed" | "blocked";
         /**
-         * @description Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+         * @description Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
          * @enum {string}
          */
-        CloudInstanceMode: "single" | "replicated";
+        CloudInstanceMode: "single" | "distributed";
         /**
          * @description Fencing authority used for hot-standby promotion decisions.
          * @enum {string}
@@ -2173,6 +2272,16 @@ export interface components {
          * @enum {string}
          */
         CloudHAHealth: "disabled" | "provisioning" | "healthy" | "degraded" | "unhealthy" | "lagging" | "reseed_required" | "promoting";
+        /**
+         * @description Normalized fail-closed state of the configured fencing authority.
+         * @enum {string}
+         */
+        CloudHAFencingState: "pending" | "ready" | "not_held" | "expired" | "missing" | "unknown";
+        /**
+         * @description Normalized fail-closed state of the customer-facing primary route.
+         * @enum {string}
+         */
+        CloudHAPrimaryRouteState: "pending" | "ready" | "switching" | "unknown";
         /** @description Bounded repair-before-replace policy for restoring hot-standby redundancy. */
         CloudHAReplacementPolicy: {
             /**
@@ -2669,8 +2778,8 @@ export interface components {
             /** @description Whether the operator planner currently allows automatic promotion. */
             automatic_promotion_allowed?: boolean;
             fencing_authority?: components["schemas"]["CloudHAFencingAuthority"];
-            fencing_state?: string;
-            primary_route_state?: string;
+            fencing_state?: components["schemas"]["CloudHAFencingState"];
+            primary_route_state?: components["schemas"]["CloudHAPrimaryRouteState"];
             sync?: components["schemas"]["CloudHASyncStatus"];
             retention?: components["schemas"]["CloudHARetentionStatus"];
             planned_actions?: components["schemas"]["CloudHAPlannedActionStatus"][];
@@ -2707,15 +2816,15 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
-        /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
             /**
-             * @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+             * @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
              * @default 0
              */
             metadata_nodes: number;
             /**
-             * @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+             * @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
              * @default 1
              */
             data_nodes: number;
@@ -2864,7 +2973,7 @@ export interface components {
         UpdateCloudInstanceRequest: {
             /** @description New display name */
             name?: string;
-            /** @description Change the instance deployment mode. Switching to replicated HA is billed before provisioning. */
+            /** @description Change the instance deployment mode. Switching to distributed topology is billed before provisioning. */
             mode?: components["schemas"]["CloudInstanceMode"];
             /** @description Enable, disable, or update the hot-standby HA add-on for single topology instances. */
             ha_config?: components["schemas"]["CloudHAConfig"] | null;
@@ -2891,11 +3000,11 @@ export interface components {
             /** @description Clear a pending or failed manual Antfly runtime target without changing the live cluster image. */
             clear_antfly_version_target?: boolean;
         };
-        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
+        /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfigUpdate: {
-            /** @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode. */
+            /** @description Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode. */
             metadata_nodes?: number;
-            /** @description Number of data (storage) nodes for replicated mode; single mode is always one Antfly node. */
+            /** @description Number of data (storage) nodes for distributed mode; single mode is always one Antfly node. */
             data_nodes?: number;
             /** @description CPU request per node (e.g., "500m", "1000m") */
             cpu?: string;
@@ -2984,6 +3093,18 @@ export interface components {
             grants?: components["schemas"]["CloudGrant"][];
             /** @description Antfly Cloud management actions allowed by antfly_cloud_* keys. */
             management_scopes?: string[];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+        };
+        /** @description Optional hosted inference spend and rate limits for an API key or organization. */
+        HostedInferenceLimits: {
+            /** @description External hosted inference requests per minute. Null or 0 inherits from the broader policy layer. */
+            requests_per_minute?: number;
+            /** @description Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer. */
+            tokens_per_minute?: number;
+            /** @description Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer. */
+            concurrent_requests?: number;
+            /** @description Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            managed_spend_cents_per_month?: number;
         };
         /** @description Returned only at creation time. The full key is never shown again. */
         CloudAPIKeyCreated: {
@@ -3010,6 +3131,7 @@ export interface components {
             quota_queries_per_month?: number | null;
             /** @description Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted. */
             grants?: components["schemas"]["UpsertCloudGrantRequest"][];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
         };
         CreateCloudManagementAPIKeyRequest: {
             /**
@@ -3020,6 +3142,11 @@ export interface components {
             /** @description Antfly Cloud management actions allowed by the key. Defaults to read-only Antfly Cloud management scopes. */
             scopes?: string[];
             expires_at?: components["schemas"]["Timestamp"];
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+        };
+        UpdateCloudAPIKeyRequest: {
+            /** @description Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits. */
+            hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"] | null;
         };
         ProvisioningEvent: {
             id: components["schemas"]["UUID"];
@@ -3403,6 +3530,25 @@ export interface components {
             source?: string;
             updated_at?: components["schemas"]["Timestamp"];
         };
+        S3ObjectSummary: {
+            key: string;
+            /** Format: int64 */
+            size?: number;
+            etag?: string;
+            last_modified?: components["schemas"]["Timestamp"];
+        };
+        S3ObjectListResponse: {
+            /** @description Backward-compatible alias for objects. */
+            data: components["schemas"]["S3ObjectSummary"][];
+            objects: components["schemas"]["S3ObjectSummary"][];
+            prefixes: string[];
+            /** @description True when the listing reached the server-side object limit. */
+            truncated: boolean;
+        };
+        /** @description Structured import job configuration and status. */
+        ImportJob: {
+            [key: string]: unknown;
+        };
         UpdateCloudUserAttributesRequest: {
             manual_attributes: {
                 [key: string]: unknown;
@@ -3599,6 +3745,8 @@ export interface components {
         ForgotPasswordRequest: {
             /** Format: email */
             email: string;
+            /** @description Optional post-login redirect to preserve after password reset */
+            redirect_url?: string;
         };
         ResetPasswordRequest: {
             token: string;
@@ -3746,6 +3894,10 @@ export interface components {
         Offset: number;
         /** @description Maximum number of items to return */
         Limit: number;
+        /** @description Provider credential ID */
+        AuthId: components["schemas"]["UUID"];
+        /** @description Import job ID */
+        JobId: components["schemas"]["UUID"];
         /** @description Cloud group ID */
         GroupId: components["schemas"]["UUID"];
         /** @description API key ID */
@@ -5051,6 +5203,166 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listCloudInstanceProviderAuthObjects: {
+        parameters: {
+            query: {
+                /** @description Allowed bucket name to list. */
+                bucket: string;
+                /** @description Optional object key prefix. */
+                prefix?: string;
+                /** @description Whether to list recursively instead of returning immediate prefixes. */
+                recursive?: boolean;
+                /** @description Maximum number of object entries to return. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bucket object listing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["S3ObjectListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    pauseImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import job ID */
+                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import job paused */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    resumeImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import job ID */
+                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import job resumed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    archiveImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import job ID */
+                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import job archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import job ID */
+                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import job archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     provisionCloudInstance: {
         parameters: {
             query?: never;
@@ -5722,6 +6034,37 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    updateCloudManagementAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description API key ID */
+                key_id: components["parameters"]["CloudKeyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCloudAPIKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Management API key updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listCloudAPIKeys: {
         parameters: {
             query?: never;
@@ -5808,6 +6151,39 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCloudAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description API key ID */
+                key_id: components["parameters"]["CloudKeyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCloudAPIKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description API key updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
