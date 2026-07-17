@@ -1574,6 +1574,175 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: List S3 objects for a cloud instance credential
+      description: Lists immediate prefixes and objects for a bucket/prefix authorized by the selected S3 credential. Responses may be truncated when the requested limit is reached.
+      operationId: listCloudInstanceProviderAuthObjects
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+        - name: bucket
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Allowed bucket name to list.
+        - name: prefix
+          in: query
+          schema:
+            type: string
+          description: Optional object key prefix.
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to list recursively instead of returning immediate prefixes.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+          description: Maximum number of object entries to return.
+      responses:
+        '200':
+          description: Bucket object listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/S3ObjectListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Pause import job
+      operationId: pauseImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Resume import job
+      operationId: resumeImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Archive import job
+      operationId: archiveImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    delete:
+      summary: Archive import job
+      description: Archives the import job while retaining run history. This is an alias for the archive action.
+      operationId: deleteImportJob
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Import job archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provision:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -1605,6 +1774,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CloudInstance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/instances/{instance_id}/ha/status-sync:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Sync hot-standby HA status
+      description: |
+        Queue an immediate Cloud reconciliation pass so Cloud pulls the latest
+        operator-observed hot-standby HA status, planned actions, fencing state,
+        route state, and promotion blockers into the public instance status.
+      operationId: syncCloudInstanceHAStatus
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '202':
+          description: HA status sync queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudHAStatusSyncResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2217,6 +2421,34 @@ paths:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    patch:
+      summary: Update Antfly Cloud management API key
+      description: Update mutable settings for an organization-scoped antfly_cloud_* management API key
+      operationId: updateCloudManagementAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: Management API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke Antfly Cloud management API key
       description: Revoke an organization-scoped antfly_cloud_* management API key
@@ -2308,6 +2540,35 @@ paths:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    patch:
+      summary: Update cloud API key
+      description: Update mutable settings for an instance-scoped antflydb_* API key
+      operationId: updateCloudAPIKey
+      tags:
+        - CloudAPIKeys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/CloudKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudAPIKeyRequest'
+      responses:
+        '204':
+          description: API key updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke cloud API key
       description: Revoke an API key for a cloud instance
@@ -3643,6 +3904,20 @@ components:
         maximum: 100
         default: 20
       description: Maximum number of items to return
+    AuthId:
+      name: auth_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Provider credential ID
+    JobId:
+      name: job_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Import job ID
     GroupId:
       name: group_id
       in: path
@@ -4670,8 +4945,926 @@ components:
       type: string
       enum:
         - single
-        - replicated
-      description: Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+        - distributed
+      description: Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
+    CloudHAFencingAuthority:
+      type: string
+      enum:
+        - none
+        - kubernetes_lease
+      description: Fencing authority used for hot-standby promotion decisions.
+    CloudHASyncMode:
+      type: string
+      enum:
+        - async
+        - remote_write
+        - remote_apply
+      description: Standby durability mode for hot-standby replication.
+    CloudHAHealth:
+      type: string
+      enum:
+        - disabled
+        - provisioning
+        - healthy
+        - degraded
+        - unhealthy
+        - lagging
+        - reseed_required
+        - promoting
+      description: Cloud-visible hot-standby health state.
+    CloudHAFencingState:
+      type: string
+      enum:
+        - pending
+        - ready
+        - not_held
+        - expired
+        - missing
+        - unknown
+      description: Normalized fail-closed state of the configured fencing authority.
+    CloudHAPrimaryRouteState:
+      type: string
+      enum:
+        - pending
+        - ready
+        - switching
+        - unknown
+      description: Normalized fail-closed state of the customer-facing primary route.
+    CloudHAReplacementPolicy:
+      type: object
+      description: Bounded repair-before-replace policy for restoring hot-standby redundancy.
+      properties:
+        repair_timeout_seconds:
+          type: integer
+          minimum: 0
+          default: 900
+          description: Maximum time to prefer repair before allocating replacement capacity.
+        repair_attempt_limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 3
+          description: Maximum distinct failed repair actions before replacement is allowed.
+        diagnostic_retention_seconds:
+          type: integer
+          minimum: 0
+          default: 86400
+          description: Minimum retention window for superseded replacement resources and diagnostics.
+        force_replacement:
+          type: boolean
+          default: false
+          description: Bypass the remaining repair budget and allocate replacement capacity on the next reconcile.
+        extend_repair_seconds:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Operator override that extends the current repair deadline without mutating runtime data.
+    CloudHAConfig:
+      type: object
+      description: Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology.
+      properties:
+        enabled:
+          type: boolean
+          default: false
+          description: Enables one primary with hot standby replica nodes.
+        standby_count:
+          type: integer
+          minimum: 1
+          maximum: 26
+          default: 1
+          description: Desired hot standby replica count when HA is enabled.
+        automatic_failover_enabled:
+          type: boolean
+          default: false
+          description: Allows fenced operator-managed automatic promotion when prerequisites are satisfied.
+        fencing_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+          default: kubernetes_lease
+        sync_mode:
+          $ref: '#/components/schemas/CloudHASyncMode'
+          default: remote_apply
+        maximum_lag_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+          description: Maximum tolerated standby lag for automatic promotion. Zero uses operator/runtime defaults.
+        replacement_policy:
+          $ref: '#/components/schemas/CloudHAReplacementPolicy'
+    CloudHAReplacementStatus:
+      type: object
+      description: Durable progress for one generation-safe replacement standby allocation.
+      properties:
+        ordinal:
+          type: integer
+          format: int32
+          minimum: 0
+        generation:
+          type: integer
+          format: int64
+          minimum: 1
+        topology_generation:
+          type: integer
+          format: int64
+          minimum: 1
+        source_promotion_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        source_promotion_receipt_id:
+          type: string
+          description: Stable digest identifying the fenced promotion authority used by this replacement.
+        replaces_node_id:
+          type: string
+        node_id:
+          type: string
+        slot_name:
+          type: string
+        resource_name:
+          type: string
+        storage_identity:
+          type: string
+        source_primary_id:
+          type: string
+        seed_artifact_generation:
+          type: string
+          description: Exact immutable portable-seed generation assigned to this replacement.
+        placement_policy:
+          type: string
+          description: Scheduling isolation contract applied to this replacement generation.
+        phase:
+          type: string
+          description: requested, provisioning, seeding, catching_up, healthy, failed, superseded, or retired.
+        decision:
+          type: string
+        reason:
+          type: string
+        boundary_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        received_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        applied_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        safe_read_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        attempt_count:
+          type: integer
+          format: int32
+          minimum: 0
+        retryable:
+          type: boolean
+        last_error:
+          type: string
+        last_attempt_at:
+          type: string
+          format: date-time
+        next_retry_at:
+          type: string
+          format: date-time
+        phase_started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CloudHAStandbyStatus:
+      type: object
+      description: Observed hot-standby replica status.
+      properties:
+        name:
+          type: string
+        slot_name:
+          type: string
+        node_id:
+          type: string
+        health:
+          $ref: '#/components/schemas/CloudHAHealth'
+        received_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        applied_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        safe_read_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        lag_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        reseed_required:
+          type: boolean
+        seed:
+          $ref: '#/components/schemas/CloudHASeedStatus'
+    CloudHASeedStatus:
+      type: object
+      description: Public, credential-free progress and immutable identity for the seed generation currently assigned to one standby. Empty fields mean the corresponding authority has not yet been durably observed.
+      properties:
+        generation:
+          type: string
+        phase:
+          type: string
+        operation_id:
+          type: string
+          description: Stable operator identity for the currently authoritative seed action.
+        topology_id:
+          type: string
+        topology_generation:
+          type: integer
+          format: int64
+          minimum: 1
+        node_id:
+          type: string
+        slot_name:
+          type: string
+        source_primary_id:
+          type: string
+        source_pvc_name:
+          type: string
+        source_pvc_uid:
+          type: string
+        target_pvc_name:
+          type: string
+        target_pvc_uid:
+          type: string
+        timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        epoch:
+          type: integer
+          format: int64
+          minimum: 0
+        backup_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        checkpoint_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        capture_receipt_sha256:
+          type: string
+        manifest_sha256:
+          type: string
+        aggregate_sha256:
+          type: string
+        seed_receipt_sha256:
+          type: string
+        attempt_count:
+          type: integer
+          format: int32
+          minimum: 0
+        retry_budget_used:
+          type: integer
+          format: int32
+          minimum: 0
+        retryable:
+          type: boolean
+        error_class:
+          type: string
+        first_attempt_at:
+          type: string
+          format: date-time
+        last_attempt_at:
+          type: string
+          format: date-time
+        next_retry_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    CloudHAPlannedActionStatus:
+      type: object
+      description: Cloud-visible summary of one operator-planned HA workflow action.
+      properties:
+        kind:
+          type: string
+        phase:
+          type: string
+        executor:
+          type: string
+        depends_on:
+          type: string
+        reason:
+          type: string
+        standby_name:
+          type: string
+        slot_name:
+          type: string
+        target_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_from_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        route_from:
+          type: string
+        route_to:
+          type: string
+        fence_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fence_holder:
+          type: string
+        fence_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        admin_method:
+          type: string
+        admin_path:
+          type: string
+        admin_job_name:
+          type: string
+        admin_job_phase:
+          type: string
+        admin_error:
+          type: string
+        admin_status_code:
+          type: integer
+          format: int32
+          minimum: 0
+        rejoin_action:
+          type: string
+          description: Former-primary rejoin action reported by the typed HA admin workflow, such as rewind or reseed.
+        rejoin_reason:
+          type: string
+          description: Reason the operator/admin workflow selected the former-primary rejoin action.
+        former_node_id:
+          type: string
+          description: Former primary node ID reported by the typed HA admin workflow.
+        operation_id:
+          type: string
+          description: Stable identity for this exact desired operator action.
+        execution_state_version:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Version of the operator's durable bounded-retry execution state.
+        retry_generation:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Explicit recovery nonce frozen into this exact action identity.
+        topology_id:
+          type: string
+        topology_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        topology_node_id:
+          type: string
+        source_pvc_name:
+          type: string
+        source_pvc_uid:
+          type: string
+        target_pvc_name:
+          type: string
+        target_pvc_uid:
+          type: string
+        target_local_node_id:
+          type: integer
+          format: int64
+          minimum: 0
+        target_replica_id:
+          type: integer
+          format: int64
+          minimum: 0
+        seed_artifact_generation:
+          type: string
+        seed_capture_receipt_sha256:
+          type: string
+          description: Digest of the exact runtime capture receipt authorizing this portable seed action.
+        attempt_count:
+          type: integer
+          format: int32
+          minimum: 0
+        retry_budget_used:
+          type: integer
+          format: int32
+          minimum: 0
+        retryable:
+          type: boolean
+        error_class:
+          type: string
+        in_flight_attempt:
+          type: integer
+          format: int32
+          minimum: 0
+        attempt_id:
+          type: string
+        first_attempt_at:
+          type: string
+          format: date-time
+        last_attempt_at:
+          type: string
+          format: date-time
+        next_retry_at:
+          type: string
+          format: date-time
+        reservation_expires_at:
+          type: string
+          format: date-time
+        prerequisite_deadline_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        seed_artifact_receipt:
+          $ref: '#/components/schemas/CloudHASeedArtifactReceiptStatus'
+    CloudHASeedArtifactReceiptStatus:
+      type: object
+      description: Credential-free immutable receipt for one portable-seed action.
+      properties:
+        action_kind:
+          type: string
+        scope:
+          type: string
+        format_version:
+          type: integer
+          format: int32
+        generation:
+          type: string
+        topology_id:
+          type: string
+        topology_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        node_id:
+          type: string
+        slot_name:
+          type: string
+        source_pvc_name:
+          type: string
+        source_pvc_uid:
+          type: string
+        target_pvc_name:
+          type: string
+        target_pvc_uid:
+          type: string
+        cluster_id:
+          type: integer
+          format: int64
+          minimum: 0
+        shard_id:
+          type: integer
+          format: int64
+          minimum: 0
+        table_id:
+          type: integer
+          format: int64
+          minimum: 0
+        timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        epoch:
+          type: integer
+          format: int64
+          minimum: 0
+        manifest_id:
+          type: string
+        backup_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        checkpoint_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        manifest_sha256:
+          type: string
+        aggregate_sha256:
+          type: string
+        seed_receipt_sha256:
+          type: string
+        capture_receipt_sha256:
+          type: string
+        generation_path:
+          type: string
+        raw_generation_path:
+          type: string
+        materialized_receipt_sha256:
+          type: string
+        materialized_aggregate_sha256:
+          type: string
+        target_local_node_id:
+          type: integer
+          format: int64
+          minimum: 0
+        target_replica_id:
+          type: integer
+          format: int64
+          minimum: 0
+        total_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+        file_count:
+          type: integer
+          format: int32
+          minimum: 0
+        retained_count:
+          type: integer
+          format: int32
+          minimum: 0
+        deleted_count:
+          type: integer
+          format: int32
+          minimum: 0
+        protected_count:
+          type: integer
+          format: int32
+          minimum: 0
+        resumed_tombstone_count:
+          type: integer
+          format: int32
+          minimum: 0
+        skipped_ineligible_count:
+          type: integer
+          format: int32
+          minimum: 0
+        checkpoint_sha256:
+          type: string
+    CloudHAFormerPrimaryStatus:
+      type: object
+      description: Cloud-visible former-primary rejoin/rewind/reseed disposition after a hot-standby promotion.
+      properties:
+        node_id:
+          type: string
+        fenced:
+          type: boolean
+        rejoin_required:
+          type: boolean
+        rewind_possible:
+          type: boolean
+        reseed_required:
+          type: boolean
+        diverged:
+          type: boolean
+        parent_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        new_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        switch_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        observed_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        fence_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fence_holder:
+          type: string
+        fence_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        target_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        target_epoch:
+          type: integer
+          format: int64
+          minimum: 0
+        fork_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        former_last_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_from_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        data_loss_discarded:
+          type: boolean
+        assessed_action:
+          type: string
+          description: Operator-assessed former-primary rejoin action, such as rewind or reseed.
+        assessed_reason:
+          type: string
+          description: Operator-assessed reason for the former-primary rejoin action.
+        action:
+          type: string
+          description: Current former-primary workflow action.
+        reason:
+          type: string
+          description: Current former-primary workflow reason.
+    CloudHATopologyPhase:
+      type: string
+      description: Durable Colony-owned phase for one post-promotion topology generation.
+      enum:
+        - PromotionObserved
+        - PrimaryAdopted
+        - FormerPrimaryAssessed
+        - FormerPrimaryPreparing
+        - FormerPrimaryFollowing
+        - CatchingUp
+        - RedundancyRestored
+        - ReplacementRequired
+    CloudHATopologyStatus:
+      type: object
+      description: Durable, generation-checked post-promotion topology and former-primary repair progress.
+      properties:
+        generation:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Monotonic Colony topology generation.
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Monotonic state revision within one topology generation.
+        phase:
+          $ref: '#/components/schemas/CloudHATopologyPhase'
+        promotion_receipt_id:
+          type: string
+          description: Stable digest of the typed promotion receipt; never contains the fence token.
+        desired_primary_id:
+          type: string
+        current_primary_id:
+          type: string
+        former_primary_id:
+          type: string
+        parent_timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        timeline_id:
+          type: integer
+          format: int64
+          minimum: 0
+        epoch:
+          type: integer
+          format: int64
+          minimum: 0
+        switch_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        fence_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        fence_token_digest:
+          type: string
+          description: SHA-256 digest of the opaque typed fence token.
+        route_generation:
+          type: integer
+          format: int64
+          minimum: 0
+        assessment:
+          type: string
+          description: Exact repair disposition for this generation, normally rewind or reseed.
+        assessment_receipt_id:
+          type: string
+        repair_receipt_id:
+          type: string
+        seed_artifact_id:
+          type: string
+        received_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        applied_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        safe_read_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        lag_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        attempt_count:
+          type: integer
+          format: int32
+          minimum: 0
+        retryable:
+          type: boolean
+        last_error_class:
+          type: string
+        last_error:
+          type: string
+        last_transition_at:
+          type: string
+          format: date-time
+        synchronous_acknowledgements_blocked:
+          type: boolean
+          description: Whether RemoteApply/Block remains fail-closed while redundancy is absent.
+    CloudHASyncStatus:
+      type: object
+      description: Observed hot-standby synchronous durability policy state.
+      properties:
+        mode:
+          type: string
+          description: Observed durability mode reported by the operator.
+        selection:
+          type: string
+          description: Standby selection policy used by the sync policy.
+        required:
+          type: integer
+          format: int32
+          minimum: 0
+        satisfied:
+          type: integer
+          format: int32
+          minimum: 0
+        candidates:
+          type: integer
+          format: int32
+          minimum: 0
+        failure_policy:
+          type: string
+        degraded:
+          type: boolean
+        action:
+          type: string
+    CloudHARetentionStatus:
+      type: object
+      description: Observed HA WAL retention pressure from standby replication slots.
+      properties:
+        oldest_restart_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_lsn_count:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_byte_count:
+          type: integer
+          format: int64
+          minimum: 0
+        retained_age_ns:
+          type: integer
+          format: int64
+          minimum: 0
+        active_slots:
+          type: integer
+          format: int32
+          minimum: 0
+        reseed_recommended:
+          type: integer
+          format: int32
+          minimum: 0
+    CloudHAStatus:
+      type: object
+      description: Cloud-visible hot-standby state observed from the operator/runtime.
+      properties:
+        health:
+          $ref: '#/components/schemas/CloudHAHealth'
+        identity:
+          type: object
+          additionalProperties: true
+          description: Current HA identity, including cluster/timeline/epoch/current primary when observed.
+        current_primary_id:
+          type: string
+        primary_lsn:
+          type: integer
+          format: int64
+          minimum: 0
+        primary_admin_reachable:
+          type: boolean
+          description: Whether the operator most recently reached the primary HA admin endpoint.
+        primary_admin_last_error:
+          type: string
+          description: Latest primary HA admin observation error, when the primary could not be observed.
+        primary_admin_status_code:
+          type: integer
+          format: int32
+          description: Latest typed primary HA admin status-observation HTTP status code.
+        desired_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standby count reported by the operator.
+        healthy_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys caught up to apply.
+        unhealthy_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys missing, inactive, or reporting replication errors.
+        lagging_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys with non-zero replication lag.
+        read_safe_standby_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys safe for bounded-staleness reads.
+        reseed_required_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Desired standbys requiring reseed.
+        automatic_promotion_allowed:
+          type: boolean
+          description: Whether the operator planner currently allows automatic promotion.
+        fencing_authority:
+          $ref: '#/components/schemas/CloudHAFencingAuthority'
+        fencing_state:
+          $ref: '#/components/schemas/CloudHAFencingState'
+        primary_route_state:
+          $ref: '#/components/schemas/CloudHAPrimaryRouteState'
+        sync:
+          $ref: '#/components/schemas/CloudHASyncStatus'
+        retention:
+          $ref: '#/components/schemas/CloudHARetentionStatus'
+        planned_actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudHAPlannedActionStatus'
+        last_promotion:
+          type: object
+          additionalProperties: true
+        former_primary:
+          $ref: '#/components/schemas/CloudHAFormerPrimaryStatus'
+        topology:
+          $ref: '#/components/schemas/CloudHATopologyStatus'
+        topology_generation:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Monotonic Colony topology generation used to reject stale replacement work.
+        time_without_sync_redundancy_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+        writes_blocked_waiting_for_durability:
+          type: boolean
+          description: Whether synchronous writes remain fail-closed while no qualifying standby exists.
+        replacements:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudHAReplacementStatus'
+        standbys:
+          type: array
+          items:
+            $ref: '#/components/schemas/CloudHAStandbyStatus'
+    CloudHAStatusSyncResponse:
+      type: object
+      required:
+        - queued
+        - ha_config
+        - ha_status
+      properties:
+        queued:
+          type: boolean
+          description: Whether an immediate Cloud reconcile job was queued to refresh HA state.
+        ha_config:
+          $ref: '#/components/schemas/CloudHAConfig'
+        ha_status:
+          $ref: '#/components/schemas/CloudHAStatus'
     CloudInstanceTier:
       type: string
       enum:
@@ -4688,18 +5881,18 @@ components:
       description: API key permission level
     NodeConfig:
       type: object
-      description: Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+      description: Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
       properties:
         metadata_nodes:
           type: integer
           minimum: 0
           default: 0
-          description: Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+          description: Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
         data_nodes:
           type: integer
           minimum: 1
           default: 1
-          description: Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+          description: Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
         cpu:
           type: string
           description: CPU request per node (e.g., "500m", "1000m")
@@ -4767,6 +5960,10 @@ components:
           $ref: '#/components/schemas/CloudInstanceTier'
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
+        ha_config:
+          $ref: '#/components/schemas/CloudHAConfig'
+        ha_status:
+          $ref: '#/components/schemas/CloudHAStatus'
         status:
           $ref: '#/components/schemas/CloudInstanceStatus'
         region:
@@ -4854,6 +6051,13 @@ components:
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
           default: single
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
+          description: Optional hot-standby HA add-on for single topology instances.
         node_config:
           $ref: '#/components/schemas/NodeConfigUpdate'
           description: Optional initial capacity overrides. When omitted, the tier and mode defaults are used.
@@ -4918,7 +6122,14 @@ components:
           description: New display name
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
-          description: Change the instance deployment mode. Switching to replicated HA is billed before provisioning.
+          description: Change the instance deployment mode. Switching to distributed topology is billed before provisioning.
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
+          description: Enable, disable, or update the hot-standby HA add-on for single topology instances.
         tier:
           $ref: '#/components/schemas/CloudInstanceTier'
           description: Change the committed-capacity package baseline.
@@ -4944,16 +6155,16 @@ components:
           description: Clear a pending or failed manual Antfly runtime target without changing the live cluster image.
     NodeConfigUpdate:
       type: object
-      description: Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+      description: Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
       properties:
         metadata_nodes:
           type: integer
           minimum: 0
-          description: Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+          description: Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
         data_nodes:
           type: integer
           minimum: 1
-          description: Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+          description: Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
         cpu:
           type: string
           description: CPU request per node (e.g., "500m", "1000m")
@@ -5094,6 +6305,28 @@ components:
           items:
             type: string
           description: Antfly Cloud management actions allowed by antfly_cloud_* keys.
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    HostedInferenceLimits:
+      type: object
+      description: Optional hosted inference spend and rate limits for an API key or organization.
+      properties:
+        requests_per_minute:
+          type: integer
+          minimum: 0
+          description: External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
+        tokens_per_minute:
+          type: integer
+          minimum: 0
+          description: Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer.
+        concurrent_requests:
+          type: integer
+          minimum: 0
+          description: Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
+        managed_spend_cents_per_month:
+          type: integer
+          minimum: 0
+          description: Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -5141,6 +6374,8 @@ components:
           description: Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted.
           items:
             $ref: '#/components/schemas/UpsertCloudGrantRequest'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
     CreateCloudManagementAPIKeyRequest:
       type: object
       required:
@@ -5159,6 +6394,17 @@ components:
             type: string
         expires_at:
           $ref: '#/components/schemas/Timestamp'
+        hosted_inference_limits:
+          $ref: '#/components/schemas/HostedInferenceLimits'
+    UpdateCloudAPIKeyRequest:
+      type: object
+      properties:
+        hosted_inference_limits:
+          nullable: true
+          x-go-type-skip-optional-pointer: false
+          description: Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits.
+          allOf:
+            - $ref: '#/components/schemas/HostedInferenceLimits'
     ProvisioningEvent:
       type: object
       required:
@@ -5521,6 +6767,12 @@ components:
         mode:
           $ref: '#/components/schemas/CloudInstanceMode'
           default: single
+        ha_config:
+          x-go-type-skip-optional-pointer: false
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/CloudHAConfig'
+          nullable: true
         node_config:
           $ref: '#/components/schemas/NodeConfigUpdate'
         region:
@@ -5836,6 +7088,48 @@ components:
           type: string
         updated_at:
           $ref: '#/components/schemas/Timestamp'
+    S3ObjectSummary:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+        size:
+          type: integer
+          format: int64
+        etag:
+          type: string
+        last_modified:
+          $ref: '#/components/schemas/Timestamp'
+    S3ObjectListResponse:
+      type: object
+      required:
+        - data
+        - objects
+        - prefixes
+        - truncated
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+          description: Backward-compatible alias for objects.
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/S3ObjectSummary'
+        prefixes:
+          type: array
+          items:
+            type: string
+        truncated:
+          type: boolean
+          description: True when the listing reached the server-side object limit.
+    ImportJob:
+      type: object
+      additionalProperties: true
+      description: Structured import job configuration and status.
     UpdateCloudUserAttributesRequest:
       type: object
       required:
@@ -6286,6 +7580,9 @@ components:
         email:
           type: string
           format: email
+        redirect_url:
+          type: string
+          description: Optional post-login redirect to preserve after password reset
     ResetPasswordRequest:
       type: object
       required:
