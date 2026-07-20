@@ -2253,17 +2253,17 @@ export interface components {
          */
         CloudInstanceVersionUpgradeStatus: "idle" | "pending" | "rolling" | "failed" | "blocked";
         /**
-         * @description Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
+         * @description Cloud deployment topology. `single` provisions one Swarm Antfly node; `replicated` provisions separate Raft-backed metadata and data node groups.
          * @enum {string}
          */
-        CloudInstanceMode: "single" | "distributed";
+        CloudInstanceMode: "single" | "replicated";
         /**
          * @description Fencing authority used for hot-standby promotion decisions.
          * @enum {string}
          */
         CloudHAFencingAuthority: "none" | "kubernetes_lease";
         /**
-         * @description Standby durability mode for hot-standby replication.
+         * @description Standby durability mode for hot-standby replication. Production create/update requests accept only `remote_apply`; the other values remain representable for compatibility with internal and historical state.
          * @enum {string}
          */
         CloudHASyncMode: "async" | "remote_write" | "remote_apply";
@@ -2866,6 +2866,11 @@ export interface components {
                 /** @description Number of accelerators per node */
                 count?: number;
             };
+            /**
+             * @description Desired Antfly shared inference state. Omitted defaults to enabled for existing instances.
+             * @enum {string}
+             */
+            shared_inference_mode?: "enabled" | "disabled";
         };
         CloudInstance: {
             id: components["schemas"]["UUID"];
@@ -2890,6 +2895,11 @@ export interface components {
              * @example us-central1
              */
             region: string;
+            /**
+             * @description Whether this instance may use Antfly shared inference.
+             * @default true
+             */
+            shared_inference_enabled: boolean;
             node_config?: components["schemas"]["NodeConfig"];
             provisioning_started_at?: components["schemas"]["Timestamp"];
             provisioning_completed_at?: components["schemas"]["Timestamp"];
@@ -2942,7 +2952,7 @@ export interface components {
             tier: components["schemas"]["CloudInstanceTier"];
             /** @default single */
             mode: components["schemas"]["CloudInstanceMode"];
-            /** @description Optional hot-standby HA add-on for single topology instances. */
+            /** @description Must be omitted or disabled during instance creation. Enable hot-standby HA on a ready single-topology instance after creating at least one table. */
             ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Optional initial capacity overrides. When omitted, the tier and mode defaults are used. */
             node_config?: components["schemas"]["NodeConfigUpdate"];
@@ -2975,7 +2985,7 @@ export interface components {
             name?: string;
             /** @description Change the instance deployment mode. Switching to distributed topology is billed before provisioning. */
             mode?: components["schemas"]["CloudInstanceMode"];
-            /** @description Enable, disable, or update the hot-standby HA add-on for single topology instances. */
+            /** @description Enable, disable, or update the hot-standby HA add-on for a ready single-topology instance. Initial enablement requires at least one table, no enabled backup schedule, and `sync_mode=remote_apply`. */
             ha_config?: components["schemas"]["CloudHAConfig"] | null;
             /** @description Change the committed-capacity package baseline. */
             tier?: components["schemas"]["CloudInstanceTier"];
@@ -2999,6 +3009,11 @@ export interface components {
             target_antfly_image_digest?: string;
             /** @description Clear a pending or failed manual Antfly runtime target without changing the live cluster image. */
             clear_antfly_version_target?: boolean;
+            /**
+             * @description Enable or disable Antfly shared inference for this instance.
+             * @enum {string}
+             */
+            shared_inference_mode?: "enabled" | "disabled";
         };
         /** @description Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node. */
         NodeConfigUpdate: {

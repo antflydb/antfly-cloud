@@ -4945,8 +4945,8 @@ components:
       type: string
       enum:
         - single
-        - distributed
-      description: Cloud deployment topology. `single` provisions one Swarm Antfly node; `distributed` provisions separate Raft-backed metadata and data node groups.
+        - replicated
+      description: Cloud deployment topology. `single` provisions one Swarm Antfly node; `replicated` provisions separate Raft-backed metadata and data node groups.
     CloudHAFencingAuthority:
       type: string
       enum:
@@ -4959,7 +4959,7 @@ components:
         - async
         - remote_write
         - remote_apply
-      description: Standby durability mode for hot-standby replication.
+      description: Standby durability mode for hot-standby replication. Production create/update requests accept only `remote_apply`; the other values remain representable for compatibility with internal and historical state.
     CloudHAHealth:
       type: string
       enum:
@@ -5930,6 +5930,12 @@ components:
               type: integer
               minimum: 1
               description: Number of accelerators per node
+        shared_inference_mode:
+          type: string
+          enum:
+            - enabled
+            - disabled
+          description: Desired Antfly shared inference state. Omitted defaults to enabled for existing instances.
     CloudInstance:
       type: object
       required:
@@ -5970,6 +5976,10 @@ components:
           type: string
           description: Deployment region
           example: us-central1
+        shared_inference_enabled:
+          type: boolean
+          description: Whether this instance may use Antfly shared inference.
+          default: true
         node_config:
           $ref: '#/components/schemas/NodeConfig'
         provisioning_started_at:
@@ -6057,7 +6067,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/CloudHAConfig'
           nullable: true
-          description: Optional hot-standby HA add-on for single topology instances.
+          description: Must be omitted or disabled during instance creation. Enable hot-standby HA on a ready single-topology instance after creating at least one table.
         node_config:
           $ref: '#/components/schemas/NodeConfigUpdate'
           description: Optional initial capacity overrides. When omitted, the tier and mode defaults are used.
@@ -6129,7 +6139,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/CloudHAConfig'
           nullable: true
-          description: Enable, disable, or update the hot-standby HA add-on for single topology instances.
+          description: Enable, disable, or update the hot-standby HA add-on for a ready single-topology instance. Initial enablement requires at least one table, no enabled backup schedule, and `sync_mode=remote_apply`.
         tier:
           $ref: '#/components/schemas/CloudInstanceTier'
           description: Change the committed-capacity package baseline.
@@ -6153,6 +6163,12 @@ components:
         clear_antfly_version_target:
           type: boolean
           description: Clear a pending or failed manual Antfly runtime target without changing the live cluster image.
+        shared_inference_mode:
+          type: string
+          enum:
+            - enabled
+            - disabled
+          description: Enable or disable Antfly shared inference for this instance.
     NodeConfigUpdate:
       type: object
       description: Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
@@ -6160,10 +6176,12 @@ components:
         metadata_nodes:
           type: integer
           minimum: 0
+          x-go-type-skip-optional-pointer: false
           description: Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
         data_nodes:
           type: integer
           minimum: 1
+          x-go-type-skip-optional-pointer: false
           description: Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
         cpu:
           type: string
