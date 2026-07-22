@@ -1,43 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
+import { client, cloudAPIError } from "../client";
+import type { components } from "../types";
 
-export interface AntflyInferenceDailyCostEntry {
-  date: string;
-  total_cost_usd: number;
-  total_requests: number;
-  total_text_tokens: number;
-}
-
-export interface AntflyInferenceDailyCostSummary {
-  organization_id: string;
-  days: number;
-  daily_costs: AntflyInferenceDailyCostEntry[];
-  total_cost_usd: number;
-  total_requests: number;
-}
+export type AntflyInferenceDailyCostEntry = components["schemas"]["AntflyInferenceDailyCostEntry"];
+export type AntflyInferenceDailyCostSummary =
+  components["schemas"]["AntflyInferenceDailyCostSummary"];
 
 export function useOrganizationAntflyInferenceDailyCost(
   orgId: string | null,
-  options?: { days?: number }
+  options?: { days?: number; cloudInstanceId?: string }
 ) {
   const days = options?.days ?? 7;
   return useQuery({
-    queryKey: ["organizations", orgId, "antfly-inference-daily-cost", { days }],
+    queryKey: [
+      "organizations",
+      orgId,
+      "antfly-inference-daily-cost",
+      { days, cloudInstanceId: options?.cloudInstanceId },
+    ],
     queryFn: async (): Promise<AntflyInferenceDailyCostSummary> => {
       if (!orgId) throw new Error("Organization ID is required");
 
-      const response = await fetch(
-        `/api/v1/organizations/${orgId}/cloud/antfly-inference-daily-cost?days=${days}`
+      const { data, error, response } = await client.GET(
+        "/organizations/{org_id}/cloud/antfly-inference-daily-cost",
+        {
+          params: {
+            path: { org_id: orgId },
+            query: { days, cloud_instance_id: options?.cloudInstanceId },
+          },
+        }
       );
-      if (!response.ok) {
-        let detail = "Failed to fetch Antfly Inference daily cost";
-        try {
-          const body = (await response.json()) as { detail?: string };
-          if (body.detail) detail = body.detail;
-        } catch {}
-        throw new Error(detail);
+      if (error) {
+        throw cloudAPIError(error, response, "Antfly Inference daily cost is unavailable.");
       }
-
-      return (await response.json()) as AntflyInferenceDailyCostSummary;
+      return data;
     },
     enabled: !!orgId,
     staleTime: 60 * 1000,

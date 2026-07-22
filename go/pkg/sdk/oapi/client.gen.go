@@ -212,6 +212,24 @@ func (e MembershipStatus) Valid() bool {
 	}
 }
 
+// Defines values for NodeConfigSharedInferenceMode.
+const (
+	NodeConfigSharedInferenceModeDisabled NodeConfigSharedInferenceMode = "disabled"
+	NodeConfigSharedInferenceModeEnabled  NodeConfigSharedInferenceMode = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the NodeConfigSharedInferenceMode enum.
+func (e NodeConfigSharedInferenceMode) Valid() bool {
+	switch e {
+	case NodeConfigSharedInferenceModeDisabled:
+		return true
+	case NodeConfigSharedInferenceModeEnabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OrganizationRole.
 const (
 	OrganizationRoleAdmin     OrganizationRole = "admin"
@@ -248,6 +266,24 @@ func (e OrganizationStatus) Valid() bool {
 	case OrganizationStatusDeleted:
 		return true
 	case OrganizationStatusFrozen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateCloudInstanceRequestSharedInferenceMode.
+const (
+	UpdateCloudInstanceRequestSharedInferenceModeDisabled UpdateCloudInstanceRequestSharedInferenceMode = "disabled"
+	UpdateCloudInstanceRequestSharedInferenceModeEnabled  UpdateCloudInstanceRequestSharedInferenceMode = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the UpdateCloudInstanceRequestSharedInferenceMode enum.
+func (e UpdateCloudInstanceRequestSharedInferenceMode) Valid() bool {
+	switch e {
+	case UpdateCloudInstanceRequestSharedInferenceModeDisabled:
+		return true
+	case UpdateCloudInstanceRequestSharedInferenceModeEnabled:
 		return true
 	default:
 		return false
@@ -318,6 +354,70 @@ func (e UpdateMemberRoleJSONBodyRole) Valid() bool {
 type AddCloudGroupMemberRequest struct {
 	// UserId RFC 4122 UUID identifier
 	UserId UUID `json:"user_id"`
+}
+
+// AntflyInferenceDailyCostEntry defines model for AntflyInferenceDailyCostEntry.
+type AntflyInferenceDailyCostEntry struct {
+	Date            openapi_types.Date `json:"date"`
+	TotalCostUsd    float64            `json:"total_cost_usd"`
+	TotalRequests   int                `json:"total_requests"`
+	TotalTextTokens int                `json:"total_text_tokens"`
+}
+
+// AntflyInferenceDailyCostSummary defines model for AntflyInferenceDailyCostSummary.
+type AntflyInferenceDailyCostSummary struct {
+	CloudInstanceId openapi_types.UUID              `json:"cloud_instance_id,omitempty,omitzero"`
+	DailyCosts      []AntflyInferenceDailyCostEntry `json:"daily_costs"`
+	Days            int                             `json:"days"`
+	OrganizationId  openapi_types.UUID              `json:"organization_id"`
+	TotalCostUsd    float64                         `json:"total_cost_usd"`
+	TotalRequests   int                             `json:"total_requests"`
+}
+
+// AntflyInferenceModelUsageSummary defines model for AntflyInferenceModelUsageSummary.
+type AntflyInferenceModelUsageSummary struct {
+	BillingCycleStart    time.Time                             `json:"billing_cycle_start"`
+	CloudInstanceId      openapi_types.UUID                    `json:"cloud_instance_id,omitempty,omitzero"`
+	EstimatedCostUsd     float64                               `json:"estimated_cost_usd"`
+	ModelFilter          string                                `json:"model_filter,omitempty,omitzero"`
+	Models               []AntflyInferenceModelUsageSummaryRow `json:"models"`
+	OrganizationId       openapi_types.UUID                    `json:"organization_id"`
+	TotalRequests        int                                   `json:"total_requests"`
+	TotalTextTokens      int                                   `json:"total_text_tokens"`
+	UnpricedRequestCount int                                   `json:"unpriced_request_count"`
+	UnpricedTextTokens   int                                   `json:"unpriced_text_tokens"`
+}
+
+// AntflyInferenceModelUsageSummaryRow defines model for AntflyInferenceModelUsageSummaryRow.
+type AntflyInferenceModelUsageSummaryRow struct {
+	EstimatedCostUsd        float64   `json:"estimated_cost_usd"`
+	LastSeenAt              time.Time `json:"last_seen_at"`
+	Model                   string    `json:"model"`
+	RequestCount            int       `json:"request_count"`
+	TextTokens              int       `json:"text_tokens"`
+	UsdPerMillionTextTokens float64   `json:"usd_per_million_text_tokens,omitempty,omitzero"`
+}
+
+// AntflyInferenceRequestLog defines model for AntflyInferenceRequestLog.
+type AntflyInferenceRequestLog struct {
+	ApiKeyPrefix            string             `json:"api_key_prefix,omitempty,omitzero"`
+	CloudInstanceId         openapi_types.UUID `json:"cloud_instance_id,omitempty,omitzero"`
+	CreatedAt               time.Time          `json:"created_at"`
+	EndpointPath            string             `json:"endpoint_path"`
+	EstimatedCostUsd        float64            `json:"estimated_cost_usd"`
+	Id                      openapi_types.UUID `json:"id"`
+	LatencyMs               int                `json:"latency_ms"`
+	Model                   string             `json:"model"`
+	OrganizationId          openapi_types.UUID `json:"organization_id"`
+	ResponseStatus          int                `json:"response_status"`
+	TextTokens              int                `json:"text_tokens"`
+	UsdPerMillionTextTokens float64            `json:"usd_per_million_text_tokens,omitempty,omitzero"`
+}
+
+// AntflyInferenceRequestLogList defines model for AntflyInferenceRequestLogList.
+type AntflyInferenceRequestLogList struct {
+	Data []AntflyInferenceRequestLog `json:"data"`
+	Meta PaginationMeta              `json:"meta"`
 }
 
 // CloudGrant defines model for CloudGrant.
@@ -437,6 +537,9 @@ type CloudInstance struct {
 
 	// Region Deployment region
 	Region string `json:"region"`
+
+	// SharedInferenceEnabled Whether this instance may use Antfly shared inference.
+	SharedInferenceEnabled bool `json:"shared_inference_enabled,omitempty,omitzero"`
 
 	// Slug URL-safe identifier (immutable)
 	Slug string `json:"slug"`
@@ -735,10 +838,16 @@ type NodeConfig struct {
 	// ReplicationFactor Raft replication factor
 	ReplicationFactor int `json:"replication_factor,omitempty,omitzero"`
 
+	// SharedInferenceMode Desired Antfly shared inference state. Omitted defaults to enabled for existing instances.
+	SharedInferenceMode NodeConfigSharedInferenceMode `json:"shared_inference_mode,omitempty,omitzero"`
+
 	// Storage Deprecated: use data_storage instead. Persistent storage per data node.
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	Storage string `json:"storage,omitempty,omitzero"`
 }
+
+// NodeConfigSharedInferenceMode Desired Antfly shared inference state. Omitted defaults to enabled for existing instances.
+type NodeConfigSharedInferenceMode string
 
 // NodeConfigUpdate Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
 type NodeConfigUpdate struct {
@@ -908,6 +1017,9 @@ type UpdateCloudInstanceRequest struct {
 	// NodeConfig Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
 	NodeConfig NodeConfigUpdate `json:"node_config,omitempty,omitzero"`
 
+	// SharedInferenceMode Enable or disable Antfly shared inference for this instance.
+	SharedInferenceMode UpdateCloudInstanceRequestSharedInferenceMode `json:"shared_inference_mode,omitempty,omitzero"`
+
 	// TargetAntflyImage Explicit Antfly runtime image for a manual rollout or rollback. When set, Jobsaf patches AntflyCluster.spec.image and health-gates completion.
 	TargetAntflyImage string `json:"target_antfly_image,omitempty,omitzero"`
 
@@ -923,6 +1035,9 @@ type UpdateCloudInstanceRequest struct {
 	// VersionPolicy Antfly runtime version policy for managed upgrades.
 	VersionPolicy CloudInstanceVersionPolicy `json:"version_policy,omitempty,omitzero"`
 }
+
+// UpdateCloudInstanceRequestSharedInferenceMode Enable or disable Antfly shared inference for this instance.
+type UpdateCloudInstanceRequestSharedInferenceMode string
 
 // UpdateCloudUserAttributesRequest defines model for UpdateCloudUserAttributesRequest.
 type UpdateCloudUserAttributesRequest struct {
@@ -1024,6 +1139,33 @@ type ListOrganizationsParams struct {
 
 	// Limit Maximum number of items to return
 	Limit Limit `form:"limit,omitempty" json:"limit,omitempty,omitzero"`
+}
+
+// GetAntflyInferenceDailyCostParams defines parameters for GetAntflyInferenceDailyCost.
+type GetAntflyInferenceDailyCostParams struct {
+	// CloudInstanceId Optional Cloud instance filter
+	CloudInstanceId UUID `form:"cloud_instance_id,omitempty" json:"cloud_instance_id,omitempty,omitzero"`
+	Days            int  `form:"days,omitempty" json:"days,omitempty,omitzero"`
+}
+
+// ListAntflyInferenceRequestLogsParams defines parameters for ListAntflyInferenceRequestLogs.
+type ListAntflyInferenceRequestLogsParams struct {
+	// CloudInstanceId Optional Cloud instance filter
+	CloudInstanceId UUID `form:"cloud_instance_id,omitempty" json:"cloud_instance_id,omitempty,omitzero"`
+
+	// Model Optional exact model filter
+	Model  string `form:"model,omitempty" json:"model,omitempty,omitzero"`
+	Offset int    `form:"offset,omitempty" json:"offset,omitempty,omitzero"`
+	Limit  int    `form:"limit,omitempty" json:"limit,omitempty,omitzero"`
+}
+
+// GetAntflyInferenceUsageSummaryParams defines parameters for GetAntflyInferenceUsageSummary.
+type GetAntflyInferenceUsageSummaryParams struct {
+	// CloudInstanceId Optional Cloud instance filter
+	CloudInstanceId UUID `form:"cloud_instance_id,omitempty" json:"cloud_instance_id,omitempty,omitzero"`
+
+	// Model Optional exact model filter
+	Model string `form:"model,omitempty" json:"model,omitempty,omitzero"`
 }
 
 // ListCloudInstancesParams defines parameters for ListCloudInstances.
@@ -1190,6 +1332,15 @@ type ClientInterface interface {
 	// GetOrganization request
 	GetOrganization(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAntflyInferenceDailyCost request
+	GetAntflyInferenceDailyCost(ctx context.Context, orgId OrgId, params *GetAntflyInferenceDailyCostParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAntflyInferenceRequestLogs request
+	ListAntflyInferenceRequestLogs(ctx context.Context, orgId OrgId, params *ListAntflyInferenceRequestLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAntflyInferenceUsageSummary request
+	GetAntflyInferenceUsageSummary(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListCloudGroups request
 	ListCloudGroups(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1324,6 +1475,42 @@ func (c *Client) ListOrganizations(ctx context.Context, params *ListOrganization
 
 func (c *Client) GetOrganization(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOrganizationRequest(c.Server, orgId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAntflyInferenceDailyCost(ctx context.Context, orgId OrgId, params *GetAntflyInferenceDailyCostParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAntflyInferenceDailyCostRequest(c.Server, orgId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAntflyInferenceRequestLogs(ctx context.Context, orgId OrgId, params *ListAntflyInferenceRequestLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAntflyInferenceRequestLogsRequest(c.Server, orgId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAntflyInferenceUsageSummary(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAntflyInferenceUsageSummaryRequest(c.Server, orgId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1904,6 +2091,217 @@ func NewGetOrganizationRequest(server string, orgId OrgId) (*http.Request, error
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAntflyInferenceDailyCostRequest generates requests for GetAntflyInferenceDailyCost
+func NewGetAntflyInferenceDailyCostRequest(server string, orgId OrgId, params *GetAntflyInferenceDailyCostParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/antfly-inference-daily-cost", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cloud_instance_id", params.CloudInstanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "days", params.Days, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAntflyInferenceRequestLogsRequest generates requests for ListAntflyInferenceRequestLogs
+func NewListAntflyInferenceRequestLogsRequest(server string, orgId OrgId, params *ListAntflyInferenceRequestLogsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/antfly-inference-logs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cloud_instance_id", params.CloudInstanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "model", params.Model, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "offset", params.Offset, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAntflyInferenceUsageSummaryRequest generates requests for GetAntflyInferenceUsageSummary
+func NewGetAntflyInferenceUsageSummaryRequest(server string, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/antfly-inference-usage-summary", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cloud_instance_id", params.CloudInstanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "model", params.Model, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -3168,6 +3566,15 @@ type ClientWithResponsesInterface interface {
 	// GetOrganizationWithResponse request
 	GetOrganizationWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*GetOrganizationResponse, error)
 
+	// GetAntflyInferenceDailyCostWithResponse request
+	GetAntflyInferenceDailyCostWithResponse(ctx context.Context, orgId OrgId, params *GetAntflyInferenceDailyCostParams, reqEditors ...RequestEditorFn) (*GetAntflyInferenceDailyCostResponse, error)
+
+	// ListAntflyInferenceRequestLogsWithResponse request
+	ListAntflyInferenceRequestLogsWithResponse(ctx context.Context, orgId OrgId, params *ListAntflyInferenceRequestLogsParams, reqEditors ...RequestEditorFn) (*ListAntflyInferenceRequestLogsResponse, error)
+
+	// GetAntflyInferenceUsageSummaryWithResponse request
+	GetAntflyInferenceUsageSummaryWithResponse(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*GetAntflyInferenceUsageSummaryResponse, error)
+
 	// ListCloudGroupsWithResponse request
 	ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error)
 
@@ -3392,6 +3799,111 @@ func (r GetOrganizationResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetOrganizationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetAntflyInferenceDailyCostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AntflyInferenceDailyCostSummary
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAntflyInferenceDailyCostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAntflyInferenceDailyCostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAntflyInferenceDailyCostResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListAntflyInferenceRequestLogsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AntflyInferenceRequestLogList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAntflyInferenceRequestLogsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAntflyInferenceRequestLogsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAntflyInferenceRequestLogsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetAntflyInferenceUsageSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AntflyInferenceModelUsageSummary
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON500      *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAntflyInferenceUsageSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAntflyInferenceUsageSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAntflyInferenceUsageSummaryResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -4287,6 +4799,33 @@ func (c *ClientWithResponses) GetOrganizationWithResponse(ctx context.Context, o
 	return ParseGetOrganizationResponse(rsp)
 }
 
+// GetAntflyInferenceDailyCostWithResponse request returning *GetAntflyInferenceDailyCostResponse
+func (c *ClientWithResponses) GetAntflyInferenceDailyCostWithResponse(ctx context.Context, orgId OrgId, params *GetAntflyInferenceDailyCostParams, reqEditors ...RequestEditorFn) (*GetAntflyInferenceDailyCostResponse, error) {
+	rsp, err := c.GetAntflyInferenceDailyCost(ctx, orgId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAntflyInferenceDailyCostResponse(rsp)
+}
+
+// ListAntflyInferenceRequestLogsWithResponse request returning *ListAntflyInferenceRequestLogsResponse
+func (c *ClientWithResponses) ListAntflyInferenceRequestLogsWithResponse(ctx context.Context, orgId OrgId, params *ListAntflyInferenceRequestLogsParams, reqEditors ...RequestEditorFn) (*ListAntflyInferenceRequestLogsResponse, error) {
+	rsp, err := c.ListAntflyInferenceRequestLogs(ctx, orgId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAntflyInferenceRequestLogsResponse(rsp)
+}
+
+// GetAntflyInferenceUsageSummaryWithResponse request returning *GetAntflyInferenceUsageSummaryResponse
+func (c *ClientWithResponses) GetAntflyInferenceUsageSummaryWithResponse(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*GetAntflyInferenceUsageSummaryResponse, error) {
+	rsp, err := c.GetAntflyInferenceUsageSummary(ctx, orgId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAntflyInferenceUsageSummaryResponse(rsp)
+}
+
 // ListCloudGroupsWithResponse request returning *ListCloudGroupsResponse
 func (c *ClientWithResponses) ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error) {
 	rsp, err := c.ListCloudGroups(ctx, orgId, reqEditors...)
@@ -4770,6 +5309,189 @@ func ParseGetOrganizationResponse(rsp *http.Response) (*GetOrganizationResponse,
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAntflyInferenceDailyCostResponse parses an HTTP response from a GetAntflyInferenceDailyCostWithResponse call
+func ParseGetAntflyInferenceDailyCostResponse(rsp *http.Response) (*GetAntflyInferenceDailyCostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAntflyInferenceDailyCostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AntflyInferenceDailyCostSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAntflyInferenceRequestLogsResponse parses an HTTP response from a ListAntflyInferenceRequestLogsWithResponse call
+func ParseListAntflyInferenceRequestLogsResponse(rsp *http.Response) (*ListAntflyInferenceRequestLogsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAntflyInferenceRequestLogsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AntflyInferenceRequestLogList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetAntflyInferenceUsageSummaryResponse parses an HTTP response from a GetAntflyInferenceUsageSummaryWithResponse call
+func ParseGetAntflyInferenceUsageSummaryResponse(rsp *http.Response) (*GetAntflyInferenceUsageSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAntflyInferenceUsageSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AntflyInferenceModelUsageSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 
@@ -5984,135 +6706,151 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"+v8BAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

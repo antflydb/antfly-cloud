@@ -1,4 +1,5 @@
-export { client, default } from "./client";
+export type { CloudAPIErrorKind } from "./client";
+export { CloudAPIError, client, cloudAPIError, default } from "./client";
 export {
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,

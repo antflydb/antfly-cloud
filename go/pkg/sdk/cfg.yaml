@@ -26,6 +26,9 @@ output-options:
     - listCloudInstanceEvents
     - getCloudInstanceMetrics
     - getCloudUsage
+    - getAntflyInferenceUsageSummary
+    - listAntflyInferenceRequestLogs
+    - getAntflyInferenceDailyCost
     - listCloudGroups
     - createCloudGroup
     - updateCloudGroup
