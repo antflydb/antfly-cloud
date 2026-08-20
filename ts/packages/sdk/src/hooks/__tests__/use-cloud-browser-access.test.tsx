@@ -78,4 +78,44 @@ describe("cloud browser access hooks", () => {
     await waitFor(() => expect(result.current.policy.data).toEqual(saved));
     expect(queryClient.getQueryData(queryKey)).toEqual(saved);
   });
+
+  it("prevents an older in-flight policy read from replacing the saved response", async () => {
+    let resolveStaleRead: (policy: CloudBrowserAccessPolicy) => void = () => undefined;
+    const staleRead = new Promise<CloudBrowserAccessPolicy>((resolve) => {
+      resolveStaleRead = resolve;
+    });
+    const staleFetch = queryClient
+      .fetchQuery({ queryKey, queryFn: () => staleRead })
+      .catch(() => undefined);
+
+    await waitFor(() => {
+      expect(queryClient.getQueryState(queryKey)?.fetchStatus).toBe("fetching");
+    });
+    vi.spyOn(client, "PUT").mockResolvedValue({
+      data: saved,
+      error: undefined,
+      response: new Response(JSON.stringify(saved), { status: 200 }),
+    } as Awaited<ReturnType<typeof client.PUT>>);
+
+    const { result } = renderHook(
+      () => ({
+        policy: useCloudBrowserAccess(orgId, instanceId),
+        update: useUpdateCloudBrowserAccess(orgId, instanceId),
+      }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      await result.current.update.mutateAsync({
+        enabled: saved.enabled,
+        allowed_origins: saved.allowed_origins,
+        rate_limits: saved.rate_limits,
+      });
+    });
+    resolveStaleRead(original);
+    await staleFetch;
+
+    await waitFor(() => expect(result.current.policy.data).toEqual(saved));
+    expect(queryClient.getQueryData(queryKey)).toEqual(saved);
+  });
 });

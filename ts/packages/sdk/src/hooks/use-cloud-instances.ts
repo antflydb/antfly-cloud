@@ -875,8 +875,12 @@ export function useCloudBrowserAccessTables(orgId: string | null, instanceId: st
  */
 export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
   const queryClient = useQueryClient();
+  const queryKey = ["organizations", orgId, "cloud-instances", instanceId, "browser-access"];
 
   return useMutation({
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey, exact: true });
+    },
     mutationFn: async (body: UpdateCloudBrowserAccessRequest) => {
       const { data, error } = await client.PUT(
         "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access",
@@ -892,10 +896,7 @@ export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
       return data;
     },
     onSuccess: (saved) => {
-      queryClient.setQueryData(
-        ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
-        saved
-      );
+      queryClient.setQueryData(queryKey, saved);
     },
   });
 }
