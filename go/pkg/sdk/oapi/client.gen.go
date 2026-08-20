@@ -26,6 +26,27 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "BearerAuth.Scopes"
 )
 
+// Defines values for CloudAPIKeyType.
+const (
+	CloudAPIKeyTypeAdmin     CloudAPIKeyType = "admin"
+	CloudAPIKeyTypeReadOnly  CloudAPIKeyType = "read_only"
+	CloudAPIKeyTypeReadWrite CloudAPIKeyType = "read_write"
+)
+
+// Valid indicates whether the value is a known member of the CloudAPIKeyType enum.
+func (e CloudAPIKeyType) Valid() bool {
+	switch e {
+	case CloudAPIKeyTypeAdmin:
+		return true
+	case CloudAPIKeyTypeReadOnly:
+		return true
+	case CloudAPIKeyTypeReadWrite:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CloudGrantSubjectType.
 const (
 	CloudGrantSubjectTypeCloudApiKey CloudGrantSubjectType = "cloud_api_key"
@@ -420,6 +441,44 @@ type AntflyInferenceRequestLogList struct {
 	Meta PaginationMeta              `json:"meta"`
 }
 
+// CloudAPIKeyCreated Returned only at creation time. The full key is never shown again.
+type CloudAPIKeyCreated struct {
+	BrowserAccess bool `json:"browser_access,omitempty,omitzero"`
+
+	// Id RFC 4122 UUID identifier
+	Id UUID `json:"id"`
+
+	// Key The full API key (only shown once)
+	Key       string `json:"key"`
+	KeyPrefix string `json:"key_prefix"`
+
+	// KeyType API key permission level
+	KeyType CloudAPIKeyType `json:"key_type"`
+	Name    string          `json:"name"`
+}
+
+// CloudAPIKeyType API key permission level
+type CloudAPIKeyType string
+
+// CloudBrowserAccessPolicy defines model for CloudBrowserAccessPolicy.
+type CloudBrowserAccessPolicy struct {
+	// AllowedOrigins Exact origins allowed to call the instance. Public origins must use HTTPS; HTTP is accepted only for localhost and loopback development. Wildcards and origins containing paths, queries, fragments, or credentials are rejected.
+	AllowedOrigins []string `json:"allowed_origins"`
+
+	// Enabled Whether direct browser requests are accepted for this instance. Disabled by default.
+	Enabled bool `json:"enabled"`
+
+	// RateLimits Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection.
+	RateLimits CloudBrowserRateLimits `json:"rate_limits"`
+}
+
+// CloudBrowserRateLimits Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection.
+type CloudBrowserRateLimits struct {
+	ConcurrentRequestsPerKey int `json:"concurrent_requests_per_key,omitempty,omitzero"`
+	RequestsPerMinutePerIp   int `json:"requests_per_minute_per_ip,omitempty,omitzero"`
+	RequestsPerMinutePerKey  int `json:"requests_per_minute_per_key,omitempty,omitzero"`
+}
+
 // CloudGrant defines model for CloudGrant.
 type CloudGrant struct {
 	// Actions Explicit action strings or role presets such as instance_viewer, instance_developer, instance_admin.
@@ -720,6 +779,41 @@ type ConnectionDetails struct {
 	Status CloudInstanceStatus `json:"status"`
 }
 
+// CreateCloudAPIKeyGrantRequest Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients.
+type CreateCloudAPIKeyGrantRequest struct {
+	Actions           []string               `json:"actions"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty,omitzero"`
+	RowFilter         map[string]interface{} `json:"row_filter,omitempty,omitzero"`
+	RowFilterTemplate map[string]interface{} `json:"row_filter_template,omitempty,omitzero"`
+
+	// TableName Table scope. Browser keys require an explicit named table; omitted values retain the wildcard behavior for non-browser keys.
+	TableName string `json:"table_name,omitempty,omitzero"`
+}
+
+// CreateCloudAPIKeyRequest defines model for CreateCloudAPIKeyRequest.
+type CreateCloudAPIKeyRequest struct {
+	// BrowserAccess Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
+	BrowserAccess bool `json:"browser_access,omitempty,omitzero"`
+
+	// ExpiresAt ISO 8601 timestamp
+	ExpiresAt Timestamp `json:"expires_at,omitempty,omitzero"`
+
+	// Grants Optional initial grants for the created API key. Colony assigns every grant to the newly created key.
+	Grants []CreateCloudAPIKeyGrantRequest `json:"grants,omitempty,omitzero"`
+
+	// HostedInferenceLimits Optional hosted inference spend and rate limits for an API key or organization.
+	HostedInferenceLimits HostedInferenceLimits `json:"hosted_inference_limits,omitempty,omitzero"`
+
+	// KeyType API key permission level
+	KeyType CloudAPIKeyType `json:"key_type,omitempty,omitzero"`
+
+	// Name Human-readable key name
+	Name string `json:"name"`
+
+	// QuotaQueriesPerMonth Per-key monthly query quota (null = unlimited)
+	QuotaQueriesPerMonth int `json:"quota_queries_per_month,omitempty,omitzero"`
+}
+
 // CreateCloudGroupRequest defines model for CreateCloudGroupRequest.
 type CreateCloudGroupRequest struct {
 	Description string                 `json:"description,omitempty,omitzero"`
@@ -753,6 +847,21 @@ type Error struct {
 
 	// Type URI identifying the problem type
 	Type string `json:"type"`
+}
+
+// HostedInferenceLimits Optional hosted inference spend and rate limits for an API key or organization.
+type HostedInferenceLimits struct {
+	// ConcurrentRequests Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
+	ConcurrentRequests int `json:"concurrent_requests,omitempty,omitzero"`
+
+	// ManagedSpendCentsPerMonth Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+	ManagedSpendCentsPerMonth int `json:"managed_spend_cents_per_month,omitempty,omitzero"`
+
+	// RequestsPerMinute External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
+	RequestsPerMinute int `json:"requests_per_minute,omitempty,omitzero"`
+
+	// TokensPerMinute Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer.
+	TokensPerMinute int `json:"tokens_per_minute,omitempty,omitzero"`
 }
 
 // InstanceMetrics defines model for InstanceMetrics.
@@ -996,6 +1105,15 @@ type Timestamp = time.Time
 // UUID RFC 4122 UUID identifier
 type UUID = openapi_types.UUID
 
+// UpdateCloudBrowserAccessRequest defines model for UpdateCloudBrowserAccessRequest.
+type UpdateCloudBrowserAccessRequest struct {
+	AllowedOrigins []string `json:"allowed_origins"`
+	Enabled        bool     `json:"enabled"`
+
+	// RateLimits Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection.
+	RateLimits CloudBrowserRateLimits `json:"rate_limits,omitempty,omitzero"`
+}
+
 // UpdateCloudGroupRequest defines model for UpdateCloudGroupRequest.
 type UpdateCloudGroupRequest struct {
 	Description string                 `json:"description,omitempty,omitzero"`
@@ -1229,6 +1347,12 @@ type AddCloudGroupMemberJSONRequestBody = AddCloudGroupMemberRequest
 // UpdateCloudInstanceJSONRequestBody defines body for UpdateCloudInstance for application/json ContentType.
 type UpdateCloudInstanceJSONRequestBody = UpdateCloudInstanceRequest
 
+// CreateCloudAPIKeyJSONRequestBody defines body for CreateCloudAPIKey for application/json ContentType.
+type CreateCloudAPIKeyJSONRequestBody = CreateCloudAPIKeyRequest
+
+// UpdateCloudBrowserAccessJSONRequestBody defines body for UpdateCloudBrowserAccess for application/json ContentType.
+type UpdateCloudBrowserAccessJSONRequestBody = UpdateCloudBrowserAccessRequest
+
 // UpsertCloudGrantJSONRequestBody defines body for UpsertCloudGrant for application/json ContentType.
 type UpsertCloudGrantJSONRequestBody = UpsertCloudGrantRequest
 
@@ -1375,6 +1499,19 @@ type ClientInterface interface {
 	UpdateCloudInstanceWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateCloudInstance(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateCloudAPIKeyWithBody request with any body
+	CreateCloudAPIKeyWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCloudAPIKey(ctx context.Context, orgId OrgId, instanceId InstanceId, body CreateCloudAPIKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCloudBrowserAccess request
+	GetCloudBrowserAccess(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCloudBrowserAccessWithBody request with any body
+	UpdateCloudBrowserAccessWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCloudBrowserAccess(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudBrowserAccessJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCloudInstanceConnection request
 	GetCloudInstanceConnection(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1667,6 +1804,66 @@ func (c *Client) UpdateCloudInstanceWithBody(ctx context.Context, orgId OrgId, i
 
 func (c *Client) UpdateCloudInstance(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateCloudInstanceRequest(c.Server, orgId, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudAPIKeyWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudAPIKeyRequestWithBody(c.Server, orgId, instanceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudAPIKey(ctx context.Context, orgId OrgId, instanceId InstanceId, body CreateCloudAPIKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudAPIKeyRequest(c.Server, orgId, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCloudBrowserAccess(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCloudBrowserAccessRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudBrowserAccessWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudBrowserAccessRequestWithBody(c.Server, orgId, instanceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCloudBrowserAccess(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudBrowserAccessJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCloudBrowserAccessRequest(c.Server, orgId, instanceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2750,6 +2947,155 @@ func NewUpdateCloudInstanceRequestWithBody(server string, orgId OrgId, instanceI
 	return req, nil
 }
 
+// NewCreateCloudAPIKeyRequest calls the generic CreateCloudAPIKey builder with application/json body
+func NewCreateCloudAPIKeyRequest(server string, orgId OrgId, instanceId InstanceId, body CreateCloudAPIKeyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateCloudAPIKeyRequestWithBody(server, orgId, instanceId, "application/json", bodyReader)
+}
+
+// NewCreateCloudAPIKeyRequestWithBody generates requests for CreateCloudAPIKey with any type of body
+func NewCreateCloudAPIKeyRequestWithBody(server string, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/api-keys", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetCloudBrowserAccessRequest generates requests for GetCloudBrowserAccess
+func NewGetCloudBrowserAccessRequest(server string, orgId OrgId, instanceId InstanceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/browser-access", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateCloudBrowserAccessRequest calls the generic UpdateCloudBrowserAccess builder with application/json body
+func NewUpdateCloudBrowserAccessRequest(server string, orgId OrgId, instanceId InstanceId, body UpdateCloudBrowserAccessJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCloudBrowserAccessRequestWithBody(server, orgId, instanceId, "application/json", bodyReader)
+}
+
+// NewUpdateCloudBrowserAccessRequestWithBody generates requests for UpdateCloudBrowserAccess with any type of body
+func NewUpdateCloudBrowserAccessRequestWithBody(server string, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/browser-access", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetCloudInstanceConnectionRequest generates requests for GetCloudInstanceConnection
 func NewGetCloudInstanceConnectionRequest(server string, orgId OrgId, instanceId InstanceId) (*http.Request, error) {
 	var err error
@@ -3610,6 +3956,19 @@ type ClientWithResponsesInterface interface {
 
 	UpdateCloudInstanceWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudInstanceResponse, error)
 
+	// CreateCloudAPIKeyWithBodyWithResponse request with any body
+	CreateCloudAPIKeyWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudAPIKeyResponse, error)
+
+	CreateCloudAPIKeyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body CreateCloudAPIKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudAPIKeyResponse, error)
+
+	// GetCloudBrowserAccessWithResponse request
+	GetCloudBrowserAccessWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudBrowserAccessResponse, error)
+
+	// UpdateCloudBrowserAccessWithBodyWithResponse request with any body
+	UpdateCloudBrowserAccessWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudBrowserAccessResponse, error)
+
+	UpdateCloudBrowserAccessWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudBrowserAccessJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudBrowserAccessResponse, error)
+
 	// GetCloudInstanceConnectionWithResponse request
 	GetCloudInstanceConnectionWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceConnectionResponse, error)
 
@@ -4210,6 +4569,107 @@ func (r UpdateCloudInstanceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateCloudInstanceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateCloudAPIKeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CloudAPIKeyCreated
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateCloudAPIKeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateCloudAPIKeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateCloudAPIKeyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetCloudBrowserAccessResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudBrowserAccessPolicy
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCloudBrowserAccessResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCloudBrowserAccessResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCloudBrowserAccessResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateCloudBrowserAccessResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudBrowserAccessPolicy
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCloudBrowserAccessResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCloudBrowserAccessResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateCloudBrowserAccessResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -4937,6 +5397,49 @@ func (c *ClientWithResponses) UpdateCloudInstanceWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseUpdateCloudInstanceResponse(rsp)
+}
+
+// CreateCloudAPIKeyWithBodyWithResponse request with arbitrary body returning *CreateCloudAPIKeyResponse
+func (c *ClientWithResponses) CreateCloudAPIKeyWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudAPIKeyResponse, error) {
+	rsp, err := c.CreateCloudAPIKeyWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudAPIKeyResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateCloudAPIKeyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body CreateCloudAPIKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudAPIKeyResponse, error) {
+	rsp, err := c.CreateCloudAPIKey(ctx, orgId, instanceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudAPIKeyResponse(rsp)
+}
+
+// GetCloudBrowserAccessWithResponse request returning *GetCloudBrowserAccessResponse
+func (c *ClientWithResponses) GetCloudBrowserAccessWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudBrowserAccessResponse, error) {
+	rsp, err := c.GetCloudBrowserAccess(ctx, orgId, instanceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCloudBrowserAccessResponse(rsp)
+}
+
+// UpdateCloudBrowserAccessWithBodyWithResponse request with arbitrary body returning *UpdateCloudBrowserAccessResponse
+func (c *ClientWithResponses) UpdateCloudBrowserAccessWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCloudBrowserAccessResponse, error) {
+	rsp, err := c.UpdateCloudBrowserAccessWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudBrowserAccessResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCloudBrowserAccessWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body UpdateCloudBrowserAccessJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCloudBrowserAccessResponse, error) {
+	rsp, err := c.UpdateCloudBrowserAccess(ctx, orgId, instanceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCloudBrowserAccessResponse(rsp)
 }
 
 // GetCloudInstanceConnectionWithResponse request returning *GetCloudInstanceConnectionResponse
@@ -5930,6 +6433,161 @@ func ParseUpdateCloudInstanceResponse(rsp *http.Response) (*UpdateCloudInstanceR
 	return response, nil
 }
 
+// ParseCreateCloudAPIKeyResponse parses an HTTP response from a CreateCloudAPIKeyWithResponse call
+func ParseCreateCloudAPIKeyResponse(rsp *http.Response) (*CreateCloudAPIKeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateCloudAPIKeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CloudAPIKeyCreated
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCloudBrowserAccessResponse parses an HTTP response from a GetCloudBrowserAccessWithResponse call
+func ParseGetCloudBrowserAccessResponse(rsp *http.Response) (*GetCloudBrowserAccessResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCloudBrowserAccessResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudBrowserAccessPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCloudBrowserAccessResponse parses an HTTP response from a UpdateCloudBrowserAccessWithResponse call
+func ParseUpdateCloudBrowserAccessResponse(rsp *http.Response) (*UpdateCloudBrowserAccessResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCloudBrowserAccessResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudBrowserAccessPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetCloudInstanceConnectionResponse parses an HTTP response from a GetCloudInstanceConnectionWithResponse call
 func ParseGetCloudInstanceConnectionResponse(rsp *http.Response) (*GetCloudInstanceConnectionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -6706,151 +7364,176 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"+v8BAAD//w==",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

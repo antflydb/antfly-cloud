@@ -30,11 +30,10 @@ func TestStatusCommandUsesReadOnlyEndpoints(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("ANTFLY_CLOUD_TOKEN", "token")
 	var out, errb bytes.Buffer
 	cmd := newRootCommand(&out, &errb)
-	cmd.SetArgs([]string{"--api-url", srv.URL + "/api/v1", "status"})
+	cmd.SetArgs([]string{"--config", filepath.Join(t.TempDir(), "missing.yaml"), "--api-url", srv.URL + "/api/v1", "status"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}

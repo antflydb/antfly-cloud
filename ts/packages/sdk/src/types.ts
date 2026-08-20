@@ -228,6 +228,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/mfa-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get organization MFA policy
+         * @description Get the persisted organization MFA enforcement policy. The extensible organization settings object cannot override this policy.
+         */
+        get: operations["getOrganizationMfaPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Enable organization MFA policy
+         * @description Enables MFA enforcement for a legacy organization. Public API callers cannot disable an active policy.
+         */
+        patch: operations["updateOrganizationMfaPolicy"];
+        trace?: never;
+    };
     "/invitations/{token}": {
         parameters: {
             query?: never;
@@ -588,6 +612,30 @@ export interface paths {
         patch: operations["updateCloudInstance"];
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get browser access policy
+         * @description Get the opt-in CORS and edge admission policy for browser clients that call query APIs directly.
+         */
+        get: operations["getCloudBrowserAccess"];
+        /**
+         * Update browser access policy
+         * @description Enable or disable direct browser access and configure exact allowed origins plus per-key and per-IP edge admission limits. Wildcard origins are not accepted. These limits are enforced per edge replica and complement the fleet-wide WAF.
+         */
+        put: operations["updateCloudBrowserAccess"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects": {
         parameters: {
             query?: never;
@@ -695,6 +743,28 @@ export interface paths {
          *     instance namespace, CRD, or persistent volumes.
          */
         post: operations["provisionCloudInstance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart a single-node cloud instance
+         * @description Restarts the database pod for a single-node instance without deleting
+         *     its AntflyCluster, configuration, secrets, or persistent volume. The
+         *     action briefly interrupts connections and is processed asynchronously.
+         */
+        post: operations["restartCloudInstance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1509,6 +1579,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/2fa/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recover a lost authenticator with a backup code
+         * @description Atomically invalidates the old authenticator and backup codes, revokes interactive grants, and returns only a restricted replacement-factor enrollment session.
+         */
+        post: operations["postAuth2faRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/2fa/setup": {
         parameters: {
             query?: never;
@@ -1549,6 +1639,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/2fa/acknowledge-backup-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Acknowledge backup codes and complete MFA enrollment
+         * @description Persists backup-code acknowledgement and elevates the restricted enrollment session.
+         */
+        post: operations["postAuth2faAcknowledgeBackupCodes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/2fa/disable": {
         parameters: {
             query?: never;
@@ -1583,6 +1693,26 @@ export interface paths {
          * @description Generate new backup codes (requires password, invalidates old ones)
          */
         post: operations["postAuth2faBackupCodes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/2fa/backup-codes/reissue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reissue unacknowledged enrollment backup codes
+         * @description Replaces and returns recovery codes only for the restricted enrollment session after a prior one-time delivery was lost.
+         */
+        post: operations["postAuth2faBackupCodesReissue"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1908,7 +2038,7 @@ export interface components {
          * @description Type of action performed
          * @enum {string}
          */
-        AuditAction: "create" | "read" | "update" | "delete" | "accept" | "verify" | "enable" | "disable" | "revoke" | "login" | "deprovision";
+        AuditAction: "create" | "read" | "update" | "delete" | "accept" | "verify" | "enable" | "disable" | "recover" | "revoke" | "login" | "deprovision";
         AuditLog: {
             id: components["schemas"]["UUID"];
             organization_id: components["schemas"]["UUID"];
@@ -1963,6 +2093,10 @@ export interface components {
              * @example Slug must match pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
              */
             error?: string | null;
+        };
+        OrganizationMfaPolicy: {
+            /** @description Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API. */
+            require_two_factor: boolean;
         };
         "InvitationResponse-2": {
             /** @description Unique invitation identifier */
@@ -2662,6 +2796,34 @@ export interface components {
             /** @description Antfly Cloud management actions allowed by antfly_cloud_* keys. */
             management_scopes?: string[];
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+            /** @description Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits. */
+            browser_access?: boolean;
+        };
+        CloudBrowserAccessPolicy: {
+            /** @description Whether direct browser requests are accepted for this instance. Disabled by default. */
+            enabled: boolean;
+            /**
+             * @description Exact origins allowed to call the instance. Public origins must use HTTPS; HTTP is accepted only for localhost and loopback development. Wildcards and origins containing paths, queries, fragments, or credentials are rejected.
+             * @example [
+             *       "https://docs.example.com"
+             *     ]
+             */
+            allowed_origins: string[];
+            rate_limits: components["schemas"]["CloudBrowserRateLimits"];
+        };
+        UpdateCloudBrowserAccessRequest: {
+            enabled: boolean;
+            allowed_origins: string[];
+            rate_limits?: components["schemas"]["CloudBrowserRateLimits"];
+        };
+        /** @description Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection. */
+        CloudBrowserRateLimits: {
+            /** @default 60 */
+            requests_per_minute_per_key: number;
+            /** @default 120 */
+            requests_per_minute_per_ip: number;
+            /** @default 5 */
+            concurrent_requests_per_key: number;
         };
         /** @description Optional hosted inference spend and rate limits for an API key or organization. */
         HostedInferenceLimits: {
@@ -2686,6 +2848,7 @@ export interface components {
             key_prefix: string;
             name: string;
             key_type: components["schemas"]["CloudAPIKeyType"];
+            browser_access?: boolean;
         };
         CreateCloudAPIKeyRequest: {
             /**
@@ -2697,9 +2860,26 @@ export interface components {
             expires_at?: components["schemas"]["Timestamp"];
             /** @description Per-key monthly query quota (null = unlimited) */
             quota_queries_per_month?: number | null;
-            /** @description Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted. */
-            grants?: components["schemas"]["UpsertCloudGrantRequest"][];
+            /** @description Optional initial grants for the created API key. Colony assigns every grant to the newly created key. */
+            grants?: components["schemas"]["CreateCloudAPIKeyGrantRequest"][];
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
+            /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions. */
+            browser_access?: boolean;
+        };
+        /** @description Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients. */
+        CreateCloudAPIKeyGrantRequest: {
+            /** @description Table scope. Browser keys require an explicit named table; omitted values retain the wildcard behavior for non-browser keys. */
+            table_name?: string;
+            actions: string[];
+            row_filter?: {
+                [key: string]: unknown;
+            } | null;
+            row_filter_template?: {
+                [key: string]: unknown;
+            } | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         CreateCloudManagementAPIKeyRequest: {
             /**
@@ -3270,6 +3450,8 @@ export interface components {
         ResendVerificationRequest: {
             /** Format: email */
             email: string;
+            /** @description Post-verification redirect URL */
+            redirect_url?: string;
         };
         TwoFactorVerifyRequest: {
             temp_token: string;
@@ -3279,6 +3461,14 @@ export interface components {
         TwoFactorVerifyBackupRequest: {
             temp_token: string;
             backup_code: string;
+            redirect_url?: string;
+        };
+        TwoFactorRecoveryRequest: {
+            /** @description Pending-login token returned after successful local primary authentication */
+            temp_token: string;
+            /** @description Unused backup code for the exact pending-login user */
+            backup_code: string;
+            /** @description Validated destination to resume after replacement-factor enrollment and backup-code acknowledgement */
             redirect_url?: string;
         };
         TwoFactorRedirectResponse: {
@@ -3296,6 +3486,12 @@ export interface components {
         TwoFactorVerifySetupResponse: {
             enabled: boolean;
             backup_codes: string[];
+            /** @description True when the restricted enrollment session must acknowledge backup codes before MFA assurance is granted. */
+            requires_backup_codes_acknowledgement?: boolean;
+        };
+        TwoFactorAcknowledgeBackupCodesRequest: {
+            /** @description Confirms the user saved the newly generated backup codes. */
+            acknowledged: boolean;
         };
         TwoFactorDisableRequest: {
             /** Format: password */
@@ -4002,6 +4198,63 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             500: components["responses"]["InternalServerError"];
+        };
+    };
+    getOrganizationMfaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organization MFA policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationMfaPolicy"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateOrganizationMfaPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizationMfaPolicy"];
+            };
+        };
+        responses: {
+            /** @description Organization MFA policy enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationMfaPolicy"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getInvitation: {
@@ -4770,6 +5023,67 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getCloudBrowserAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Browser access policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudBrowserAccessPolicy"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCloudBrowserAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCloudBrowserAccessRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated browser access policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudBrowserAccessPolicy"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listCloudInstanceProviderAuthObjects: {
         parameters: {
             query: {
@@ -4954,6 +5268,44 @@ export interface operations {
                 };
             };
             /** @description Provisioning accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudInstance"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    restartCloudInstance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An equivalent restart is already active */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudInstance"];
+                };
+            };
+            /** @description Restart accepted */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -6701,6 +7053,48 @@ export interface operations {
             };
         };
     };
+    postAuth2faRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorRecoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Recovery started; replacement authenticator enrollment is required */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorRedirectResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+            /** @description Invalid backup code or pending-login token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+        };
+    };
     postAuth2faSetup: {
         parameters: {
             query?: never;
@@ -6781,6 +7175,48 @@ export interface operations {
             };
         };
     };
+    postAuth2faAcknowledgeBackupCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorAcknowledgeBackupCodesRequest"];
+            };
+        };
+        responses: {
+            /** @description Enrollment completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TwoFactorRedirectResponse"];
+                };
+            };
+            /** @description Acknowledgement is missing or enrollment is not pending */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+        };
+    };
     postAuth2faDisable: {
         parameters: {
             query?: never;
@@ -6814,6 +7250,15 @@ export interface operations {
             };
             /** @description Invalid password, code, or authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+            /** @description MFA is required by policy (MFA_POLICY_REQUIRED) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6855,6 +7300,44 @@ export interface operations {
                 };
             };
             /** @description Invalid password or authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+        };
+    };
+    postAuth2faBackupCodesReissue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement backup codes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupCodesResponse"];
+                };
+            };
+            /** @description Session is not awaiting backup-code acknowledgement */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthError"];
+                };
+            };
+            /** @description Restricted enrollment session required */
             401: {
                 headers: {
                     [name: string]: unknown;

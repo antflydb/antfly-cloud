@@ -25,6 +25,9 @@ output-options:
     - getCloudInstanceConnection
     - listCloudInstanceEvents
     - getCloudInstanceMetrics
+    - getCloudBrowserAccess
+    - updateCloudBrowserAccess
+    - createCloudAPIKey
     - getCloudUsage
     - getAntflyInferenceUsageSummary
     - listAntflyInferenceRequestLogs

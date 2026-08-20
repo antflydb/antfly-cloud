@@ -23,7 +23,12 @@ export type CloudBillingCommitmentList = components["schemas"]["CloudBillingComm
 
 type CreateCloudInstanceRequest = components["schemas"]["CreateCloudInstanceRequest"];
 type UpdateCloudInstanceRequest = components["schemas"]["UpdateCloudInstanceRequest"];
-type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
+export type CreateCloudAPIKeyGrantRequest =
+  components["schemas"]["CreateCloudAPIKeyGrantRequest"];
+export type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
+export type CloudBrowserAccessPolicy = components["schemas"]["CloudBrowserAccessPolicy"];
+export type UpdateCloudBrowserAccessRequest =
+  components["schemas"]["UpdateCloudBrowserAccessRequest"];
 type CreateCloudManagementAPIKeyRequest =
   components["schemas"]["CreateCloudManagementAPIKeyRequest"];
 type CloudCreditEstimateRequest = components["schemas"]["CloudCreditEstimateRequest"];
@@ -806,6 +811,59 @@ export function useCloudAPIKeys(
     },
     enabled: !!orgId && !!instanceId,
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to read the direct-browser CORS and edge-admission policy for an instance.
+ */
+export function useCloudBrowserAccess(orgId: string | null, instanceId: string | null) {
+  return useQuery({
+    queryKey: ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
+    queryFn: async () => {
+      if (!orgId || !instanceId) throw new Error("Organization and instance IDs are required");
+
+      const { data, error } = await client.GET(
+        "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access",
+        { params: { path: { org_id: orgId, instance_id: instanceId } } }
+      );
+
+      if (error) {
+        throw new Error(error.detail || "Failed to fetch browser access policy");
+      }
+      return data;
+    },
+    enabled: !!orgId && !!instanceId,
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to replace the direct-browser CORS and edge-admission policy for an instance.
+ */
+export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (body: UpdateCloudBrowserAccessRequest) => {
+      const { data, error } = await client.PUT(
+        "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access",
+        {
+          params: { path: { org_id: orgId, instance_id: instanceId } },
+          body,
+        }
+      );
+
+      if (error) {
+        throw new Error(error.detail || "Failed to update browser access policy");
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
+      });
+    },
   });
 }
 
