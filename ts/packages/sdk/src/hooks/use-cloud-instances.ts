@@ -27,6 +27,7 @@ export type CreateCloudAPIKeyGrantRequest =
   components["schemas"]["CreateCloudAPIKeyGrantRequest"];
 export type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
 export type CloudBrowserAccessPolicy = components["schemas"]["CloudBrowserAccessPolicy"];
+export type CloudBrowserAccessTable = components["schemas"]["CloudBrowserAccessTable"];
 export type UpdateCloudBrowserAccessRequest =
   components["schemas"]["UpdateCloudBrowserAccessRequest"];
 type CreateCloudManagementAPIKeyRequest =
@@ -830,6 +831,37 @@ export function useCloudBrowserAccess(orgId: string | null, instanceId: string |
 
       if (error) {
         throw new Error(error.detail || "Failed to fetch browser access policy");
+      }
+      return data;
+    },
+    enabled: !!orgId && !!instanceId,
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to list instance-owned tables eligible for direct-browser key grants.
+ */
+export function useCloudBrowserAccessTables(orgId: string | null, instanceId: string | null) {
+  return useQuery({
+    queryKey: [
+      "organizations",
+      orgId,
+      "cloud-instances",
+      instanceId,
+      "browser-access",
+      "tables",
+    ],
+    queryFn: async () => {
+      if (!orgId || !instanceId) throw new Error("Organization and instance IDs are required");
+
+      const { data, error } = await client.GET(
+        "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access/tables",
+        { params: { path: { org_id: orgId, instance_id: instanceId } } }
+      );
+
+      if (error) {
+        throw new Error(error.detail || "Failed to fetch browser access tables");
       }
       return data;
     },

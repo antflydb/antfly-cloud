@@ -61,6 +61,7 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
 		wantPolicyPath := "/api/v1/organizations/" + orgID + "/cloud/instances/" + instanceID + "/browser-access"
+		wantTablesPath := wantPolicyPath + "/tables"
 		wantKeysPath := "/api/v1/organizations/" + orgID + "/cloud/instances/" + instanceID + "/api-keys"
 		w.Header().Set("Content-Type", "application/json")
 		switch {
@@ -68,6 +69,8 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 			_, _ = w.Write([]byte(`{"enabled":true,"allowed_origins":["https://docs.example.com"],"rate_limits":{"requests_per_minute_per_key":60,"requests_per_minute_per_ip":120,"concurrent_requests_per_key":5}}`))
 		case r.Method == http.MethodPut && r.URL.Path == wantPolicyPath:
 			_, _ = w.Write([]byte(`{"enabled":true,"allowed_origins":["https://app.example.com"],"rate_limits":{"requests_per_minute_per_key":30,"requests_per_minute_per_ip":60,"concurrent_requests_per_key":3}}`))
+		case r.Method == http.MethodGet && r.URL.Path == wantTablesPath:
+			_, _ = w.Write([]byte(`{"data":[{"table_name":"acme_prod_docs","display_name":"docs","source":"managed"}]}`))
 		case r.Method == http.MethodPost && r.URL.Path == wantKeysPath:
 			if err := json.NewDecoder(r.Body).Decode(&createRequest); err != nil {
 				http.Error(w, "invalid create request", http.StatusBadRequest)
@@ -102,22 +105,26 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 	if err != nil || updated.AllowedOrigins[0] != "https://app.example.com" {
 		t.Fatalf("updated = %#v, err = %v", updated, err)
 	}
+	tables, err := c.BrowserAccessTables(ctx, orgID, instanceID)
+	if err != nil || len(tables) != 1 || tables[0].TableName != "acme_prod_docs" {
+		t.Fatalf("tables = %#v, err = %v", tables, err)
+	}
 	created, err := c.CreateCloudAPIKey(ctx, orgID, instanceID, CreateCloudAPIKeyRequest{
 		Name:          "Docs",
 		KeyType:       "read_only",
 		BrowserAccess: true,
 		Grants: []CreateCloudAPIKeyGrantRequest{{
-			TableName: "cloud_acme_docs",
+			TableName: "acme_prod_docs",
 			Actions:   []string{"read"},
 		}},
 	})
 	if err != nil || !created.BrowserAccess || created.Key != "antflydb_test" {
 		t.Fatalf("created = %#v, err = %v", created, err)
 	}
-	if requests != 3 {
-		t.Fatalf("requests = %d, want 3", requests)
+	if requests != 4 {
+		t.Fatalf("requests = %d, want 4", requests)
 	}
-	if len(createRequest.Grants) != 1 || createRequest.Grants[0].TableName != "cloud_acme_docs" || len(createRequest.Grants[0].Actions) != 1 || createRequest.Grants[0].Actions[0] != "read" {
+	if len(createRequest.Grants) != 1 || createRequest.Grants[0].TableName != "acme_prod_docs" || len(createRequest.Grants[0].Actions) != 1 || createRequest.Grants[0].Actions[0] != "read" {
 		t.Fatalf("create request grants = %#v", createRequest.Grants)
 	}
 }

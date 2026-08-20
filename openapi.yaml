@@ -1695,6 +1695,41 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/browser-access/tables:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: List browser-access tables
+      description: List instance-owned tables that may be granted to direct-browser API keys.
+      operationId: listCloudBrowserAccessTables
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: Browser-access tables
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CloudBrowserAccessTable'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -5953,6 +5988,28 @@ components:
             - https://docs.example.com
         rate_limits:
           $ref: '#/components/schemas/CloudBrowserRateLimits'
+    CloudBrowserAccessTable:
+      type: object
+      required:
+        - table_name
+        - display_name
+        - source
+      properties:
+        table_name:
+          type: string
+          description: Physical Antfly table name used in query routes and grants.
+          example: acme_prod_events
+        display_name:
+          type: string
+          description: Customer-facing table or import-job name.
+          example: events
+        source:
+          type: string
+          enum:
+            - managed
+            - import_job
+            - shared
+          description: Authoritative Colony record that establishes ownership of the table.
     UpdateCloudBrowserAccessRequest:
       type: object
       required:
