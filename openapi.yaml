@@ -695,6 +695,64 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /organizations/{org_id}/mfa-policy:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get organization MFA policy
+      description: Get the persisted organization MFA enforcement policy. The extensible organization settings object cannot override this policy.
+      operationId: getOrganizationMfaPolicy
+      tags:
+        - Organizations
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+      responses:
+        '200':
+          description: Organization MFA policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationMfaPolicy'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Enable organization MFA policy
+      description: Enables MFA enforcement for a legacy organization. Public API callers cannot disable an active policy.
+      operationId: updateOrganizationMfaPolicy
+      tags:
+        - Organizations
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationMfaPolicy'
+      responses:
+        '200':
+          description: Organization MFA policy enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationMfaPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /invitations/{token}:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -1577,6 +1635,66 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/browser-access:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get browser access policy
+      description: Get the opt-in CORS and edge admission policy for browser clients that call query APIs directly.
+      operationId: getCloudBrowserAccess
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: Browser access policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudBrowserAccessPolicy'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update browser access policy
+      description: Enable or disable direct browser access and configure exact allowed origins plus per-key and per-IP edge admission limits. Wildcard origins are not accepted. These limits are enforced per edge replica and complement the fleet-wide WAF.
+      operationId: updateCloudBrowserAccess
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudBrowserAccessRequest'
+      responses:
+        '200':
+          description: Updated browser access policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudBrowserAccessPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -1773,6 +1891,45 @@ paths:
                 $ref: '#/components/schemas/CloudInstance'
         '202':
           description: Provisioning accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInstance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/instances/{instance_id}/restart:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Restart a single-node cloud instance
+      description: |
+        Restarts the database pod for a single-node instance without deleting
+        its AntflyCluster, configuration, secrets, or persistent volume. The
+        action briefly interrupts connections and is processed asynchronously.
+      operationId: restartCloudInstance
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: An equivalent restart is already active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInstance'
+        '202':
+          description: Restart accepted
           content:
             application/json:
               schema:
@@ -3523,6 +3680,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthError'
+  /2fa/recovery:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    post:
+      summary: Recover a lost authenticator with a backup code
+      description: Atomically invalidates the old authenticator and backup codes, revokes interactive grants, and returns only a restricted replacement-factor enrollment session.
+      operationId: postAuth2faRecovery
+      tags:
+        - TwoFactor
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorRecoveryRequest'
+      responses:
+        '200':
+          description: Recovery started; replacement authenticator enrollment is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorRedirectResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '401':
+          description: Invalid backup code or pending-login token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
   /2fa/setup:
     servers:
       - url: https://auth.antfly.io/auth/v1
@@ -3591,6 +3784,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthError'
+  /2fa/acknowledge-backup-codes:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    post:
+      summary: Acknowledge backup codes and complete MFA enrollment
+      description: Persists backup-code acknowledgement and elevates the restricted enrollment session.
+      operationId: postAuth2faAcknowledgeBackupCodes
+      tags:
+        - TwoFactor
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorAcknowledgeBackupCodesRequest'
+      responses:
+        '200':
+          description: Enrollment completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorRedirectResponse'
+        '400':
+          description: Acknowledgement is missing or enrollment is not pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
   /2fa/disable:
     servers:
       - url: https://auth.antfly.io/auth/v1
@@ -3628,6 +3858,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthError'
+        '403':
+          description: MFA is required by policy (MFA_POLICY_REQUIRED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
   /2fa/backup-codes:
     servers:
       - url: https://auth.antfly.io/auth/v1
@@ -3661,6 +3897,37 @@ paths:
                 $ref: '#/components/schemas/AuthError'
         '401':
           description: Invalid password or authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+  /2fa/backup-codes/reissue:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    post:
+      summary: Reissue unacknowledged enrollment backup codes
+      description: Replaces and returns recovery codes only for the restricted enrollment session after a prior one-time delivery was lost.
+      operationId: postAuth2faBackupCodesReissue
+      tags:
+        - TwoFactor
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Replacement backup codes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupCodesResponse'
+        '400':
+          description: Session is not awaiting backup-code acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '401':
+          description: Restricted enrollment session required
           content:
             application/json:
               schema:
@@ -4323,6 +4590,7 @@ components:
         - verify
         - enable
         - disable
+        - recover
         - revoke
         - login
         - deprovision
@@ -4402,6 +4670,14 @@ components:
           nullable: true
           description: Validation error if slug is invalid
           example: 'Slug must match pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$'
+    OrganizationMfaPolicy:
+      type: object
+      required:
+        - require_two_factor
+      properties:
+        require_two_factor:
+          type: boolean
+          description: Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API.
     InvitationResponse-2:
       type: object
       required:
@@ -5654,6 +5930,63 @@ components:
           description: Antfly Cloud management actions allowed by antfly_cloud_* keys.
         hosted_inference_limits:
           $ref: '#/components/schemas/HostedInferenceLimits'
+        browser_access:
+          type: boolean
+          description: Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits.
+    CloudBrowserAccessPolicy:
+      type: object
+      required:
+        - enabled
+        - allowed_origins
+        - rate_limits
+      properties:
+        enabled:
+          type: boolean
+          description: Whether direct browser requests are accepted for this instance. Disabled by default.
+        allowed_origins:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+          description: Exact origins allowed to call the instance. Public origins must use HTTPS; HTTP is accepted only for localhost and loopback development. Wildcards and origins containing paths, queries, fragments, or credentials are rejected.
+          example:
+            - https://docs.example.com
+        rate_limits:
+          $ref: '#/components/schemas/CloudBrowserRateLimits'
+    UpdateCloudBrowserAccessRequest:
+      type: object
+      required:
+        - enabled
+        - allowed_origins
+      properties:
+        enabled:
+          type: boolean
+        allowed_origins:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+        rate_limits:
+          $ref: '#/components/schemas/CloudBrowserRateLimits'
+    CloudBrowserRateLimits:
+      type: object
+      description: Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection.
+      properties:
+        requests_per_minute_per_key:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 60
+        requests_per_minute_per_ip:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 120
+        concurrent_requests_per_key:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          default: 5
     HostedInferenceLimits:
       type: object
       description: Optional hosted inference spend and rate limits for an API key or organization.
@@ -5697,6 +6030,8 @@ components:
           type: string
         key_type:
           $ref: '#/components/schemas/CloudAPIKeyType'
+        browser_access:
+          type: boolean
     CreateCloudAPIKeyRequest:
       type: object
       required:
@@ -5723,6 +6058,9 @@ components:
             $ref: '#/components/schemas/UpsertCloudGrantRequest'
         hosted_inference_limits:
           $ref: '#/components/schemas/HostedInferenceLimits'
+        browser_access:
+          type: boolean
+          description: Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
     CreateCloudManagementAPIKeyRequest:
       type: object
       required:
@@ -6820,6 +7158,9 @@ components:
         email:
           type: string
           format: email
+        redirect_url:
+          type: string
+          description: Post-verification redirect URL
     TwoFactorVerifyRequest:
       type: object
       required:
@@ -6845,6 +7186,21 @@ components:
           type: string
         redirect_url:
           type: string
+    TwoFactorRecoveryRequest:
+      type: object
+      required:
+        - temp_token
+        - backup_code
+      properties:
+        temp_token:
+          type: string
+          description: Pending-login token returned after successful local primary authentication
+        backup_code:
+          type: string
+          description: Unused backup code for the exact pending-login user
+        redirect_url:
+          type: string
+          description: Validated destination to resume after replacement-factor enrollment and backup-code acknowledgement
     TwoFactorRedirectResponse:
       type: object
       required:
@@ -6884,6 +7240,17 @@ components:
           type: array
           items:
             type: string
+        requires_backup_codes_acknowledgement:
+          type: boolean
+          description: True when the restricted enrollment session must acknowledge backup codes before MFA assurance is granted.
+    TwoFactorAcknowledgeBackupCodesRequest:
+      type: object
+      required:
+        - acknowledged
+      properties:
+        acknowledged:
+          type: boolean
+          description: Confirms the user saved the newly generated backup codes.
     TwoFactorDisableRequest:
       type: object
       required:

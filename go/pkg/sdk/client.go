@@ -221,6 +221,11 @@ type CloudUserAttributes struct {
 type CloudSCIMGroupSyncRequest = oapi.CloudSCIMGroupSyncRequest
 type CloudSCIMGroupInput = oapi.CloudSCIMGroupInput
 type CloudSCIMGroupMemberInput = oapi.CloudSCIMGroupMemberInput
+type CloudBrowserAccessPolicy = oapi.CloudBrowserAccessPolicy
+type CloudBrowserRateLimits = oapi.CloudBrowserRateLimits
+type UpdateCloudBrowserAccessRequest = oapi.UpdateCloudBrowserAccessRequest
+type CreateCloudAPIKeyRequest = oapi.CreateCloudAPIKeyRequest
+type CloudAPIKeyCreated = oapi.CloudAPIKeyCreated
 
 type CloudSCIMGroupSyncResult struct {
 	GroupsSynced      int `json:"groups_synced"`
@@ -425,6 +430,55 @@ func (c *Client) Connection(ctx context.Context, org, instance string) (*Connect
 		return nil, apiError(resp.StatusCode(), resp.Body)
 	}
 	return &ConnectionDetails{ProxyURL: resp.JSON200.ProxyUrl, AntflyInferenceProxyURL: resp.JSON200.AntflyInferenceProxyUrl, Status: string(resp.JSON200.Status)}, nil
+}
+
+// BrowserAccess returns the direct-browser CORS and edge-admission policy for an instance.
+func (c *Client) BrowserAccess(ctx context.Context, org, instance string) (*CloudBrowserAccessPolicy, error) {
+	orgID, instanceID, err := parseOrgInstance(org, instance)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.GetCloudBrowserAccessWithResponse(ctx, orgID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, apiError(resp.StatusCode(), resp.Body)
+	}
+	return resp.JSON200, nil
+}
+
+// UpdateBrowserAccess replaces the direct-browser CORS and edge-admission policy for an instance.
+func (c *Client) UpdateBrowserAccess(ctx context.Context, org, instance string, req UpdateCloudBrowserAccessRequest) (*CloudBrowserAccessPolicy, error) {
+	orgID, instanceID, err := parseOrgInstance(org, instance)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.UpdateCloudBrowserAccessWithResponse(ctx, orgID, instanceID, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, apiError(resp.StatusCode(), resp.Body)
+	}
+	return resp.JSON200, nil
+}
+
+// CreateCloudAPIKey creates an instance data-plane key. Set BrowserAccess with
+// a read-only key and explicit named-table grants for direct browser use.
+func (c *Client) CreateCloudAPIKey(ctx context.Context, org, instance string, req CreateCloudAPIKeyRequest) (*CloudAPIKeyCreated, error) {
+	orgID, instanceID, err := parseOrgInstance(org, instance)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.CreateCloudAPIKeyWithResponse(ctx, orgID, instanceID, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON201 == nil {
+		return nil, apiError(resp.StatusCode(), resp.Body)
+	}
+	return resp.JSON201, nil
 }
 
 func (c *Client) Usage(ctx context.Context, org string) (*CloudUsageSummary, error) {

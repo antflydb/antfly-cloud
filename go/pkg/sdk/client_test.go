@@ -49,3 +49,62 @@ func TestClientAPIError(t *testing.T) {
 		t.Fatalf("err = %#v", err)
 	}
 }
+
+func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
+	const (
+		orgID      = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+		instanceID = "3bf7206e-c22c-47df-8126-366d4f53752d"
+	)
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		wantPolicyPath := "/api/v1/organizations/" + orgID + "/cloud/instances/" + instanceID + "/browser-access"
+		wantKeysPath := "/api/v1/organizations/" + orgID + "/cloud/instances/" + instanceID + "/api-keys"
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == wantPolicyPath:
+			_, _ = w.Write([]byte(`{"enabled":true,"allowed_origins":["https://docs.example.com"],"rate_limits":{"requests_per_minute_per_key":60,"requests_per_minute_per_ip":120,"concurrent_requests_per_key":5}}`))
+		case r.Method == http.MethodPut && r.URL.Path == wantPolicyPath:
+			_, _ = w.Write([]byte(`{"enabled":true,"allowed_origins":["https://app.example.com"],"rate_limits":{"requests_per_minute_per_key":30,"requests_per_minute_per_ip":60,"concurrent_requests_per_key":3}}`))
+		case r.Method == http.MethodPost && r.URL.Path == wantKeysPath:
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"id":"f36960bb-e39c-496d-83ff-b127c21b1bda","key":"antflydb_test","key_prefix":"antflydb_test","name":"Docs","key_type":"read_only","browser_access":true}`))
+		default:
+			http.Error(w, "unexpected request", http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	c, err := NewClient(srv.URL+"/api/v1", "test-token", &http.Client{Timeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	policy, err := c.BrowserAccess(ctx, orgID, instanceID)
+	if err != nil || !policy.Enabled || len(policy.AllowedOrigins) != 1 {
+		t.Fatalf("policy = %#v, err = %v", policy, err)
+	}
+	updated, err := c.UpdateBrowserAccess(ctx, orgID, instanceID, UpdateCloudBrowserAccessRequest{
+		Enabled:        true,
+		AllowedOrigins: []string{"https://app.example.com"},
+		RateLimits: CloudBrowserRateLimits{
+			RequestsPerMinutePerKey:  30,
+			RequestsPerMinutePerIp:   60,
+			ConcurrentRequestsPerKey: 3,
+		},
+	})
+	if err != nil || updated.AllowedOrigins[0] != "https://app.example.com" {
+		t.Fatalf("updated = %#v, err = %v", updated, err)
+	}
+	created, err := c.CreateCloudAPIKey(ctx, orgID, instanceID, CreateCloudAPIKeyRequest{
+		Name:          "Docs",
+		KeyType:       "read_only",
+		BrowserAccess: true,
+	})
+	if err != nil || !created.BrowserAccess || created.Key != "antflydb_test" {
+		t.Fatalf("created = %#v, err = %v", created, err)
+	}
+	if requests != 3 {
+		t.Fatalf("requests = %d, want 3", requests)
+	}
+}
