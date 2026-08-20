@@ -223,6 +223,7 @@ type CloudSCIMGroupInput = oapi.CloudSCIMGroupInput
 type CloudSCIMGroupMemberInput = oapi.CloudSCIMGroupMemberInput
 type CloudBrowserAccessPolicy = oapi.CloudBrowserAccessPolicy
 type CloudBrowserRateLimits = oapi.CloudBrowserRateLimits
+type CloudBrowserAccessTable = oapi.CloudBrowserAccessTable
 type UpdateCloudBrowserAccessRequest = oapi.UpdateCloudBrowserAccessRequest
 type CreateCloudAPIKeyGrantRequest = oapi.CreateCloudAPIKeyGrantRequest
 type CreateCloudAPIKeyRequest = oapi.CreateCloudAPIKeyRequest
@@ -447,6 +448,22 @@ func (c *Client) BrowserAccess(ctx context.Context, org, instance string) (*Clou
 		return nil, apiError(resp.StatusCode(), resp.Body)
 	}
 	return resp.JSON200, nil
+}
+
+// BrowserAccessTables returns instance-owned tables eligible for direct-browser grants.
+func (c *Client) BrowserAccessTables(ctx context.Context, org, instance string) ([]CloudBrowserAccessTable, error) {
+	orgID, instanceID, err := parseOrgInstance(org, instance)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.client.ListCloudBrowserAccessTablesWithResponse(ctx, orgID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, apiError(resp.StatusCode(), resp.Body)
+	}
+	return resp.JSON200.Data, nil
 }
 
 // UpdateBrowserAccess replaces the direct-browser CORS and edge-admission policy for an instance.

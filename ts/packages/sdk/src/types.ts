@@ -636,6 +636,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access/tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List browser-access tables
+         * @description List instance-owned tables that may be granted to direct-browser API keys.
+         */
+        get: operations["listCloudBrowserAccessTables"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects": {
         parameters: {
             query?: never;
@@ -2810,6 +2830,23 @@ export interface components {
              */
             allowed_origins: string[];
             rate_limits: components["schemas"]["CloudBrowserRateLimits"];
+        };
+        CloudBrowserAccessTable: {
+            /**
+             * @description Physical Antfly table name used in query routes and grants.
+             * @example acme_prod_events
+             */
+            table_name: string;
+            /**
+             * @description Customer-facing table or import-job name.
+             * @example events
+             */
+            display_name: string;
+            /**
+             * @description Authoritative Colony record that establishes ownership of the table.
+             * @enum {string}
+             */
+            source: "managed" | "import_job" | "shared";
         };
         UpdateCloudBrowserAccessRequest: {
             enabled: boolean;
@@ -5079,6 +5116,36 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listCloudBrowserAccessTables: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Browser-access tables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CloudBrowserAccessTable"][];
+                    };
+                };
+            };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];

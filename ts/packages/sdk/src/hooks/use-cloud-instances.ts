@@ -27,6 +27,7 @@ export type CreateCloudAPIKeyGrantRequest =
   components["schemas"]["CreateCloudAPIKeyGrantRequest"];
 export type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
 export type CloudBrowserAccessPolicy = components["schemas"]["CloudBrowserAccessPolicy"];
+export type CloudBrowserAccessTable = components["schemas"]["CloudBrowserAccessTable"];
 export type UpdateCloudBrowserAccessRequest =
   components["schemas"]["UpdateCloudBrowserAccessRequest"];
 type CreateCloudManagementAPIKeyRequest =
@@ -839,12 +840,47 @@ export function useCloudBrowserAccess(orgId: string | null, instanceId: string |
 }
 
 /**
+ * Hook to list instance-owned tables eligible for direct-browser key grants.
+ */
+export function useCloudBrowserAccessTables(orgId: string | null, instanceId: string | null) {
+  return useQuery({
+    queryKey: [
+      "organizations",
+      orgId,
+      "cloud-instances",
+      instanceId,
+      "browser-access",
+      "tables",
+    ],
+    queryFn: async () => {
+      if (!orgId || !instanceId) throw new Error("Organization and instance IDs are required");
+
+      const { data, error } = await client.GET(
+        "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access/tables",
+        { params: { path: { org_id: orgId, instance_id: instanceId } } }
+      );
+
+      if (error) {
+        throw new Error(error.detail || "Failed to fetch browser access tables");
+      }
+      return data;
+    },
+    enabled: !!orgId && !!instanceId,
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
  * Hook to replace the direct-browser CORS and edge-admission policy for an instance.
  */
 export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
   const queryClient = useQueryClient();
+  const queryKey = ["organizations", orgId, "cloud-instances", instanceId, "browser-access"];
 
   return useMutation({
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey, exact: true });
+    },
     mutationFn: async (body: UpdateCloudBrowserAccessRequest) => {
       const { data, error } = await client.PUT(
         "/organizations/{org_id}/cloud/instances/{instance_id}/browser-access",
@@ -859,10 +895,8 @@ export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
       }
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
-      });
+    onSuccess: (saved) => {
+      queryClient.setQueryData(queryKey, saved);
     },
   });
 }
