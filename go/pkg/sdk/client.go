@@ -224,6 +224,7 @@ type CloudSCIMGroupMemberInput = oapi.CloudSCIMGroupMemberInput
 type CloudBrowserAccessPolicy = oapi.CloudBrowserAccessPolicy
 type CloudBrowserRateLimits = oapi.CloudBrowserRateLimits
 type UpdateCloudBrowserAccessRequest = oapi.UpdateCloudBrowserAccessRequest
+type CreateCloudAPIKeyGrantRequest = oapi.CreateCloudAPIKeyGrantRequest
 type CreateCloudAPIKeyRequest = oapi.CreateCloudAPIKeyRequest
 type CloudAPIKeyCreated = oapi.CloudAPIKeyCreated
 

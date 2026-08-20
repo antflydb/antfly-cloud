@@ -2860,11 +2860,26 @@ export interface components {
             expires_at?: components["schemas"]["Timestamp"];
             /** @description Per-key monthly query quota (null = unlimited) */
             quota_queries_per_month?: number | null;
-            /** @description Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted. */
-            grants?: components["schemas"]["UpsertCloudGrantRequest"][];
+            /** @description Optional initial grants for the created API key. Colony assigns every grant to the newly created key. */
+            grants?: components["schemas"]["CreateCloudAPIKeyGrantRequest"][];
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
             /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions. */
             browser_access?: boolean;
+        };
+        /** @description Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients. */
+        CreateCloudAPIKeyGrantRequest: {
+            /** @description Table scope. Browser keys require an explicit named table; omitted values retain the wildcard behavior for non-browser keys. */
+            table_name?: string;
+            actions: string[];
+            row_filter?: {
+                [key: string]: unknown;
+            } | null;
+            row_filter_template?: {
+                [key: string]: unknown;
+            } | null;
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         CreateCloudManagementAPIKeyRequest: {
             /**

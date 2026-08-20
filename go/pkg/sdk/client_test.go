@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,6 +57,7 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 		instanceID = "3bf7206e-c22c-47df-8126-366d4f53752d"
 	)
 	requests := 0
+	var createRequest CreateCloudAPIKeyRequest
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
 		wantPolicyPath := "/api/v1/organizations/" + orgID + "/cloud/instances/" + instanceID + "/browser-access"
@@ -67,6 +69,10 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 		case r.Method == http.MethodPut && r.URL.Path == wantPolicyPath:
 			_, _ = w.Write([]byte(`{"enabled":true,"allowed_origins":["https://app.example.com"],"rate_limits":{"requests_per_minute_per_key":30,"requests_per_minute_per_ip":60,"concurrent_requests_per_key":3}}`))
 		case r.Method == http.MethodPost && r.URL.Path == wantKeysPath:
+			if err := json.NewDecoder(r.Body).Decode(&createRequest); err != nil {
+				http.Error(w, "invalid create request", http.StatusBadRequest)
+				return
+			}
 			w.WriteHeader(http.StatusCreated)
 			_, _ = w.Write([]byte(`{"id":"f36960bb-e39c-496d-83ff-b127c21b1bda","key":"antflydb_test","key_prefix":"antflydb_test","name":"Docs","key_type":"read_only","browser_access":true}`))
 		default:
@@ -100,11 +106,18 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 		Name:          "Docs",
 		KeyType:       "read_only",
 		BrowserAccess: true,
+		Grants: []CreateCloudAPIKeyGrantRequest{{
+			TableName: "cloud_acme_docs",
+			Actions:   []string{"read"},
+		}},
 	})
 	if err != nil || !created.BrowserAccess || created.Key != "antflydb_test" {
 		t.Fatalf("created = %#v, err = %v", created, err)
 	}
 	if requests != 3 {
 		t.Fatalf("requests = %d, want 3", requests)
+	}
+	if len(createRequest.Grants) != 1 || createRequest.Grants[0].TableName != "cloud_acme_docs" || len(createRequest.Grants[0].Actions) != 1 || createRequest.Grants[0].Actions[0] != "read" {
+		t.Fatalf("create request grants = %#v", createRequest.Grants)
 	}
 }

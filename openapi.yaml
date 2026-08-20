@@ -6053,14 +6053,39 @@ components:
           description: Per-key monthly query quota (null = unlimited)
         grants:
           type: array
-          description: Optional initial grants for the created API key. subject_type and subject_id are assigned to the new cloud API key when omitted.
+          description: Optional initial grants for the created API key. Colony assigns every grant to the newly created key.
           items:
-            $ref: '#/components/schemas/UpsertCloudGrantRequest'
+            $ref: '#/components/schemas/CreateCloudAPIKeyGrantRequest'
         hosted_inference_limits:
           $ref: '#/components/schemas/HostedInferenceLimits'
         browser_access:
           type: boolean
           description: Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
+    CreateCloudAPIKeyGrantRequest:
+      type: object
+      required:
+        - actions
+      description: Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients.
+      properties:
+        table_name:
+          type: string
+          description: Table scope. Browser keys require an explicit named table; omitted values retain the wildcard behavior for non-browser keys.
+        actions:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        row_filter:
+          type: object
+          nullable: true
+          additionalProperties: true
+        row_filter_template:
+          type: object
+          nullable: true
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
     CreateCloudManagementAPIKeyRequest:
       type: object
       required:

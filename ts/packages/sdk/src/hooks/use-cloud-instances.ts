@@ -23,7 +23,9 @@ export type CloudBillingCommitmentList = components["schemas"]["CloudBillingComm
 
 type CreateCloudInstanceRequest = components["schemas"]["CreateCloudInstanceRequest"];
 type UpdateCloudInstanceRequest = components["schemas"]["UpdateCloudInstanceRequest"];
-type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
+export type CreateCloudAPIKeyGrantRequest =
+  components["schemas"]["CreateCloudAPIKeyGrantRequest"];
+export type CreateCloudAPIKeyRequest = components["schemas"]["CreateCloudAPIKeyRequest"];
 export type CloudBrowserAccessPolicy = components["schemas"]["CloudBrowserAccessPolicy"];
 export type UpdateCloudBrowserAccessRequest =
   components["schemas"]["UpdateCloudBrowserAccessRequest"];
