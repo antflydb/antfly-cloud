@@ -115,7 +115,7 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 		BrowserAccess: true,
 		Grants: []CreateCloudAPIKeyGrantRequest{{
 			TableName: "acme_prod_docs",
-			Actions:   []string{"read"},
+			Actions:   []string{"table.read"},
 		}},
 	})
 	if err != nil || !created.BrowserAccess || created.Key != "antflydb_test" {
@@ -124,7 +124,7 @@ func TestClientBrowserAccessAndKeyCreation(t *testing.T) {
 	if requests != 4 {
 		t.Fatalf("requests = %d, want 4", requests)
 	}
-	if len(createRequest.Grants) != 1 || createRequest.Grants[0].TableName != "acme_prod_docs" || len(createRequest.Grants[0].Actions) != 1 || createRequest.Grants[0].Actions[0] != "read" {
+	if len(createRequest.Grants) != 1 || createRequest.Grants[0].TableName != "acme_prod_docs" || len(createRequest.Grants[0].Actions) != 1 || createRequest.Grants[0].Actions[0] != "table.read" {
 		t.Fatalf("create request grants = %#v", createRequest.Grants)
 	}
 }

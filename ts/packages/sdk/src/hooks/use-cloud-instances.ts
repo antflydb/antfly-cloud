@@ -891,10 +891,11 @@ export function useUpdateCloudBrowserAccess(orgId: string, instanceId: string) {
       }
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
-      });
+    onSuccess: (saved) => {
+      queryClient.setQueryData(
+        ["organizations", orgId, "cloud-instances", instanceId, "browser-access"],
+        saved
+      );
     },
   });
 }
