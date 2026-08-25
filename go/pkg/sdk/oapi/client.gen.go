@@ -89,6 +89,171 @@ func (e CloudGrantSubjectType) Valid() bool {
 	}
 }
 
+// Defines values for CloudHAFencingAuthority.
+const (
+	CloudHAFencingAuthorityKubernetesLease CloudHAFencingAuthority = "kubernetes_lease"
+	CloudHAFencingAuthorityNone            CloudHAFencingAuthority = "none"
+)
+
+// Valid indicates whether the value is a known member of the CloudHAFencingAuthority enum.
+func (e CloudHAFencingAuthority) Valid() bool {
+	switch e {
+	case CloudHAFencingAuthorityKubernetesLease:
+		return true
+	case CloudHAFencingAuthorityNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudHAFencingState.
+const (
+	CloudHAFencingStateExpired CloudHAFencingState = "expired"
+	CloudHAFencingStateMissing CloudHAFencingState = "missing"
+	CloudHAFencingStateNotHeld CloudHAFencingState = "not_held"
+	CloudHAFencingStatePending CloudHAFencingState = "pending"
+	CloudHAFencingStateReady   CloudHAFencingState = "ready"
+	CloudHAFencingStateUnknown CloudHAFencingState = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the CloudHAFencingState enum.
+func (e CloudHAFencingState) Valid() bool {
+	switch e {
+	case CloudHAFencingStateExpired:
+		return true
+	case CloudHAFencingStateMissing:
+		return true
+	case CloudHAFencingStateNotHeld:
+		return true
+	case CloudHAFencingStatePending:
+		return true
+	case CloudHAFencingStateReady:
+		return true
+	case CloudHAFencingStateUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudHAHealth.
+const (
+	CloudHAHealthDegraded       CloudHAHealth = "degraded"
+	CloudHAHealthDisabled       CloudHAHealth = "disabled"
+	CloudHAHealthHealthy        CloudHAHealth = "healthy"
+	CloudHAHealthLagging        CloudHAHealth = "lagging"
+	CloudHAHealthPromoting      CloudHAHealth = "promoting"
+	CloudHAHealthProvisioning   CloudHAHealth = "provisioning"
+	CloudHAHealthReseedRequired CloudHAHealth = "reseed_required"
+	CloudHAHealthUnhealthy      CloudHAHealth = "unhealthy"
+)
+
+// Valid indicates whether the value is a known member of the CloudHAHealth enum.
+func (e CloudHAHealth) Valid() bool {
+	switch e {
+	case CloudHAHealthDegraded:
+		return true
+	case CloudHAHealthDisabled:
+		return true
+	case CloudHAHealthHealthy:
+		return true
+	case CloudHAHealthLagging:
+		return true
+	case CloudHAHealthPromoting:
+		return true
+	case CloudHAHealthProvisioning:
+		return true
+	case CloudHAHealthReseedRequired:
+		return true
+	case CloudHAHealthUnhealthy:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudHAPrimaryRouteState.
+const (
+	CloudHAPrimaryRouteStatePending   CloudHAPrimaryRouteState = "pending"
+	CloudHAPrimaryRouteStateReady     CloudHAPrimaryRouteState = "ready"
+	CloudHAPrimaryRouteStateSwitching CloudHAPrimaryRouteState = "switching"
+	CloudHAPrimaryRouteStateUnknown   CloudHAPrimaryRouteState = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the CloudHAPrimaryRouteState enum.
+func (e CloudHAPrimaryRouteState) Valid() bool {
+	switch e {
+	case CloudHAPrimaryRouteStatePending:
+		return true
+	case CloudHAPrimaryRouteStateReady:
+		return true
+	case CloudHAPrimaryRouteStateSwitching:
+		return true
+	case CloudHAPrimaryRouteStateUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudHASyncMode.
+const (
+	CloudHASyncModeAsync       CloudHASyncMode = "async"
+	CloudHASyncModeRemoteApply CloudHASyncMode = "remote_apply"
+	CloudHASyncModeRemoteWrite CloudHASyncMode = "remote_write"
+)
+
+// Valid indicates whether the value is a known member of the CloudHASyncMode enum.
+func (e CloudHASyncMode) Valid() bool {
+	switch e {
+	case CloudHASyncModeAsync:
+		return true
+	case CloudHASyncModeRemoteApply:
+		return true
+	case CloudHASyncModeRemoteWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudHATopologyPhase.
+const (
+	CloudHATopologyPhaseCatchingUp             CloudHATopologyPhase = "CatchingUp"
+	CloudHATopologyPhaseFormerPrimaryAssessed  CloudHATopologyPhase = "FormerPrimaryAssessed"
+	CloudHATopologyPhaseFormerPrimaryFollowing CloudHATopologyPhase = "FormerPrimaryFollowing"
+	CloudHATopologyPhaseFormerPrimaryPreparing CloudHATopologyPhase = "FormerPrimaryPreparing"
+	CloudHATopologyPhasePrimaryAdopted         CloudHATopologyPhase = "PrimaryAdopted"
+	CloudHATopologyPhasePromotionObserved      CloudHATopologyPhase = "PromotionObserved"
+	CloudHATopologyPhaseRedundancyRestored     CloudHATopologyPhase = "RedundancyRestored"
+	CloudHATopologyPhaseReplacementRequired    CloudHATopologyPhase = "ReplacementRequired"
+)
+
+// Valid indicates whether the value is a known member of the CloudHATopologyPhase enum.
+func (e CloudHATopologyPhase) Valid() bool {
+	switch e {
+	case CloudHATopologyPhaseCatchingUp:
+		return true
+	case CloudHATopologyPhaseFormerPrimaryAssessed:
+		return true
+	case CloudHATopologyPhaseFormerPrimaryFollowing:
+		return true
+	case CloudHATopologyPhaseFormerPrimaryPreparing:
+		return true
+	case CloudHATopologyPhasePrimaryAdopted:
+		return true
+	case CloudHATopologyPhasePromotionObserved:
+		return true
+	case CloudHATopologyPhaseRedundancyRestored:
+		return true
+	case CloudHATopologyPhaseReplacementRequired:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CloudInstanceMode.
 const (
 	CloudInstanceModeReplicated CloudInstanceMode = "replicated"
@@ -592,6 +757,456 @@ type CloudGroupMember struct {
 	UserId UUID `json:"user_id"`
 }
 
+// CloudHAConfig Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology.
+type CloudHAConfig struct {
+	// AutomaticFailoverEnabled Allows fenced operator-managed automatic promotion when prerequisites are satisfied.
+	AutomaticFailoverEnabled bool `json:"automatic_failover_enabled,omitempty,omitzero"`
+
+	// Enabled Enables one primary with hot standby replica nodes.
+	Enabled bool `json:"enabled,omitempty,omitzero"`
+
+	// FencingAuthority Fencing authority used for hot-standby promotion decisions.
+	FencingAuthority CloudHAFencingAuthority `json:"fencing_authority,omitempty,omitzero"`
+
+	// MaximumLagLsn Maximum tolerated standby lag for automatic promotion. Zero uses operator/runtime defaults.
+	MaximumLagLsn int64 `json:"maximum_lag_lsn,omitempty,omitzero"`
+
+	// ReplacementPolicy Bounded repair-before-replace policy for restoring hot-standby redundancy.
+	ReplacementPolicy CloudHAReplacementPolicy `json:"replacement_policy,omitempty,omitzero"`
+
+	// StandbyCount Desired hot standby replica count when HA is enabled.
+	StandbyCount int `json:"standby_count,omitempty,omitzero"`
+
+	// SyncMode Standby durability mode for hot-standby replication. Production create/update requests accept only `remote_apply`; the other values remain representable for compatibility with internal and historical state.
+	SyncMode CloudHASyncMode `json:"sync_mode,omitempty,omitzero"`
+}
+
+// CloudHAFencingAuthority Fencing authority used for hot-standby promotion decisions.
+type CloudHAFencingAuthority string
+
+// CloudHAFencingState Normalized fail-closed state of the configured fencing authority.
+type CloudHAFencingState string
+
+// CloudHAFormerPrimaryStatus Cloud-visible former-primary rejoin/rewind/reseed disposition after a hot-standby promotion.
+type CloudHAFormerPrimaryStatus struct {
+	// Action Current former-primary workflow action.
+	Action string `json:"action,omitempty,omitzero"`
+
+	// AssessedAction Operator-assessed former-primary rejoin action, such as rewind or reseed.
+	AssessedAction string `json:"assessed_action,omitempty,omitzero"`
+
+	// AssessedReason Operator-assessed reason for the former-primary rejoin action.
+	AssessedReason    string `json:"assessed_reason,omitempty,omitzero"`
+	DataLossDiscarded bool   `json:"data_loss_discarded,omitempty,omitzero"`
+	Diverged          bool   `json:"diverged,omitempty,omitzero"`
+
+	// FenceAuthority Fencing authority used for hot-standby promotion decisions.
+	FenceAuthority     CloudHAFencingAuthority `json:"fence_authority,omitempty,omitzero"`
+	FenceGeneration    int64                   `json:"fence_generation,omitempty,omitzero"`
+	FenceHolder        string                  `json:"fence_holder,omitempty,omitzero"`
+	Fenced             bool                    `json:"fenced,omitempty,omitzero"`
+	ForkLsn            int64                   `json:"fork_lsn,omitempty,omitzero"`
+	FormerLastLsn      int64                   `json:"former_last_lsn,omitempty,omitzero"`
+	NewTimelineId      int64                   `json:"new_timeline_id,omitempty,omitzero"`
+	NodeId             string                  `json:"node_id,omitempty,omitzero"`
+	ObservedLsn        int64                   `json:"observed_lsn,omitempty,omitzero"`
+	ObservedTimelineId int64                   `json:"observed_timeline_id,omitempty,omitzero"`
+	ParentTimelineId   int64                   `json:"parent_timeline_id,omitempty,omitzero"`
+
+	// Reason Current former-primary workflow reason.
+	Reason           string `json:"reason,omitempty,omitzero"`
+	RejoinRequired   bool   `json:"rejoin_required,omitempty,omitzero"`
+	ReseedRequired   bool   `json:"reseed_required,omitempty,omitzero"`
+	RetainedFromLsn  int64  `json:"retained_from_lsn,omitempty,omitzero"`
+	RewindPossible   bool   `json:"rewind_possible,omitempty,omitzero"`
+	SwitchLsn        int64  `json:"switch_lsn,omitempty,omitzero"`
+	TargetEpoch      int64  `json:"target_epoch,omitempty,omitzero"`
+	TargetTimelineId int64  `json:"target_timeline_id,omitempty,omitzero"`
+}
+
+// CloudHAHealth Cloud-visible hot-standby health state.
+type CloudHAHealth string
+
+// CloudHAPlannedActionStatus Cloud-visible summary of one operator-planned HA workflow action.
+type CloudHAPlannedActionStatus struct {
+	AdminError      string    `json:"admin_error,omitempty,omitzero"`
+	AdminJobName    string    `json:"admin_job_name,omitempty,omitzero"`
+	AdminJobPhase   string    `json:"admin_job_phase,omitempty,omitzero"`
+	AdminMethod     string    `json:"admin_method,omitempty,omitzero"`
+	AdminPath       string    `json:"admin_path,omitempty,omitzero"`
+	AdminStatusCode int32     `json:"admin_status_code,omitempty,omitzero"`
+	AttemptCount    int32     `json:"attempt_count,omitempty,omitzero"`
+	AttemptId       string    `json:"attempt_id,omitempty,omitzero"`
+	CompletedAt     time.Time `json:"completed_at,omitempty,omitzero"`
+	DependsOn       string    `json:"depends_on,omitempty,omitzero"`
+	ErrorClass      string    `json:"error_class,omitempty,omitzero"`
+
+	// ExecutionStateVersion Version of the operator's durable bounded-retry execution state.
+	ExecutionStateVersion int32  `json:"execution_state_version,omitempty,omitzero"`
+	Executor              string `json:"executor,omitempty,omitzero"`
+
+	// FenceAuthority Fencing authority used for hot-standby promotion decisions.
+	FenceAuthority  CloudHAFencingAuthority `json:"fence_authority,omitempty,omitzero"`
+	FenceGeneration int64                   `json:"fence_generation,omitempty,omitzero"`
+	FenceHolder     string                  `json:"fence_holder,omitempty,omitzero"`
+	FirstAttemptAt  time.Time               `json:"first_attempt_at,omitempty,omitzero"`
+
+	// FormerNodeId Former primary node ID reported by the typed HA admin workflow.
+	FormerNodeId    string    `json:"former_node_id,omitempty,omitzero"`
+	InFlightAttempt int32     `json:"in_flight_attempt,omitempty,omitzero"`
+	Kind            string    `json:"kind,omitempty,omitzero"`
+	LastAttemptAt   time.Time `json:"last_attempt_at,omitempty,omitzero"`
+	NextRetryAt     time.Time `json:"next_retry_at,omitempty,omitzero"`
+	ObservedLsn     int64     `json:"observed_lsn,omitempty,omitzero"`
+
+	// OperationId Stable identity for this exact desired operator action.
+	OperationId            string    `json:"operation_id,omitempty,omitzero"`
+	Phase                  string    `json:"phase,omitempty,omitzero"`
+	PrerequisiteDeadlineAt time.Time `json:"prerequisite_deadline_at,omitempty,omitzero"`
+	Reason                 string    `json:"reason,omitempty,omitzero"`
+
+	// RejoinAction Former-primary rejoin action reported by the typed HA admin workflow, such as rewind or reseed.
+	RejoinAction string `json:"rejoin_action,omitempty,omitzero"`
+
+	// RejoinReason Reason the operator/admin workflow selected the former-primary rejoin action.
+	RejoinReason         string    `json:"rejoin_reason,omitempty,omitzero"`
+	ReservationExpiresAt time.Time `json:"reservation_expires_at,omitempty,omitzero"`
+	RetainedFromLsn      int64     `json:"retained_from_lsn,omitempty,omitzero"`
+	RetryBudgetUsed      int32     `json:"retry_budget_used,omitempty,omitzero"`
+
+	// RetryGeneration Explicit recovery nonce frozen into this exact action identity.
+	RetryGeneration        int64  `json:"retry_generation,omitempty,omitzero"`
+	Retryable              bool   `json:"retryable,omitempty,omitzero"`
+	RouteFrom              string `json:"route_from,omitempty,omitzero"`
+	RouteTo                string `json:"route_to,omitempty,omitzero"`
+	SeedArtifactGeneration string `json:"seed_artifact_generation,omitempty,omitzero"`
+
+	// SeedArtifactReceipt Credential-free immutable receipt for one portable-seed action.
+	SeedArtifactReceipt CloudHASeedArtifactReceiptStatus `json:"seed_artifact_receipt,omitempty,omitzero"`
+
+	// SeedCaptureReceiptSha256 Digest of the exact runtime capture receipt authorizing this portable seed action.
+	SeedCaptureReceiptSha256 string `json:"seed_capture_receipt_sha256,omitempty,omitzero"`
+	SlotName                 string `json:"slot_name,omitempty,omitzero"`
+	SourcePvcName            string `json:"source_pvc_name,omitempty,omitzero"`
+	SourcePvcUid             string `json:"source_pvc_uid,omitempty,omitzero"`
+	StandbyName              string `json:"standby_name,omitempty,omitzero"`
+	TargetLocalNodeId        int64  `json:"target_local_node_id,omitempty,omitzero"`
+	TargetLsn                int64  `json:"target_lsn,omitempty,omitzero"`
+	TargetPvcName            string `json:"target_pvc_name,omitempty,omitzero"`
+	TargetPvcUid             string `json:"target_pvc_uid,omitempty,omitzero"`
+	TargetReplicaId          int64  `json:"target_replica_id,omitempty,omitzero"`
+	TopologyGeneration       int64  `json:"topology_generation,omitempty,omitzero"`
+	TopologyId               string `json:"topology_id,omitempty,omitzero"`
+	TopologyNodeId           string `json:"topology_node_id,omitempty,omitzero"`
+}
+
+// CloudHAPrimaryRouteState Normalized fail-closed state of the customer-facing primary route.
+type CloudHAPrimaryRouteState string
+
+// CloudHAReplacementPolicy Bounded repair-before-replace policy for restoring hot-standby redundancy.
+type CloudHAReplacementPolicy struct {
+	// DiagnosticRetentionSeconds Minimum retention window for superseded replacement resources and diagnostics.
+	DiagnosticRetentionSeconds int `json:"diagnostic_retention_seconds,omitempty,omitzero"`
+
+	// ExtendRepairSeconds Operator override that extends the current repair deadline without mutating runtime data.
+	ExtendRepairSeconds int `json:"extend_repair_seconds,omitempty,omitzero"`
+
+	// ForceReplacement Bypass the remaining repair budget and allocate replacement capacity on the next reconcile.
+	ForceReplacement bool `json:"force_replacement,omitempty,omitzero"`
+
+	// RepairAttemptLimit Maximum distinct failed repair actions before replacement is allowed.
+	RepairAttemptLimit int `json:"repair_attempt_limit,omitempty,omitzero"`
+
+	// RepairTimeoutSeconds Maximum time to prefer repair before allocating replacement capacity.
+	RepairTimeoutSeconds int `json:"repair_timeout_seconds,omitempty,omitzero"`
+}
+
+// CloudHAReplacementStatus Durable progress for one generation-safe replacement standby allocation.
+type CloudHAReplacementStatus struct {
+	AppliedLsn    int64     `json:"applied_lsn,omitempty,omitzero"`
+	AttemptCount  int32     `json:"attempt_count,omitempty,omitzero"`
+	BoundaryLsn   int64     `json:"boundary_lsn,omitempty,omitzero"`
+	CompletedAt   time.Time `json:"completed_at,omitempty,omitzero"`
+	CreatedAt     time.Time `json:"created_at,omitempty,omitzero"`
+	Decision      string    `json:"decision,omitempty,omitzero"`
+	Generation    int64     `json:"generation,omitempty,omitzero"`
+	LastAttemptAt time.Time `json:"last_attempt_at,omitempty,omitzero"`
+	LastError     string    `json:"last_error,omitempty,omitzero"`
+	NextRetryAt   time.Time `json:"next_retry_at,omitempty,omitzero"`
+	NodeId        string    `json:"node_id,omitempty,omitzero"`
+	Ordinal       int32     `json:"ordinal,omitempty,omitzero"`
+
+	// Phase requested, provisioning, seeding, catching_up, healthy, failed, superseded, or retired.
+	Phase          string    `json:"phase,omitempty,omitzero"`
+	PhaseStartedAt time.Time `json:"phase_started_at,omitempty,omitzero"`
+
+	// PlacementPolicy Scheduling isolation contract applied to this replacement generation.
+	PlacementPolicy string `json:"placement_policy,omitempty,omitzero"`
+	Reason          string `json:"reason,omitempty,omitzero"`
+	ReceivedLsn     int64  `json:"received_lsn,omitempty,omitzero"`
+	ReplacesNodeId  string `json:"replaces_node_id,omitempty,omitzero"`
+	ResourceName    string `json:"resource_name,omitempty,omitzero"`
+	Retryable       bool   `json:"retryable,omitempty,omitzero"`
+	SafeReadLsn     int64  `json:"safe_read_lsn,omitempty,omitzero"`
+
+	// SeedArtifactGeneration Exact immutable portable-seed generation assigned to this replacement.
+	SeedArtifactGeneration    string `json:"seed_artifact_generation,omitempty,omitzero"`
+	SlotName                  string `json:"slot_name,omitempty,omitzero"`
+	SourcePrimaryId           string `json:"source_primary_id,omitempty,omitzero"`
+	SourcePromotionGeneration int64  `json:"source_promotion_generation,omitempty,omitzero"`
+
+	// SourcePromotionReceiptId Stable digest identifying the fenced promotion authority used by this replacement.
+	SourcePromotionReceiptId string    `json:"source_promotion_receipt_id,omitempty,omitzero"`
+	StorageIdentity          string    `json:"storage_identity,omitempty,omitzero"`
+	TopologyGeneration       int64     `json:"topology_generation,omitempty,omitzero"`
+	UpdatedAt                time.Time `json:"updated_at,omitempty,omitzero"`
+}
+
+// CloudHARetentionStatus Observed HA WAL retention pressure from standby replication slots.
+type CloudHARetentionStatus struct {
+	ActiveSlots       int32 `json:"active_slots,omitempty,omitzero"`
+	OldestRestartLsn  int64 `json:"oldest_restart_lsn,omitempty,omitzero"`
+	ReseedRecommended int32 `json:"reseed_recommended,omitempty,omitzero"`
+	RetainedAgeNs     int64 `json:"retained_age_ns,omitempty,omitzero"`
+	RetainedByteCount int64 `json:"retained_byte_count,omitempty,omitzero"`
+	RetainedLsnCount  int64 `json:"retained_lsn_count,omitempty,omitzero"`
+}
+
+// CloudHASeedArtifactReceiptStatus Credential-free immutable receipt for one portable-seed action.
+type CloudHASeedArtifactReceiptStatus struct {
+	ActionKind                  string `json:"action_kind,omitempty,omitzero"`
+	AggregateSha256             string `json:"aggregate_sha256,omitempty,omitzero"`
+	BackupLsn                   int64  `json:"backup_lsn,omitempty,omitzero"`
+	CaptureReceiptSha256        string `json:"capture_receipt_sha256,omitempty,omitzero"`
+	CheckpointLsn               int64  `json:"checkpoint_lsn,omitempty,omitzero"`
+	CheckpointSha256            string `json:"checkpoint_sha256,omitempty,omitzero"`
+	ClusterId                   int64  `json:"cluster_id,omitempty,omitzero"`
+	DeletedCount                int32  `json:"deleted_count,omitempty,omitzero"`
+	Epoch                       int64  `json:"epoch,omitempty,omitzero"`
+	FileCount                   int32  `json:"file_count,omitempty,omitzero"`
+	FormatVersion               int32  `json:"format_version,omitempty,omitzero"`
+	Generation                  string `json:"generation,omitempty,omitzero"`
+	GenerationPath              string `json:"generation_path,omitempty,omitzero"`
+	ManifestId                  string `json:"manifest_id,omitempty,omitzero"`
+	ManifestSha256              string `json:"manifest_sha256,omitempty,omitzero"`
+	MaterializedAggregateSha256 string `json:"materialized_aggregate_sha256,omitempty,omitzero"`
+	MaterializedReceiptSha256   string `json:"materialized_receipt_sha256,omitempty,omitzero"`
+	NodeId                      string `json:"node_id,omitempty,omitzero"`
+	ProtectedCount              int32  `json:"protected_count,omitempty,omitzero"`
+	RawGenerationPath           string `json:"raw_generation_path,omitempty,omitzero"`
+	ResumedTombstoneCount       int32  `json:"resumed_tombstone_count,omitempty,omitzero"`
+	RetainedCount               int32  `json:"retained_count,omitempty,omitzero"`
+	Scope                       string `json:"scope,omitempty,omitzero"`
+	SeedReceiptSha256           string `json:"seed_receipt_sha256,omitempty,omitzero"`
+	ShardId                     int64  `json:"shard_id,omitempty,omitzero"`
+	SkippedIneligibleCount      int32  `json:"skipped_ineligible_count,omitempty,omitzero"`
+	SlotName                    string `json:"slot_name,omitempty,omitzero"`
+	SourcePvcName               string `json:"source_pvc_name,omitempty,omitzero"`
+	SourcePvcUid                string `json:"source_pvc_uid,omitempty,omitzero"`
+	TableId                     int64  `json:"table_id,omitempty,omitzero"`
+	TargetLocalNodeId           int64  `json:"target_local_node_id,omitempty,omitzero"`
+	TargetPvcName               string `json:"target_pvc_name,omitempty,omitzero"`
+	TargetPvcUid                string `json:"target_pvc_uid,omitempty,omitzero"`
+	TargetReplicaId             int64  `json:"target_replica_id,omitempty,omitzero"`
+	TimelineId                  int64  `json:"timeline_id,omitempty,omitzero"`
+	TopologyGeneration          int64  `json:"topology_generation,omitempty,omitzero"`
+	TopologyId                  string `json:"topology_id,omitempty,omitzero"`
+	TotalBytes                  int64  `json:"total_bytes,omitempty,omitzero"`
+}
+
+// CloudHASeedStatus Public, credential-free progress and immutable identity for the seed generation currently assigned to one standby. Empty fields mean the corresponding authority has not yet been durably observed.
+type CloudHASeedStatus struct {
+	AggregateSha256      string    `json:"aggregate_sha256,omitempty,omitzero"`
+	AttemptCount         int32     `json:"attempt_count,omitempty,omitzero"`
+	BackupLsn            int64     `json:"backup_lsn,omitempty,omitzero"`
+	CaptureReceiptSha256 string    `json:"capture_receipt_sha256,omitempty,omitzero"`
+	CheckpointLsn        int64     `json:"checkpoint_lsn,omitempty,omitzero"`
+	CompletedAt          time.Time `json:"completed_at,omitempty,omitzero"`
+	Epoch                int64     `json:"epoch,omitempty,omitzero"`
+	ErrorClass           string    `json:"error_class,omitempty,omitzero"`
+	FirstAttemptAt       time.Time `json:"first_attempt_at,omitempty,omitzero"`
+	Generation           string    `json:"generation,omitempty,omitzero"`
+	LastAttemptAt        time.Time `json:"last_attempt_at,omitempty,omitzero"`
+	ManifestSha256       string    `json:"manifest_sha256,omitempty,omitzero"`
+	NextRetryAt          time.Time `json:"next_retry_at,omitempty,omitzero"`
+	NodeId               string    `json:"node_id,omitempty,omitzero"`
+
+	// OperationId Stable operator identity for the currently authoritative seed action.
+	OperationId        string `json:"operation_id,omitempty,omitzero"`
+	Phase              string `json:"phase,omitempty,omitzero"`
+	RetryBudgetUsed    int32  `json:"retry_budget_used,omitempty,omitzero"`
+	Retryable          bool   `json:"retryable,omitempty,omitzero"`
+	SeedReceiptSha256  string `json:"seed_receipt_sha256,omitempty,omitzero"`
+	SlotName           string `json:"slot_name,omitempty,omitzero"`
+	SourcePrimaryId    string `json:"source_primary_id,omitempty,omitzero"`
+	SourcePvcName      string `json:"source_pvc_name,omitempty,omitzero"`
+	SourcePvcUid       string `json:"source_pvc_uid,omitempty,omitzero"`
+	TargetPvcName      string `json:"target_pvc_name,omitempty,omitzero"`
+	TargetPvcUid       string `json:"target_pvc_uid,omitempty,omitzero"`
+	TimelineId         int64  `json:"timeline_id,omitempty,omitzero"`
+	TopologyGeneration int64  `json:"topology_generation,omitempty,omitzero"`
+	TopologyId         string `json:"topology_id,omitempty,omitzero"`
+}
+
+// CloudHAStandbyStatus Observed hot-standby replica status.
+type CloudHAStandbyStatus struct {
+	AppliedLsn int64 `json:"applied_lsn,omitempty,omitzero"`
+
+	// Health Cloud-visible hot-standby health state.
+	Health         CloudHAHealth `json:"health,omitempty,omitzero"`
+	LagLsn         int64         `json:"lag_lsn,omitempty,omitzero"`
+	Name           string        `json:"name,omitempty,omitzero"`
+	NodeId         string        `json:"node_id,omitempty,omitzero"`
+	ReceivedLsn    int64         `json:"received_lsn,omitempty,omitzero"`
+	ReseedRequired bool          `json:"reseed_required,omitempty,omitzero"`
+	SafeReadLsn    int64         `json:"safe_read_lsn,omitempty,omitzero"`
+
+	// Seed Public, credential-free progress and immutable identity for the seed generation currently assigned to one standby. Empty fields mean the corresponding authority has not yet been durably observed.
+	Seed     CloudHASeedStatus `json:"seed,omitempty,omitzero"`
+	SlotName string            `json:"slot_name,omitempty,omitzero"`
+}
+
+// CloudHAStatus Cloud-visible hot-standby state observed from the operator/runtime.
+type CloudHAStatus struct {
+	// AutomaticPromotionAllowed Whether the operator planner currently allows automatic promotion.
+	AutomaticPromotionAllowed bool   `json:"automatic_promotion_allowed,omitempty,omitzero"`
+	CurrentPrimaryId          string `json:"current_primary_id,omitempty,omitzero"`
+
+	// DesiredStandbyCount Desired standby count reported by the operator.
+	DesiredStandbyCount int32 `json:"desired_standby_count,omitempty,omitzero"`
+
+	// FencingAuthority Fencing authority used for hot-standby promotion decisions.
+	FencingAuthority CloudHAFencingAuthority `json:"fencing_authority,omitempty,omitzero"`
+
+	// FencingState Normalized fail-closed state of the configured fencing authority.
+	FencingState CloudHAFencingState `json:"fencing_state,omitempty,omitzero"`
+
+	// FormerPrimary Cloud-visible former-primary rejoin/rewind/reseed disposition after a hot-standby promotion.
+	FormerPrimary CloudHAFormerPrimaryStatus `json:"former_primary,omitempty,omitzero"`
+
+	// Health Cloud-visible hot-standby health state.
+	Health CloudHAHealth `json:"health,omitempty,omitzero"`
+
+	// HealthyStandbyCount Desired standbys caught up to apply.
+	HealthyStandbyCount int32 `json:"healthy_standby_count,omitempty,omitzero"`
+
+	// Identity Current HA identity, including cluster/timeline/epoch/current primary when observed.
+	Identity map[string]interface{} `json:"identity,omitempty,omitzero"`
+
+	// LaggingStandbyCount Desired standbys with non-zero replication lag.
+	LaggingStandbyCount int32                        `json:"lagging_standby_count,omitempty,omitzero"`
+	LastPromotion       map[string]interface{}       `json:"last_promotion,omitempty,omitzero"`
+	PlannedActions      []CloudHAPlannedActionStatus `json:"planned_actions,omitempty,omitzero"`
+
+	// PrimaryAdminLastError Latest primary HA admin observation error, when the primary could not be observed.
+	PrimaryAdminLastError string `json:"primary_admin_last_error,omitempty,omitzero"`
+
+	// PrimaryAdminReachable Whether the operator most recently reached the primary HA admin endpoint.
+	PrimaryAdminReachable bool `json:"primary_admin_reachable,omitempty,omitzero"`
+
+	// PrimaryAdminStatusCode Latest typed primary HA admin status-observation HTTP status code.
+	PrimaryAdminStatusCode int32 `json:"primary_admin_status_code,omitempty,omitzero"`
+	PrimaryLsn             int64 `json:"primary_lsn,omitempty,omitzero"`
+
+	// PrimaryRouteState Normalized fail-closed state of the customer-facing primary route.
+	PrimaryRouteState CloudHAPrimaryRouteState `json:"primary_route_state,omitempty,omitzero"`
+
+	// ReadSafeStandbyCount Desired standbys safe for bounded-staleness reads.
+	ReadSafeStandbyCount int32                      `json:"read_safe_standby_count,omitempty,omitzero"`
+	Replacements         []CloudHAReplacementStatus `json:"replacements,omitempty,omitzero"`
+
+	// ReseedRequiredCount Desired standbys requiring reseed.
+	ReseedRequiredCount int32 `json:"reseed_required_count,omitempty,omitzero"`
+
+	// Retention Observed HA WAL retention pressure from standby replication slots.
+	Retention CloudHARetentionStatus `json:"retention,omitempty,omitzero"`
+	Standbys  []CloudHAStandbyStatus `json:"standbys,omitempty,omitzero"`
+
+	// Sync Observed hot-standby synchronous durability policy state.
+	Sync                             CloudHASyncStatus `json:"sync,omitempty,omitzero"`
+	TimeWithoutSyncRedundancySeconds int64             `json:"time_without_sync_redundancy_seconds,omitempty,omitzero"`
+
+	// Topology Durable, generation-checked post-promotion topology and former-primary repair progress.
+	Topology CloudHATopologyStatus `json:"topology,omitempty,omitzero"`
+
+	// TopologyGeneration Monotonic Colony topology generation used to reject stale replacement work.
+	TopologyGeneration int64 `json:"topology_generation,omitempty,omitzero"`
+
+	// UnhealthyStandbyCount Desired standbys missing, inactive, or reporting replication errors.
+	UnhealthyStandbyCount int32 `json:"unhealthy_standby_count,omitempty,omitzero"`
+
+	// WritesBlockedWaitingForDurability Whether synchronous writes remain fail-closed while no qualifying standby exists.
+	WritesBlockedWaitingForDurability bool `json:"writes_blocked_waiting_for_durability,omitempty,omitzero"`
+}
+
+// CloudHASyncMode Standby durability mode for hot-standby replication. Production create/update requests accept only `remote_apply`; the other values remain representable for compatibility with internal and historical state.
+type CloudHASyncMode string
+
+// CloudHASyncStatus Observed hot-standby synchronous durability policy state.
+type CloudHASyncStatus struct {
+	Action        string `json:"action,omitempty,omitzero"`
+	Candidates    int32  `json:"candidates,omitempty,omitzero"`
+	Degraded      bool   `json:"degraded,omitempty,omitzero"`
+	FailurePolicy string `json:"failure_policy,omitempty,omitzero"`
+
+	// Mode Observed durability mode reported by the operator.
+	Mode      string `json:"mode,omitempty,omitzero"`
+	Required  int32  `json:"required,omitempty,omitzero"`
+	Satisfied int32  `json:"satisfied,omitempty,omitzero"`
+
+	// Selection Standby selection policy used by the sync policy.
+	Selection string `json:"selection,omitempty,omitzero"`
+}
+
+// CloudHATopologyPhase Durable Colony-owned phase for one post-promotion topology generation.
+type CloudHATopologyPhase string
+
+// CloudHATopologyStatus Durable, generation-checked post-promotion topology and former-primary repair progress.
+type CloudHATopologyStatus struct {
+	AppliedLsn int64 `json:"applied_lsn,omitempty,omitzero"`
+
+	// Assessment Exact repair disposition for this generation, normally rewind or reseed.
+	Assessment          string `json:"assessment,omitempty,omitzero"`
+	AssessmentReceiptId string `json:"assessment_receipt_id,omitempty,omitzero"`
+	AttemptCount        int32  `json:"attempt_count,omitempty,omitzero"`
+	CurrentPrimaryId    string `json:"current_primary_id,omitempty,omitzero"`
+	DesiredPrimaryId    string `json:"desired_primary_id,omitempty,omitzero"`
+	Epoch               int64  `json:"epoch,omitempty,omitzero"`
+	FenceGeneration     int64  `json:"fence_generation,omitempty,omitzero"`
+
+	// FenceTokenDigest SHA-256 digest of the opaque typed fence token.
+	FenceTokenDigest string `json:"fence_token_digest,omitempty,omitzero"`
+	FormerPrimaryId  string `json:"former_primary_id,omitempty,omitzero"`
+
+	// Generation Monotonic Colony topology generation.
+	Generation       int64     `json:"generation,omitempty,omitzero"`
+	LagLsn           int64     `json:"lag_lsn,omitempty,omitzero"`
+	LastError        string    `json:"last_error,omitempty,omitzero"`
+	LastErrorClass   string    `json:"last_error_class,omitempty,omitzero"`
+	LastTransitionAt time.Time `json:"last_transition_at,omitempty,omitzero"`
+	ParentTimelineId int64     `json:"parent_timeline_id,omitempty,omitzero"`
+
+	// Phase Durable Colony-owned phase for one post-promotion topology generation.
+	Phase CloudHATopologyPhase `json:"phase,omitempty,omitzero"`
+
+	// PromotionReceiptId Stable digest of the typed promotion receipt; never contains the fence token.
+	PromotionReceiptId string `json:"promotion_receipt_id,omitempty,omitzero"`
+	ReceivedLsn        int64  `json:"received_lsn,omitempty,omitzero"`
+	RepairReceiptId    string `json:"repair_receipt_id,omitempty,omitzero"`
+	Retryable          bool   `json:"retryable,omitempty,omitzero"`
+
+	// Revision Monotonic state revision within one topology generation.
+	Revision        int64  `json:"revision,omitempty,omitzero"`
+	RouteGeneration int64  `json:"route_generation,omitempty,omitzero"`
+	SafeReadLsn     int64  `json:"safe_read_lsn,omitempty,omitzero"`
+	SeedArtifactId  string `json:"seed_artifact_id,omitempty,omitzero"`
+	SwitchLsn       int64  `json:"switch_lsn,omitempty,omitzero"`
+
+	// SynchronousAcknowledgementsBlocked Whether RemoteApply/Block remains fail-closed while redundancy is absent.
+	SynchronousAcknowledgementsBlocked bool  `json:"synchronous_acknowledgements_blocked,omitempty,omitzero"`
+	TimelineId                         int64 `json:"timeline_id,omitempty,omitzero"`
+}
+
 // CloudInstance defines model for CloudInstance.
 type CloudInstance struct {
 	// CreatedAt ISO 8601 timestamp
@@ -606,16 +1221,22 @@ type CloudInstance struct {
 	// CurrentAntflyVersion Currently healthy Antfly runtime version.
 	CurrentAntflyVersion string `json:"current_antfly_version,omitempty,omitzero"`
 
+	// HaConfig Hot-standby HA add-on configuration. Supported only with `mode=single`; distributed mode is the separate Raft-backed topology.
+	HaConfig CloudHAConfig `json:"ha_config,omitempty,omitzero"`
+
+	// HaStatus Cloud-visible hot-standby state observed from the operator/runtime.
+	HaStatus CloudHAStatus `json:"ha_status,omitempty,omitzero"`
+
 	// Id RFC 4122 UUID identifier
 	Id UUID `json:"id"`
 
-	// Mode Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+	// Mode Cloud deployment topology. `single` provisions one Swarm Antfly node; `replicated` provisions separate Raft-backed metadata and data node groups.
 	Mode CloudInstanceMode `json:"mode"`
 
 	// Name Display name
 	Name string `json:"name"`
 
-	// NodeConfig Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+	// NodeConfig Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
 	NodeConfig NodeConfig `json:"node_config,omitempty,omitzero"`
 
 	// OrganizationId RFC 4122 UUID identifier
@@ -673,7 +1294,7 @@ type CloudInstance struct {
 	VersionUpgradeStatus CloudInstanceVersionUpgradeStatus `json:"version_upgrade_status,omitempty,omitzero"`
 }
 
-// CloudInstanceMode Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+// CloudInstanceMode Cloud deployment topology. `single` provisions one Swarm Antfly node; `replicated` provisions separate Raft-backed metadata and data node groups.
 type CloudInstanceMode string
 
 // CloudInstanceStatus Instance lifecycle status
@@ -951,7 +1572,7 @@ type InvitationResponse2Status string
 // MembershipStatus Membership status
 type MembershipStatus string
 
-// NodeConfig Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+// NodeConfig Cluster node configuration. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
 type NodeConfig struct {
 	// Accelerator GPU/TPU accelerator configuration (reserved for future use)
 	Accelerator struct {
@@ -965,7 +1586,7 @@ type NodeConfig struct {
 	// Cpu CPU request per node (e.g., "500m", "1000m")
 	Cpu string `json:"cpu,omitempty,omitzero"`
 
-	// DataNodes Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
+	// DataNodes Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
 	DataNodes int `json:"data_nodes,omitempty,omitzero"`
 
 	// DataStorage Persistent storage per data node (e.g., "10Gi", "50Gi")
@@ -974,7 +1595,7 @@ type NodeConfig struct {
 	// Memory Memory request per node (e.g., "4Gi", "8Gi")
 	Memory string `json:"memory,omitempty,omitzero"`
 
-	// MetadataNodes Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
+	// MetadataNodes Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
 	MetadataNodes int `json:"metadata_nodes,omitempty,omitzero"`
 
 	// MetadataStorage Persistent storage per metadata node (e.g., "2Gi", "5Gi")
@@ -994,7 +1615,7 @@ type NodeConfig struct {
 // NodeConfigSharedInferenceMode Desired Antfly shared inference state. Omitted defaults to enabled for existing instances.
 type NodeConfigSharedInferenceMode string
 
-// NodeConfigUpdate Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+// NodeConfigUpdate Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
 type NodeConfigUpdate struct {
 	// Accelerator GPU/TPU accelerator configuration
 	Accelerator *struct {
@@ -1008,8 +1629,8 @@ type NodeConfigUpdate struct {
 	// Cpu CPU request per node (e.g., "500m", "1000m")
 	Cpu string `json:"cpu,omitempty,omitzero"`
 
-	// DataNodes Number of data (storage) nodes for replicated mode; single mode is always one Antfly node.
-	DataNodes int `json:"data_nodes,omitempty,omitzero"`
+	// DataNodes Number of data (storage) nodes for distributed mode; single mode is always one Antfly node.
+	DataNodes *int `json:"data_nodes,omitempty"`
 
 	// DataStorage Persistent storage per data node (e.g., "10Gi", "50Gi")
 	DataStorage string `json:"data_storage,omitempty,omitzero"`
@@ -1017,8 +1638,8 @@ type NodeConfigUpdate struct {
 	// Memory Memory request per node (e.g., "4Gi", "8Gi")
 	Memory string `json:"memory,omitempty,omitzero"`
 
-	// MetadataNodes Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
-	MetadataNodes int `json:"metadata_nodes,omitempty,omitzero"`
+	// MetadataNodes Number of metadata (Raft consensus) nodes for distributed mode; ignored for single mode.
+	MetadataNodes *int `json:"metadata_nodes,omitempty"`
 
 	// MetadataStorage Persistent storage per metadata node (e.g., "2Gi", "5Gi")
 	MetadataStorage string `json:"metadata_storage,omitempty,omitzero"`
@@ -1162,13 +1783,16 @@ type UpdateCloudInstanceRequest struct {
 	// ClearAntflyVersionTarget Clear a pending or failed manual Antfly runtime target without changing the live cluster image.
 	ClearAntflyVersionTarget bool `json:"clear_antfly_version_target,omitempty,omitzero"`
 
-	// Mode Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+	// HaConfig Enable, disable, or update the hot-standby HA add-on for a ready single-topology instance. Initial enablement requires at least one table, no enabled backup schedule, and `sync_mode=remote_apply`.
+	HaConfig *CloudHAConfig `json:"ha_config,omitempty"`
+
+	// Mode Cloud deployment topology. `single` provisions one Swarm Antfly node; `replicated` provisions separate Raft-backed metadata and data node groups.
 	Mode CloudInstanceMode `json:"mode,omitempty,omitzero"`
 
 	// Name New display name
 	Name string `json:"name,omitempty,omitzero"`
 
-	// NodeConfig Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+	// NodeConfig Node configuration changes for scaling. Split metadata/data node counts apply only to distributed mode; single mode is normalized to one Antfly node.
 	NodeConfig NodeConfigUpdate `json:"node_config,omitempty,omitzero"`
 
 	// SharedInferenceMode Enable or disable Antfly shared inference for this instance.
@@ -7552,180 +8176,244 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"XP/QS3Mhc1WBqLCqZzK/9l9uvtz8/wAAAP//",
+	"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",
+	"mwueqzJEhVQ9kfm9/+XzL5//bwAAAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
