@@ -3329,7 +3329,17 @@ export interface components {
             /** @description True when the listing reached the server-side object limit. */
             truncated: boolean;
         };
-        /** @description Structured import job configuration and status. */
+        /**
+         * @description Configuration and status for structured-record or unstructured-file imports.
+         *     GitHub Markdown and MDX files emit directly indexed section records; other
+         *     documents retain native extraction. Run summaries count selected, supported,
+         *     native, section, and valid empty files separately from emitted rows and native
+         *     chunks. Section records have independent expected, loaded, full-text, and
+         *     vector coverage counters. The optional files_with_searchable_content counter
+         *     counts distinct source files with verified searchable text; it excludes valid
+         *     empty files and is absent from historical summaries. Loaded rows alone do not
+         *     establish full-text or semantic coverage.
+         */
         ImportJob: {
             [key: string]: unknown;
         };
