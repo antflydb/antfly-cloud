@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><title>DocsAF Search</title><style>body{font-family:system-ui;margin:2rem;max-width:900px}input{width:70%;padding:.6rem}button{padding:.6rem}.hit{border-top:1px solid #ddd;padding:1rem 0}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}</style></head><body>
+<h1>DocsAF Search</h1><p>Run <code>python3 scripts/local_proxy.py</code>, then search your DocsAF table without exposing the Cloud API key in browser code.</p>
+<p>For the sample corpus, try <code>source-document rows</code>, <code>hierarchy artifacts</code>, or <code>hosted Antfly instances</code>.</p>
+<input id="q" value="source-document rows"><button id="go">Search</button><div id="out"></div>
+<script>
+const table = new URLSearchParams(location.search).get('table') || 'docsaf';
+async function search(){const q=document.getElementById('q').value; const r=await fetch(`http://127.0.0.1:8766/tables/${table}/query`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({semantic_search:q,limit:10})}); const data=await r.json(); const hits=data.responses?.[0]?.hits?.hits||[]; document.getElementById('out').innerHTML=hits.map(h=>{const s=h.source||h._source||{}; return `<div class=hit><b>${h.id||h._id||''}</b><pre>${escapeHtml(JSON.stringify(s,null,2))}</pre></div>`}).join('') || '<p>No hits.</p>'}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+document.getElementById('go').onclick=search;
+</script></body></html>

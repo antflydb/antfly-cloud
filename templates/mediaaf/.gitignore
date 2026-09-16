@@ -1,0 +1,9 @@
+.env
+.env.local
+web/node_modules/
+web/dist/
+ingest/image-to-text/output/
+artifacts/
+*.pyc
+__pycache__/
+sources/*/manifest.json
