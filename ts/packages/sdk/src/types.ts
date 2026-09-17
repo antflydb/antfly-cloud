@@ -2529,8 +2529,29 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
+        /** @description Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors. */
+        CloudHotStandby: {
+            /** @enum {string} */
+            phase: "preparing" | "seeding" | "ready" | "degraded";
+            topology_id: string;
+            table_name?: string;
+            /** Format: uint64 */
+            table_id?: number;
+            /** Format: uint64 */
+            shard_id?: number;
+            source_pvc_uid?: string;
+            target_pvc_uid?: string;
+            /** Format: int64 */
+            primary_generation?: number;
+            /** Format: uint64 */
+            primary_lsn?: number;
+            /** Format: uint64 */
+            applied_lsn?: number;
+            message?: string;
+        };
         /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
+            readonly hot_standby?: components["schemas"]["CloudHotStandby"];
             /**
              * @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
              * @default 0
@@ -2690,6 +2711,8 @@ export interface components {
             is_default: boolean;
         };
         UpdateCloudInstanceRequest: {
+            /** @description Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates. */
+            enable_hot_standby?: boolean;
             /** @description New display name */
             name?: string;
             /** @description Change the instance deployment mode. Switching to replicated HA is billed before provisioning. */
@@ -2864,14 +2887,18 @@ export interface components {
         };
         /** @description Optional hosted inference spend and rate limits for an API key or organization. */
         HostedInferenceLimits: {
+            /** @description Optional public external hosted inference model IDs this key may invoke. Native Antfly Inference models are unaffected. Null or empty inherits from the broader policy layer. */
+            allowed_models?: string[] | null;
             /** @description External hosted inference requests per minute. Null or 0 inherits from the broader policy layer. */
-            requests_per_minute?: number;
+            requests_per_minute?: number | null;
             /** @description Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer. */
-            tokens_per_minute?: number;
+            tokens_per_minute?: number | null;
             /** @description Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer. */
-            concurrent_requests?: number;
-            /** @description Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
-            managed_spend_cents_per_month?: number;
+            concurrent_requests?: number | null;
+            /** @description Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            managed_spend_cents_per_day?: number | null;
+            /** @description Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            managed_spend_cents_per_month?: number | null;
         };
         /** @description Returned only at creation time. The full key is never shown again. */
         CloudAPIKeyCreated: {
@@ -3111,6 +3138,8 @@ export interface components {
             meta: components["schemas"]["PaginationMeta"];
         };
         CloudCreditEstimateRequest: {
+            /** @description Estimate one synchronous standby for this existing instance. */
+            enable_hot_standby?: boolean;
             /**
              * @description Cloud operation being estimated
              * @enum {string}
@@ -3329,7 +3358,17 @@ export interface components {
             /** @description True when the listing reached the server-side object limit. */
             truncated: boolean;
         };
-        /** @description Structured import job configuration and status. */
+        /**
+         * @description Configuration and status for structured-record or unstructured-file imports.
+         *     GitHub Markdown and MDX files emit directly indexed section records; other
+         *     documents retain native extraction. Run summaries count selected, supported,
+         *     native, section, and valid empty files separately from emitted rows and native
+         *     chunks. Section records have independent expected, loaded, full-text, and
+         *     vector coverage counters. The optional files_with_searchable_content counter
+         *     counts distinct source files with verified searchable text; it excludes valid
+         *     empty files and is absent from historical summaries. Loaded rows alone do not
+         *     establish full-text or semantic coverage.
+         */
         ImportJob: {
             [key: string]: unknown;
         };

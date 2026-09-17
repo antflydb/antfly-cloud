@@ -5539,10 +5539,54 @@ components:
         - read_write
         - admin
       description: API key permission level
+    CloudHotStandby:
+      type: object
+      readOnly: true
+      description: Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors.
+      required:
+        - phase
+        - topology_id
+      properties:
+        phase:
+          type: string
+          enum:
+            - preparing
+            - seeding
+            - ready
+            - degraded
+        topology_id:
+          type: string
+        table_name:
+          type: string
+        table_id:
+          type: integer
+          format: uint64
+        shard_id:
+          type: integer
+          format: uint64
+        source_pvc_uid:
+          type: string
+        target_pvc_uid:
+          type: string
+        primary_generation:
+          type: integer
+          format: int64
+        primary_lsn:
+          type: integer
+          format: uint64
+        applied_lsn:
+          type: integer
+          format: uint64
+        message:
+          type: string
     NodeConfig:
       type: object
       description: Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
       properties:
+        hot_standby:
+          $ref: '#/components/schemas/CloudHotStandby'
+          readOnly: true
+          x-go-type-skip-optional-pointer: false
         metadata_nodes:
           type: integer
           minimum: 0
@@ -5774,6 +5818,9 @@ components:
     UpdateCloudInstanceRequest:
       type: object
       properties:
+        enable_hot_standby:
+          type: boolean
+          description: Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
         name:
           type: string
           minLength: 1
@@ -6048,22 +6095,37 @@ components:
       type: object
       description: Optional hosted inference spend and rate limits for an API key or organization.
       properties:
+        allowed_models:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Optional public external hosted inference model IDs this key may invoke. Native Antfly Inference models are unaffected. Null or empty inherits from the broader policy layer.
         requests_per_minute:
           type: integer
+          nullable: true
           minimum: 0
           description: External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
         tokens_per_minute:
           type: integer
+          nullable: true
           minimum: 0
           description: Estimated hosted inference text tokens per minute. Null or 0 inherits from the broader policy layer.
         concurrent_requests:
           type: integer
+          nullable: true
           minimum: 0
           description: Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
+        managed_spend_cents_per_day:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
         managed_spend_cents_per_month:
           type: integer
+          nullable: true
           minimum: 0
-          description: Monthly Antfly-managed provider spend in cents. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+          description: Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -6519,6 +6581,9 @@ components:
       required:
         - operation
       properties:
+        enable_hot_standby:
+          type: boolean
+          description: Estimate one synchronous standby for this existing instance.
         operation:
           type: string
           enum:
@@ -6890,7 +6955,16 @@ components:
     ImportJob:
       type: object
       additionalProperties: true
-      description: Structured import job configuration and status.
+      description: |
+        Configuration and status for structured-record or unstructured-file imports.
+        GitHub Markdown and MDX files emit directly indexed section records; other
+        documents retain native extraction. Run summaries count selected, supported,
+        native, section, and valid empty files separately from emitted rows and native
+        chunks. Section records have independent expected, loaded, full-text, and
+        vector coverage counters. The optional files_with_searchable_content counter
+        counts distinct source files with verified searchable text; it excludes valid
+        empty files and is absent from historical summaries. Loaded rows alone do not
+        establish full-text or semantic coverage.
     UpdateCloudUserAttributesRequest:
       type: object
       required:
