@@ -339,6 +339,9 @@ func newUsageCommand(stateFor stateFactory) *cobra.Command {
 
 func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Command {
 	cmd := &cobra.Command{Use: "instance", Short: "Inspect a cloud instance"}
+	cmd.AddCommand(newInstanceAPIKeyCommand(stateFor))
+	cmd.AddCommand(newInstanceQueryCommand(stateFor))
+	cmd.AddCommand(newInstanceTableCommand(stateFor))
 	cmd.AddCommand(&cobra.Command{Use: "use <instance-id-or-slug>", Short: "Set the default cloud instance", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, err := stateFor(true)
 		if err != nil {

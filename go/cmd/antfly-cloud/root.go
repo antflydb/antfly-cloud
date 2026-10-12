@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -94,6 +95,8 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 	cmd.AddCommand(newStatusCommand(stateFor))
 	cmd.AddCommand(newInstancesCommand(stateFor))
 	cmd.AddCommand(newInstanceCommand(stateFor, &configFile))
+	cmd.AddCommand(newImportCommand(stateFor))
+	cmd.AddCommand(newProviderAuthCommand(stateFor))
 	cmd.AddCommand(newAntflyEnvCommand(stateFor))
 	cmd.AddCommand(newAntflyContextCommand(stateFor))
 	cmd.AddCommand(newAccessCommand(stateFor))
@@ -105,7 +108,9 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 
 func execute() int {
 	cmd := newRootCommand(os.Stdout, os.Stderr)
-	if err := cmd.Execute(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	if err := cmd.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		return 1
 	}
