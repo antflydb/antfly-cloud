@@ -15,7 +15,7 @@ import (
 )
 
 // Source and mapping configuration are provider-owned JSON; preserve them unchanged.
-type CreateImportJobRequest struct {
+type CreateImportRequest struct {
 	Name               string          `json:"name"`
 	ProviderAuthID     string          `json:"provider_auth_id"`
 	TargetTable        string          `json:"target_table"`
@@ -28,7 +28,7 @@ type CreateImportJobRequest struct {
 	ScheduleInterval   int             `json:"schedule_interval_seconds,omitempty"`
 }
 
-type ImportJob struct {
+type Import struct {
 	ID                 string          `json:"id"`
 	OrganizationID     string          `json:"organization_id"`
 	CloudInstanceID    string          `json:"cloud_instance_id"`
@@ -47,12 +47,12 @@ type ImportJob struct {
 	Status             string          `json:"status"`
 	CreatedAt          time.Time       `json:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at"`
-	LastRun            *ImportJobRun   `json:"last_run,omitempty"`
+	LastRun            *ImportRun      `json:"last_run,omitempty"`
 }
 
-type ImportJobRun struct {
+type ImportRun struct {
 	ID           string         `json:"id"`
-	ImportJobID  string         `json:"import_job_id"`
+	ImportID     string         `json:"import_id"`
 	Status       string         `json:"status"`
 	Diagnostics  RunDiagnostics `json:"diagnostics"`
 	ErrorMessage *string        `json:"error_message,omitempty"`
@@ -138,7 +138,7 @@ type RunDiagnosticSource struct {
 
 type DocumentTableHealth struct {
 	TableName                     string         `json:"table_name"`
-	JobID                         string         `json:"job_id"`
+	ImportID                      string         `json:"import_id"`
 	LastRunID                     string         `json:"last_run_id,omitempty"`
 	LastRunOutcome                string         `json:"last_run_outcome,omitempty"`
 	LastRunStatus                 string         `json:"last_run_status,omitempty"`
@@ -187,18 +187,18 @@ func instanceAPIPath(org, instance string) string {
 	return "/organizations/" + url.PathEscape(org) + "/cloud/instances/" + url.PathEscape(instance)
 }
 
-func importAPIPath(org, instance, job string) (string, error) {
+func importAPIPath(org, instance, importID string) (string, error) {
 	orgID, instanceID, err := parseOrgInstance(org, instance)
 	if err != nil {
 		return "", err
 	}
-	path := instanceAPIPath(orgID.String(), instanceID.String()) + "/import-jobs"
-	if job != "" {
-		jobID, err := parseUUID(job, "job")
+	path := instanceAPIPath(orgID.String(), instanceID.String()) + "/imports"
+	if importID != "" {
+		id, err := parseUUID(importID, "import")
 		if err != nil {
 			return "", err
 		}
-		path += "/" + jobID.String()
+		path += "/" + id.String()
 	}
 	return path, nil
 }
@@ -278,13 +278,13 @@ func (c *Client) ImportCapabilities(ctx context.Context, org, instance string) (
 	return &result.Data, nil
 }
 
-func (c *Client) ImportJobs(ctx context.Context, org, instance string, includeArchived bool) ([]ImportJob, error) {
+func (c *Client) Imports(ctx context.Context, org, instance string, includeArchived bool) ([]Import, error) {
 	path, err := importAPIPath(org, instance, "")
 	if err != nil {
 		return nil, err
 	}
 	var result struct {
-		Data []ImportJob `json:"data"`
+		Data []Import `json:"data"`
 	}
 	if err := c.requestJSON(ctx, http.MethodGet, path+"?include_archived="+strconv.FormatBool(includeArchived), nil, &result, false); err != nil {
 		return nil, err
@@ -292,25 +292,25 @@ func (c *Client) ImportJobs(ctx context.Context, org, instance string, includeAr
 	return result.Data, nil
 }
 
-func (c *Client) CreateImportJob(ctx context.Context, org, instance string, req CreateImportJobRequest) (*ImportJob, error) {
+func (c *Client) CreateImport(ctx context.Context, org, instance string, req CreateImportRequest) (*Import, error) {
 	path, err := importAPIPath(org, instance, "")
 	if err != nil {
 		return nil, err
 	}
-	var result ImportJob
+	var result Import
 	if err := c.requestJSON(ctx, http.MethodPost, path, req, &result, false); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (c *Client) ImportJobRuns(ctx context.Context, org, instance, job string, limit, offset int) ([]ImportJobRun, error) {
-	path, err := importAPIPath(org, instance, job)
+func (c *Client) ImportRuns(ctx context.Context, org, instance, importID string, limit, offset int) ([]ImportRun, error) {
+	path, err := importAPIPath(org, instance, importID)
 	if err != nil {
 		return nil, err
 	}
 	var result struct {
-		Data []ImportJobRun `json:"data"`
+		Data []ImportRun `json:"data"`
 	}
 	if err := c.requestJSON(ctx, http.MethodGet, path+"/runs?limit="+strconv.Itoa(limit)+"&offset="+strconv.Itoa(offset), nil, &result, false); err != nil {
 		return nil, err
@@ -318,8 +318,8 @@ func (c *Client) ImportJobRuns(ctx context.Context, org, instance, job string, l
 	return result.Data, nil
 }
 
-func (c *Client) ImportJobHealth(ctx context.Context, org, instance, job string) (*DocumentTableHealth, error) {
-	path, err := importAPIPath(org, instance, job)
+func (c *Client) ImportHealth(ctx context.Context, org, instance, importID string) (*DocumentTableHealth, error) {
+	path, err := importAPIPath(org, instance, importID)
 	if err != nil {
 		return nil, err
 	}
@@ -330,53 +330,53 @@ func (c *Client) ImportJobHealth(ctx context.Context, org, instance, job string)
 	return &result, nil
 }
 
-func (c *Client) runImportJob(ctx context.Context, org, instance, job, action string) (*ImportJobRun, error) {
-	path, err := importAPIPath(org, instance, job)
+func (c *Client) runImport(ctx context.Context, org, instance, importID, action string) (*ImportRun, error) {
+	path, err := importAPIPath(org, instance, importID)
 	if err != nil {
 		return nil, err
 	}
-	var result ImportJobRun
+	var result ImportRun
 	if err := c.requestJSON(ctx, http.MethodPost, path+"/"+action, nil, &result, false); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (c *Client) RunImportJob(ctx context.Context, org, instance, job string) (*ImportJobRun, error) {
-	return c.runImportJob(ctx, org, instance, job, "run")
+func (c *Client) RunImport(ctx context.Context, org, instance, importID string) (*ImportRun, error) {
+	return c.runImport(ctx, org, instance, importID, "run")
 }
 
-func (c *Client) RetryFailedImportFiles(ctx context.Context, org, instance, job string) (*ImportJobRun, error) {
-	return c.runImportJob(ctx, org, instance, job, "retry-failed")
+func (c *Client) RetryFailedImportFiles(ctx context.Context, org, instance, importID string) (*ImportRun, error) {
+	return c.runImport(ctx, org, instance, importID, "retry-failed")
 }
 
-func (c *Client) updateImportJob(ctx context.Context, org, instance, job, action string) (*ImportJob, error) {
-	path, err := importAPIPath(org, instance, job)
+func (c *Client) updateImport(ctx context.Context, org, instance, importID, action string) (*Import, error) {
+	path, err := importAPIPath(org, instance, importID)
 	if err != nil {
 		return nil, err
 	}
-	var result ImportJob
+	var result Import
 	if err := c.requestJSON(ctx, http.MethodPost, path+"/"+action, nil, &result, false); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (c *Client) PauseImportJob(ctx context.Context, org, instance, job string) (*ImportJob, error) {
-	return c.updateImportJob(ctx, org, instance, job, "pause")
+func (c *Client) PauseImport(ctx context.Context, org, instance, importID string) (*Import, error) {
+	return c.updateImport(ctx, org, instance, importID, "pause")
 }
 
-func (c *Client) ResumeImportJob(ctx context.Context, org, instance, job string) (*ImportJob, error) {
-	return c.updateImportJob(ctx, org, instance, job, "resume")
+func (c *Client) ResumeImport(ctx context.Context, org, instance, importID string) (*Import, error) {
+	return c.updateImport(ctx, org, instance, importID, "resume")
 }
 
-func (c *Client) ArchiveImportJob(ctx context.Context, org, instance, job string) (*ImportJob, error) {
-	return c.updateImportJob(ctx, org, instance, job, "archive")
+func (c *Client) ArchiveImport(ctx context.Context, org, instance, importID string) (*Import, error) {
+	return c.updateImport(ctx, org, instance, importID, "archive")
 }
 
 // ImportRunResult distinguishes durable terminal status from successful ingestion.
 // Missing outcomes in historical runs are not sufficient evidence of success.
-func ImportRunResult(run ImportJobRun) (terminal bool, err error) {
+func ImportRunResult(run ImportRun) (terminal bool, err error) {
 	switch run.Status {
 	case "pending", "running":
 		return false, nil
@@ -396,28 +396,28 @@ func ImportRunResult(run ImportJobRun) (terminal bool, err error) {
 	}
 }
 
-// WaitImportJobRun waits only for runID, paging history rather than assuming the
-// most recent run belongs to this caller. Cancellation stops polling, not the job.
+// WaitImportRun waits only for runID, paging history rather than assuming the
+// most recent run belongs to this caller. Cancellation stops polling, not the run.
 // On timeout/cancellation the last observed run is returned with the error.
-func (c *Client) WaitImportJobRun(ctx context.Context, org, instance, job, runID string, pollInterval time.Duration) (*ImportJobRun, error) {
+func (c *Client) WaitImportRun(ctx context.Context, org, instance, importID, runID string, pollInterval time.Duration) (*ImportRun, error) {
 	id, err := parseUUID(runID, "run")
 	if err != nil {
 		return nil, err
 	}
 	runID = id.String()
-	jobID, err := parseUUID(job, "job")
+	id, err = parseUUID(importID, "import")
 	if err != nil {
 		return nil, err
 	}
-	job = jobID.String()
+	importID = id.String()
 	if pollInterval <= 0 {
 		return nil, errors.New("poll interval must be positive")
 	}
-	var last *ImportJobRun
+	var last *ImportRun
 	for {
 		found := false
 		for offset := 0; ; offset += 100 {
-			runs, err := c.ImportJobRuns(ctx, org, instance, job, 100, offset)
+			runs, err := c.ImportRuns(ctx, org, instance, importID, 100, offset)
 			if err != nil {
 				return last, err
 			}
@@ -425,8 +425,8 @@ func (c *Client) WaitImportJobRun(ctx context.Context, org, instance, job, runID
 				if runs[i].ID != runID {
 					continue
 				}
-				if runs[i].ImportJobID != "" && runs[i].ImportJobID != job {
-					return last, errors.New("requested run belongs to another import job")
+				if runs[i].ImportID != "" && runs[i].ImportID != importID {
+					return last, errors.New("requested run belongs to another import")
 				}
 				run := runs[i]
 				last = &run
@@ -441,7 +441,7 @@ func (c *Client) WaitImportJobRun(ctx context.Context, org, instance, job, runID
 			}
 		}
 		if !found {
-			return last, fmt.Errorf("import run %s not found in job %s", runID, job)
+			return last, fmt.Errorf("import run %s not found in import %s", runID, importID)
 		}
 		timer := time.NewTimer(pollInterval)
 		select {

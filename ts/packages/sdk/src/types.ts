@@ -691,14 +691,14 @@ export interface paths {
         post?: never;
         /**
          * Delete instance provider credential
-         * @description Delete an unreferenced credential. Archived import jobs retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting job history.
+         * @description Delete an unreferenced credential. Archived imports retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting import history.
          */
         delete: operations["deleteCloudProviderAuth"];
         options?: never;
         head?: never;
         /**
          * Update or revoke an instance provider credential
-         * @description Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived import jobs. This does not revoke the upstream provider key.
+         * @description Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
          */
         patch: operations["updateCloudProviderAuth"];
         trace?: never;
@@ -723,7 +723,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports": {
         parameters: {
             query?: never;
             header?: never;
@@ -735,21 +735,21 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** List import jobs */
-        get: operations["listImportJobs"];
+        /** List imports */
+        get: operations["listImports"];
         put?: never;
         /**
-         * Create import job
+         * Create import
          * @description Save a bucket-backed import configuration. Submit a run separately. Requires write access to the target table.
          */
-        post: operations["createImportJob"];
+        post: operations["createImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/capabilities": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/capabilities": {
         parameters: {
             query?: never;
             header?: never;
@@ -766,7 +766,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/preview": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -779,14 +779,14 @@ export interface paths {
          * Preview structured import records
          * @description Preview mapping of structured records; this does not run unstructured document extraction.
          */
-        post: operations["previewImportJob"];
+        post: operations["previewImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/infer-mapping": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/infer-mapping": {
         parameters: {
             query?: never;
             header?: never;
@@ -803,7 +803,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/run": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -813,17 +813,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Run import job
+         * Run import
          * @description Queue a durable run. A completed run can have success, partial, or failed outcome; inspect diagnostics.outcome.
          */
-        post: operations["runImportJob"];
+        post: operations["runImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/retry-failed": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/retry-failed": {
         parameters: {
             query?: never;
             header?: never;
@@ -843,15 +843,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/runs": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List import job runs */
-        get: operations["listImportJobRuns"];
+        /** List import runs */
+        get: operations["listImportRuns"];
         put?: never;
         post?: never;
         delete?: never;
@@ -860,7 +860,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/health": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/health": {
         parameters: {
             query?: never;
             header?: never;
@@ -871,7 +871,7 @@ export interface paths {
          * Get imported document coverage
          * @description Coverage from the latest completed full-scope run. Retry-only runs do not replace this snapshot. Confirm retrieval separately.
          */
-        get: operations["getImportJobHealth"];
+        get: operations["getImportHealth"];
         put?: never;
         post?: never;
         delete?: never;
@@ -880,7 +880,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/pause": {
         parameters: {
             query?: never;
             header?: never;
@@ -889,15 +889,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pause import job */
-        post: operations["pauseImportJob"];
+        /** Pause import */
+        post: operations["pauseImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/resume": {
         parameters: {
             query?: never;
             header?: never;
@@ -906,15 +906,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resume import job */
-        post: operations["resumeImportJob"];
+        /** Resume import */
+        post: operations["resumeImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -923,15 +923,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Archive import job */
-        post: operations["archiveImportJob"];
+        /** Archive import */
+        post: operations["archiveImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -942,10 +942,10 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Archive import job
-         * @description Archives the import job while retaining run history. This is an alias for the archive action.
+         * Archive import
+         * @description Archives the import while retaining run history. This performs the same transition as the archive action.
          */
-        delete: operations["deleteImportJob"];
+        delete: operations["deleteImport"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3583,7 +3583,7 @@ export interface components {
          *     empty files and is absent from historical summaries. Loaded rows alone do not
          *     establish full-text or semantic coverage.
          */
-        ImportJob: {
+        Import: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -3615,7 +3615,7 @@ export interface components {
             next_run_at?: string;
             /** Format: date-time */
             last_scheduled_enqueue_at?: string;
-            last_run?: components["schemas"]["ImportJobRun"];
+            last_run?: components["schemas"]["ImportRun"];
         } & {
             [key: string]: unknown;
         };
@@ -3681,7 +3681,7 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        CreateImportJobRequest: {
+        CreateImportRequest: {
             name: string;
             /** Format: uuid */
             provider_auth_id: string;
@@ -3706,7 +3706,7 @@ export interface components {
             /** @enum {integer} */
             schedule_interval_seconds?: 900 | 1800 | 3600 | 21600 | 43200 | 86400;
         };
-        PreviewImportJobRequest: {
+        PreviewImportRequest: {
             /** Format: uuid */
             provider_auth_id?: string;
             source_config?: components["schemas"]["ImportSourceConfig"];
@@ -3727,11 +3727,11 @@ export interface components {
             sample_filename?: string;
             limit?: number;
         };
-        ImportJobRun: {
+        ImportRun: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            import_job_id: string;
+            import_id: string;
             /** @enum {string} */
             status: "pending" | "running" | "complete";
             diagnostics: components["schemas"]["ImportRunDiagnostics"];
@@ -3773,10 +3773,10 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        ImportJobHealth: {
+        ImportHealth: {
             table_name: string;
             /** Format: uuid */
-            job_id: string;
+            import_id: string;
             /** Format: uuid */
             last_run_id?: string;
             last_run_outcome?: string;
@@ -4154,8 +4154,8 @@ export interface components {
         Limit: number;
         /** @description Provider credential ID */
         AuthId: components["schemas"]["UUID"];
-        /** @description Import job ID */
-        JobId: components["schemas"]["UUID"];
+        /** @description Import ID */
+        ImportId: components["schemas"]["UUID"];
         /** @description Cloud group ID */
         GroupId: components["schemas"]["UUID"];
         /** @description API key ID */
@@ -5775,7 +5775,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    listImportJobs: {
+    listImports: {
         parameters: {
             query?: {
                 include_archived?: boolean;
@@ -5791,14 +5791,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Saved import jobs and their latest runs */
+            /** @description Saved imports and their latest runs */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ImportJob"][];
+                        data: components["schemas"]["Import"][];
                     };
                 };
             };
@@ -5806,7 +5806,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-    createImportJob: {
+    createImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5820,17 +5820,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateImportJobRequest"];
+                "application/json": components["schemas"]["CreateImportRequest"];
             };
         };
         responses: {
-            /** @description Saved import job */
+            /** @description Saved import */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -5869,7 +5869,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-    previewImportJob: {
+    previewImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5883,7 +5883,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PreviewImportJobRequest"];
+                "application/json": components["schemas"]["PreviewImportRequest"];
             };
         };
         responses: {
@@ -5937,7 +5937,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-    runImportJob: {
+    runImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5946,8 +5946,8 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
@@ -5959,7 +5959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJobRun"];
+                    "application/json": components["schemas"]["ImportRun"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -5977,8 +5977,8 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
@@ -5990,7 +5990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJobRun"];
+                    "application/json": components["schemas"]["ImportRun"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -5999,7 +5999,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    listImportJobRuns: {
+    listImportRuns: {
         parameters: {
             query?: {
                 limit?: number;
@@ -6011,8 +6011,8 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
@@ -6025,7 +6025,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ImportJobRun"][];
+                        data: components["schemas"]["ImportRun"][];
                     };
                 };
             };
@@ -6034,7 +6034,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    getImportJobHealth: {
+    getImportHealth: {
         parameters: {
             query?: never;
             header?: never;
@@ -6043,8 +6043,8 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
@@ -6056,7 +6056,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJobHealth"];
+                    "application/json": components["schemas"]["ImportHealth"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -6064,7 +6064,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    pauseImportJob: {
+    pauseImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -6073,20 +6073,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job paused */
+            /** @description Import paused */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -6094,7 +6094,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    resumeImportJob: {
+    resumeImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -6103,20 +6103,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job resumed */
+            /** @description Import resumed */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -6124,7 +6124,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    archiveImportJob: {
+    archiveImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -6133,20 +6133,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job archived */
+            /** @description Import archived */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -6154,7 +6154,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    deleteImportJob: {
+    deleteImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -6163,20 +6163,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job archived */
+            /** @description Import archived */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];

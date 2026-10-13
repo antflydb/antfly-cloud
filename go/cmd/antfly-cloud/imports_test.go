@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const cliImportJob = "459294c6-f229-4fa0-a6d2-7f5cbec020f3"
+const cliImportID = "459294c6-f229-4fa0-a6d2-7f5cbec020f3"
 const cliImportRun = "f36960bb-e39c-496d-83ff-b127c21b1bda"
 
 func importTestServer(t *testing.T, endpoint http.HandlerFunc) *httptest.Server {
@@ -44,16 +44,16 @@ func TestImportWaitCommandReturnsFailureAndDiagnostics(t *testing.T) {
 	for _, outcome := range []string{"success", "partial", "failed", ""} {
 		t.Run(outcome, func(t *testing.T) {
 			srv := importTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-				_ = json.NewEncoder(w).Encode(map[string]any{"data": []sdk.ImportJobRun{{ID: cliImportRun, Status: "complete", Diagnostics: sdk.RunDiagnostics{Outcome: outcome, Diagnostics: []sdk.RunDiagnostic{{Code: "document_extraction_failed", Source: &sdk.RunDiagnosticSource{Key: "bad.pdf"}}}}}}})
+				_ = json.NewEncoder(w).Encode(map[string]any{"data": []sdk.ImportRun{{ID: cliImportRun, Status: "complete", Diagnostics: sdk.RunDiagnostics{Outcome: outcome, Diagnostics: []sdk.RunDiagnostic{{Code: "document_extraction_failed", Source: &sdk.RunDiagnosticSource{Key: "bad.pdf"}}}}}}})
 			})
 			defer srv.Close()
 			var out, stderr bytes.Buffer
-			cmd := importTestRoot(t, srv, &out, &stderr, "import", "wait", cliImportJob, cliImportRun)
+			cmd := importTestRoot(t, srv, &out, &stderr, "import", "wait", cliImportID, cliImportRun)
 			err := cmd.Execute()
 			if (err != nil) != (outcome != "success") {
 				t.Fatalf("outcome=%q err=%v", outcome, err)
 			}
-			var run sdk.ImportJobRun
+			var run sdk.ImportRun
 			if err := json.Unmarshal(out.Bytes(), &run); err != nil {
 				t.Fatal(err)
 			}
@@ -214,14 +214,14 @@ func TestCreateSelectorsRejectBeforeHTTP(t *testing.T) {
 		{"provider conflict", []string{"connections", "create", "--provider", "s3"}, `{"provider":"gcs"}`},
 		{"empty provider", []string{"connections", "create", "--provider="}, `{"provider":"s3"}`},
 		{"empty provider without JSON value", []string{"connections", "create", "--provider="}, `{}`},
-		{"connection conflict", []string{"import", "create", "--connection", cliImportRun}, `{"provider_auth_id":"` + cliImportJob + `"}`},
+		{"connection conflict", []string{"import", "create", "--connection", cliImportRun}, `{"provider_auth_id":"` + cliImportID + `"}`},
 		{"empty connection", []string{"import", "create", "--connection="}, `{"provider_auth_id":"` + cliImportRun + `"}`},
 		{"empty connection without JSON value", []string{"import", "create", "--connection="}, `{}`},
 		{"table conflict", []string{"import", "create", "--table", "docs"}, `{"target_table":"other"}`},
 		{"empty table", []string{"import", "create", "--table="}, `{"target_table":"docs"}`},
 		{"empty table without JSON value", []string{"import", "create", "--table="}, `{}`},
 		{"equal connection with conflicting table", []string{"import", "create", "--connection", cliImportRun, "--table", "docs"}, `{"provider_auth_id":"` + cliImportRun + `","target_table":"other"}`},
-		{"conflicting connection with equal table", []string{"import", "create", "--connection", cliImportRun, "--table", "docs"}, `{"provider_auth_id":"` + cliImportJob + `","target_table":"docs"}`},
+		{"conflicting connection with equal table", []string{"import", "create", "--connection", cliImportRun, "--table", "docs"}, `{"provider_auth_id":"` + cliImportID + `","target_table":"docs"}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -273,15 +273,15 @@ func TestCreateSelectorsAcceptConsistentSources(t *testing.T) {
 					created = true
 					w.WriteHeader(http.StatusCreated)
 					_ = json.NewEncoder(w).Encode(sdk.ProviderAuth{ID: cliImportRun, Provider: "s3", Status: "active"})
-				case strings.HasSuffix(r.URL.Path, "/import-jobs"):
-					var req sdk.CreateImportJobRequest
+				case strings.HasSuffix(r.URL.Path, "/imports"):
+					var req sdk.CreateImportRequest
 					if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ProviderAuthID != cliImportRun || req.TargetTable != "docs" {
 						http.Error(w, "unknown connection or target table", http.StatusBadRequest)
 						return
 					}
 					created = true
 					w.WriteHeader(http.StatusCreated)
-					_ = json.NewEncoder(w).Encode(sdk.ImportJob{ID: cliImportJob, ProviderAuthID: cliImportRun, TableName: "docs"})
+					_ = json.NewEncoder(w).Encode(sdk.Import{ID: cliImportID, ProviderAuthID: cliImportRun, TableName: "docs"})
 				default:
 					http.NotFound(w, r)
 				}
@@ -299,7 +299,7 @@ func TestCreateSelectorsAcceptConsistentSources(t *testing.T) {
 			if err := json.Unmarshal(out.Bytes(), &result); err != nil {
 				t.Fatal(err)
 			}
-			wantID := cliImportJob
+			wantID := cliImportID
 			if tt.args[0] == "connections" {
 				wantID = cliImportRun
 			}

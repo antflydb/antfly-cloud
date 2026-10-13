@@ -71,7 +71,7 @@ func newConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	requestFileFlag(create, &file)
 	create.Flags().StringVar(&provider, "provider", "", "provider; supplies the JSON provider field")
 	group.AddCommand(create)
-	group.AddCommand(&cobra.Command{Use: "delete <connection-id>", Short: "Delete only unreferenced metadata (archived jobs retain references)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	group.AddCommand(&cobra.Command{Use: "delete <connection-id>", Short: "Delete only unreferenced metadata (archived imports retain references)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := importInstance(cmd, stateFor)
 		if err != nil {
 			return err

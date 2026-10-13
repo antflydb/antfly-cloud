@@ -1799,7 +1799,7 @@ paths:
         description: Production
     patch:
       summary: Update or revoke an instance provider credential
-      description: Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived import jobs. This does not revoke the upstream provider key.
+      description: Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
       operationId: updateCloudProviderAuth
       tags:
         - Instances
@@ -1832,7 +1832,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       summary: Delete instance provider credential
-      description: Delete an unreferenced credential. Archived import jobs retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting job history.
+      description: Delete an unreferenced credential. Archived imports retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting import history.
       operationId: deleteCloudProviderAuth
       tags:
         - Instances
@@ -1907,7 +1907,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
@@ -1915,8 +1915,8 @@ paths:
       - $ref: '#/components/parameters/OrgId'
       - $ref: '#/components/parameters/InstanceId'
     get:
-      summary: List import jobs
-      operationId: listImportJobs
+      summary: List imports
+      operationId: listImports
       tags:
         - Instances
       security:
@@ -1929,7 +1929,7 @@ paths:
             default: false
       responses:
         '200':
-          description: Saved import jobs and their latest runs
+          description: Saved imports and their latest runs
           content:
             application/json:
               schema:
@@ -1940,15 +1940,15 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ImportJob'
+                      $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
     post:
-      summary: Create import job
+      summary: Create import
       description: Save a bucket-backed import configuration. Submit a run separately. Requires write access to the target table.
-      operationId: createImportJob
+      operationId: createImport
       tags:
         - Instances
       security:
@@ -1958,21 +1958,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateImportJobRequest'
+              $ref: '#/components/schemas/CreateImportRequest'
       responses:
         '201':
-          description: Saved import job
+          description: Saved import
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/capabilities:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/capabilities:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
@@ -2003,14 +2003,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/preview:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/preview:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
       summary: Preview structured import records
       description: Preview mapping of structured records; this does not run unstructured document extraction.
-      operationId: previewImportJob
+      operationId: previewImport
       tags:
         - Instances
       security:
@@ -2023,7 +2023,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreviewImportJobRequest'
+              $ref: '#/components/schemas/PreviewImportRequest'
       responses:
         '200':
           description: Preview records and mapping diagnostics
@@ -2038,7 +2038,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/infer-mapping:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/infer-mapping:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
@@ -2072,14 +2072,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/run:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/run:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Run import job
+      summary: Run import
       description: Queue a durable run. A completed run can have success, partial, or failed outcome; inspect diagnostics.outcome.
-      operationId: runImportJob
+      operationId: runImport
       tags:
         - Instances
       security:
@@ -2087,14 +2087,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '202':
           description: Accepted run, including the run ID to monitor
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJobRun'
+                $ref: '#/components/schemas/ImportRun'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2103,7 +2103,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/retry-failed:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/retry-failed:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
@@ -2118,14 +2118,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '202':
           description: Accepted failed-file retry run
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJobRun'
+                $ref: '#/components/schemas/ImportRun'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2134,13 +2134,13 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/runs:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/runs:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     get:
-      summary: List import job runs
-      operationId: listImportJobRuns
+      summary: List import runs
+      operationId: listImportRuns
       tags:
         - Instances
       security:
@@ -2148,7 +2148,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
         - name: limit
           in: query
           schema:
@@ -2175,21 +2175,21 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ImportJobRun'
+                      $ref: '#/components/schemas/ImportRun'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/health:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/health:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     get:
       summary: Get imported document coverage
       description: Coverage from the latest completed full-scope run. Retry-only runs do not replace this snapshot. Confirm retrieval separately.
-      operationId: getImportJobHealth
+      operationId: getImportHealth
       tags:
         - Instances
       security:
@@ -2197,27 +2197,27 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
           description: Source, extraction, full-text, and vector coverage
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJobHealth'
+                $ref: '#/components/schemas/ImportHealth'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/pause:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Pause import job
-      operationId: pauseImportJob
+      summary: Pause import
+      operationId: pauseImport
       tags:
         - Instances
       security:
@@ -2225,27 +2225,27 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
-          description: Import job paused
+          description: Import paused
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/resume:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Resume import job
-      operationId: resumeImportJob
+      summary: Resume import
+      operationId: resumeImport
       tags:
         - Instances
       security:
@@ -2253,27 +2253,27 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
-          description: Import job resumed
+          description: Import resumed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/archive:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Archive import job
-      operationId: archiveImportJob
+      summary: Archive import
+      operationId: archiveImport
       tags:
         - Instances
       security:
@@ -2281,28 +2281,28 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
-          description: Import job archived
+          description: Import archived
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     delete:
-      summary: Archive import job
-      description: Archives the import job while retaining run history. This is an alias for the archive action.
-      operationId: deleteImportJob
+      summary: Archive import
+      description: Archives the import while retaining run history. This performs the same transition as the archive action.
+      operationId: deleteImport
       tags:
         - Instances
       security:
@@ -2310,14 +2310,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
-          description: Import job archived
+          description: Import archived
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4744,13 +4744,13 @@ components:
       schema:
         $ref: '#/components/schemas/UUID'
       description: Provider credential ID
-    JobId:
-      name: job_id
+    ImportId:
+      name: import_id
       in: path
       required: true
       schema:
         $ref: '#/components/schemas/UUID'
-      description: Import job ID
+      description: Import ID
     GroupId:
       name: group_id
       in: path
@@ -7395,7 +7395,7 @@ components:
         truncated:
           type: boolean
           description: True when the listing reached the server-side object limit.
-    ImportJob:
+    Import:
       type: object
       additionalProperties: true
       description: |
@@ -7478,7 +7478,7 @@ components:
           type: string
           format: date-time
         last_run:
-          $ref: '#/components/schemas/ImportJobRun'
+          $ref: '#/components/schemas/ImportRun'
     CreateCloudProviderAuthRequest:
       type: object
       required:
@@ -7593,7 +7593,7 @@ components:
           type: integer
           minimum: 1
           maximum: 10000
-    CreateImportJobRequest:
+    CreateImportRequest:
       type: object
       required:
         - name
@@ -7639,7 +7639,7 @@ components:
             - 21600
             - 43200
             - 86400
-    PreviewImportJobRequest:
+    PreviewImportRequest:
       type: object
       properties:
         provider_auth_id:
@@ -7676,11 +7676,11 @@ components:
         limit:
           type: integer
           minimum: 1
-    ImportJobRun:
+    ImportRun:
       type: object
       required:
         - id
-        - import_job_id
+        - import_id
         - status
         - diagnostics
         - created_at
@@ -7689,7 +7689,7 @@ components:
         id:
           type: string
           format: uuid
-        import_job_id:
+        import_id:
           type: string
           format: uuid
         status:
@@ -7757,12 +7757,12 @@ components:
               source:
                 type: object
                 additionalProperties: true
-    ImportJobHealth:
+    ImportHealth:
       type: object
       additionalProperties: true
       required:
         - table_name
-        - job_id
+        - import_id
         - semantic_search_available
         - semantic_search_partial
         - full_text_search_available
@@ -7770,7 +7770,7 @@ components:
       properties:
         table_name:
           type: string
-        job_id:
+        import_id:
           type: string
           format: uuid
         last_run_id:

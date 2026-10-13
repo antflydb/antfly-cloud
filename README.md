@@ -36,11 +36,11 @@ antfly cloud --org acme --instance prod --json connections list
 antfly cloud --org acme --instance prod --json connections get CONNECTION_ID
 antfly cloud --org acme --instance prod --json connections objects CONNECTION_ID --bucket docs --prefix manuals/ --limit 20
 antfly cloud --org acme --instance prod --json import create --connection CONNECTION_ID --table TABLE_NAME --file import.json
-antfly cloud --org acme --instance prod --json import run JOB_ID
-antfly cloud --org acme --instance prod --json import wait JOB_ID RUN_ID --wait-timeout 30m
-antfly cloud --org acme --instance prod --json import runs JOB_ID --limit 20 --offset 0
-antfly cloud --org acme --instance prod --json import health JOB_ID
-antfly cloud --org acme --instance prod --json import retry-failed JOB_ID
+antfly cloud --org acme --instance prod --json import run IMPORT_ID
+antfly cloud --org acme --instance prod --json import wait IMPORT_ID RUN_ID --wait-timeout 30m
+antfly cloud --org acme --instance prod --json import runs IMPORT_ID --limit 20 --offset 0
+antfly cloud --org acme --instance prod --json import health IMPORT_ID
+antfly cloud --org acme --instance prod --json import retry-failed IMPORT_ID
 ```
 
 Cloud `connections` manages the hosted credential vault on the selected instance.
@@ -78,9 +78,26 @@ success. `--timeout` controls each API request; `--wait-timeout` controls the
 overall wait, and `--poll-interval` defaults to two seconds. Ctrl-C stops waiting
 without canceling the backend run.
 
-Use `import pause JOB_ID`, `import resume JOB_ID`, or `import archive JOB_ID` to
+Use `import pause IMPORT_ID`, `import resume IMPORT_ID`, or `import archive IMPORT_ID` to
 manage scheduling and visibility. Archive retains history; `import list
---include-archived` includes archived jobs. Pause does not disable manual runs.
+--include-archived` includes archived imports. Pause does not disable manual runs.
+
+### Breaking imports API upgrade
+
+Upgrade the Cloud service and clients together. The public resource is now
+`/organizations/{org_id}/cloud/instances/{instance_id}/imports`, with execution
+history at `/imports/{import_id}/runs`. Run and health responses identify their
+saved import with `import_id`; each resource's own `id` and nested `last_run`
+remain unchanged. Update raw HTTP paths and response decoders before upgrading.
+There are no compatibility routes, redirects, deprecated wrappers, or aliases.
+
+Go SDK callers must use `CreateImportRequest`, `Import`, and `ImportRun`, and read
+`ImportRun.ImportID` and `DocumentTableHealth.ImportID`. The exported methods are
+now `Imports`, `CreateImport`, `ImportRuns`, `ImportHealth`, `RunImport`,
+`PauseImport`, `ResumeImport`, `ArchiveImport`, and `WaitImportRun`.
+`ImportRunResult` takes `ImportRun`. The CLI keeps its `import` group, actions,
+and flags; import arguments are `<import-id>`, and `wait` still takes the
+specified `<run-id>`. Existing saved imports and run history are retained.
 
 ### Inspecting and rotating hosted credentials
 
@@ -155,7 +172,7 @@ Clean up only your own resources:
 
 ```sh
 antfly cloud --org acme --instance prod --json instance api-key revoke KEY_ID
-antfly cloud --org acme --instance prod --json import archive JOB_ID
+antfly cloud --org acme --instance prod --json import archive IMPORT_ID
 antfly cloud --org acme --instance prod --json connections revoke CONNECTION_ID
 antfly cloud --org acme --instance prod --json instance table drop --table TABLE_NAME
 ```
@@ -163,7 +180,7 @@ antfly cloud --org acme --instance prod --json instance table drop --table TABLE
 Dropping a table permanently deletes its documents. No bulk/all-table operation is
 provided. Finish active runs before revoking credentials. `connections revoke`
 disables the hosted credential and permanently clears its stored secret, but does
-not revoke the key at the upstream provider. Metadata remains for archived job
+not revoke the key at the upstream provider. Metadata remains for archived import
 references; `connections delete` is only for unreferenced metadata.
 
 

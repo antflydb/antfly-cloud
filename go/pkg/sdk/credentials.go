@@ -146,7 +146,7 @@ func (c *Client) DeleteProviderAuth(ctx context.Context, org, instance, id strin
 }
 
 // RevokeProviderAuth removes usable credentials while retaining import history.
-// Deletion is not a substitute: archived jobs can still reference the credential.
+// Deletion is not a substitute: archived imports can still reference the credential.
 func (c *Client) RevokeProviderAuth(ctx context.Context, org, instance, id string) (*ProviderAuth, error) {
 	path, err := credentialAPIPath(org, instance, "provider-auths", id)
 	if err != nil {
