@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -37,6 +38,16 @@ type CreateProviderAuthRequest struct {
 	IsDefault   *bool          `json:"is_default,omitempty"`
 }
 
+type UpdateProviderAuthRequest struct {
+	DisplayName   *string         `json:"display_name,omitempty"`
+	Secret        *string         `json:"secret,omitempty"`
+	ReplaceSecret *bool           `json:"replace_secret,omitempty"`
+	ClearSecret   *bool           `json:"clear_secret,omitempty"`
+	Config        *map[string]any `json:"config,omitempty"`
+	Enabled       *bool           `json:"enabled,omitempty"`
+	IsDefault     *bool           `json:"is_default,omitempty"`
+}
+
 func credentialAPIPath(org, instance, collection, id string) (string, error) {
 	orgID, instanceID, err := parseOrgInstance(org, instance)
 	if err != nil {
@@ -67,6 +78,21 @@ func (c *Client) ProviderAuths(ctx context.Context, org, instance string) ([]Pro
 	return result.Data, nil
 }
 
+func (c *Client) GetProviderAuth(ctx context.Context, org, instance, id string) (*ProviderAuth, error) {
+	if id == "" {
+		return nil, errors.New("credential id is required")
+	}
+	path, err := credentialAPIPath(org, instance, "provider-auths", id)
+	if err != nil {
+		return nil, err
+	}
+	var result ProviderAuth
+	if err := c.requestJSON(ctx, http.MethodGet, path, nil, &result, true); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) CreateProviderAuth(ctx context.Context, org, instance string, req CreateProviderAuthRequest) (*ProviderAuth, error) {
 	path, err := credentialAPIPath(org, instance, "provider-auths", "")
 	if err != nil {
@@ -74,6 +100,38 @@ func (c *Client) CreateProviderAuth(ctx context.Context, org, instance string, r
 	}
 	var result ProviderAuth
 	if err := c.requestJSON(ctx, http.MethodPost, path, req, &result, true); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func (c *Client) UpdateProviderAuth(ctx context.Context, org, instance, id string, req UpdateProviderAuthRequest) (*ProviderAuth, error) {
+	if id == "" {
+		return nil, errors.New("credential id is required")
+	}
+	path, err := credentialAPIPath(org, instance, "provider-auths", id)
+	if err != nil {
+		return nil, err
+	}
+	var result ProviderAuth
+	if err := c.requestJSON(ctx, http.MethodPatch, path, req, &result, true); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ValidateProviderAuth checks stored credentials with the provider. It does not
+// establish that a running import has adopted a replacement.
+func (c *Client) ValidateProviderAuth(ctx context.Context, org, instance, id string) (*ProviderAuth, error) {
+	if id == "" {
+		return nil, errors.New("credential id is required")
+	}
+	path, err := credentialAPIPath(org, instance, "provider-auths", id)
+	if err != nil {
+		return nil, err
+	}
+	var result ProviderAuth
+	if err := c.requestJSON(ctx, http.MethodPost, path+"/validate", nil, &result, true); err != nil {
 		return nil, err
 	}
 	return &result, nil

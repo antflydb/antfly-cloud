@@ -3,14 +3,41 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/antflydb/antfly-cloud/go/pkg/sdk"
 	"github.com/spf13/cobra"
 )
 
-func newProviderAuthCommand(stateFor stateFactory) *cobra.Command {
-	group := &cobra.Command{Use: "provider-auth", Short: "Manage instance-owned provider credentials (never prints secrets)"}
+func newConnectionsCommand(stateFor stateFactory) *cobra.Command {
+	group := &cobra.Command{Use: "connections", Short: "Manage hosted instance connections (never prints secrets)", Long: "Connections live on the selected hosted instance. Local antfly connections login aws/google does not upload credentials to this vault."}
 	group.AddCommand(newProviderAuthObjectsCommand(stateFor))
+	group.AddCommand(newConnectionUpdateCommand(stateFor))
+	group.AddCommand(&cobra.Command{Use: "get <connection-id>", Short: "Inspect hosted connection metadata", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, org, inst, err := importInstance(cmd, stateFor)
+		if err != nil {
+			return err
+		}
+		result, err := st.client.GetProviderAuth(cmd.Context(), org.ID, inst.ID, args[0])
+		if err != nil {
+			return err
+		}
+		return st.out.PrintJSON(result)
+	}})
+	group.AddCommand(&cobra.Command{Use: "validate <connection-id>", Short: "Validate stored provider credentials; does not prove runtime adoption", Long: "Validate stored provider credentials, including recovery after failed replacement validation. Success does not prove asynchronous runtime reconciliation or uninterrupted active imports. Rotate outside active imports.", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, org, inst, err := importInstance(cmd, stateFor)
+		if err != nil {
+			return err
+		}
+		result, err := st.client.ValidateProviderAuth(cmd.Context(), org.ID, inst.ID, args[0])
+		if err != nil {
+			return err
+		}
+		if err := st.out.PrintJSON(result); err != nil {
+			return err
+		}
+		return connectionValidationResult(result)
+	}})
 	group.AddCommand(&cobra.Command{Use: "list", Short: "List credential metadata", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := importInstance(cmd, stateFor)
 		if err != nil {
@@ -22,10 +49,13 @@ func newProviderAuthCommand(stateFor stateFactory) *cobra.Command {
 		}
 		return st.out.PrintJSON(result)
 	}})
-	var file string
+	var file, provider string
 	create := &cobra.Command{Use: "create", Short: "Register a provider credential from JSON file or stdin", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		var req sdk.CreateProviderAuthRequest
 		if err := readRequestFile(cmd, file, &req); err != nil {
+			return err
+		}
+		if err := requestSelector(cmd, "provider", provider, &req.Provider); err != nil {
 			return err
 		}
 		st, org, inst, err := importInstance(cmd, stateFor)
@@ -39,8 +69,9 @@ func newProviderAuthCommand(stateFor stateFactory) *cobra.Command {
 		return st.out.PrintJSON(result)
 	}}
 	requestFileFlag(create, &file)
+	create.Flags().StringVar(&provider, "provider", "", "provider; supplies the JSON provider field")
 	group.AddCommand(create)
-	group.AddCommand(&cobra.Command{Use: "delete <auth-id>", Short: "Delete an unreferenced credential (archived jobs still retain references)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	group.AddCommand(&cobra.Command{Use: "delete <connection-id>", Short: "Delete only unreferenced metadata (archived jobs retain references)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := importInstance(cmd, stateFor)
 		if err != nil {
 			return err
@@ -50,7 +81,7 @@ func newProviderAuthCommand(stateFor stateFactory) *cobra.Command {
 		}
 		return st.out.PrintJSON(map[string]any{"id": args[0], "deleted": true})
 	}})
-	group.AddCommand(&cobra.Command{Use: "revoke <auth-id>", Short: "Disable a credential and permanently clear its stored secret, retaining job history", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	group.AddCommand(&cobra.Command{Use: "revoke <connection-id>", Short: "Disable and clear the hosted secret; does not revoke the upstream provider key", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := importInstance(cmd, stateFor)
 		if err != nil {
 			return err
@@ -67,10 +98,15 @@ func newProviderAuthCommand(stateFor stateFactory) *cobra.Command {
 func newInstanceAPIKeyCommand(stateFor stateFactory) *cobra.Command {
 	group := &cobra.Command{Use: "api-key", Short: "Create and revoke instance data-plane API keys"}
 	var file string
-	create := &cobra.Command{Use: "create", Short: "Create an API key; prints the full secret exactly once", Long: "Create a data-plane API key from request JSON. Include key_type=read_only and explicit named-table grants for a table-scoped reader. Successful output intentionally includes the secret once; redirect it to a secure file. No secret is printed on error.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
+	create := &cobra.Command{Use: "create", Short: "Create an API key; prints the full secret exactly once", Long: "Create a data-plane API key from request JSON. Include key_type=read_only and explicit named-table grants for a table-scoped reader. Omitted or empty grants create an instance-wide key; use table_name=* for an explicit all-table grant. Successful output intentionally includes the secret once; redirect it to a secure file. No secret is printed on error.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		var req sdk.CreateCloudAPIKeyRequest
 		if err := readRequestFile(cmd, file, &req); err != nil {
 			return err
+		}
+		for _, grant := range req.Grants {
+			if strings.TrimSpace(grant.TableName) == "" {
+				return errors.New("each grant requires an explicit table_name; use * for all tables")
+			}
 		}
 		st, org, inst, err := importInstance(cmd, stateFor)
 		if err != nil {
@@ -123,5 +159,66 @@ func newProviderAuthObjectsCommand(stateFor stateFactory) *cobra.Command {
 	cmd.Flags().StringVar(&prefix, "prefix", "", "object key prefix")
 	cmd.Flags().IntVar(&limit, "limit", 200, "maximum objects (1..1000)")
 	cmd.Flags().BoolVar(&recursive, "recursive", false, "list nested objects rather than immediate prefixes")
+	return cmd
+}
+
+func connectionValidationResult(result *sdk.ProviderAuth) error {
+	if result.Status != "active" {
+		return errors.New("connection validation did not return active status")
+	}
+	return nil
+}
+
+func validateConnectionUpdate(req sdk.UpdateProviderAuthRequest) error {
+	if req.DisplayName == nil && req.Secret == nil && req.ReplaceSecret == nil && req.ClearSecret == nil && req.Config == nil && req.Enabled == nil && req.IsDefault == nil {
+		return errors.New("connection update requires at least one field")
+	}
+	replace := req.ReplaceSecret != nil && *req.ReplaceSecret
+	if req.Secret != nil && (!replace || strings.TrimSpace(*req.Secret) == "") {
+		return errors.New("secret replacement requires replace_secret=true and a nonblank secret")
+	}
+	if replace && req.Secret == nil {
+		return errors.New("replace_secret=true requires a secret")
+	}
+	if req.ClearSecret != nil && *req.ClearSecret && replace {
+		return errors.New("clear_secret cannot be combined with secret replacement")
+	}
+	return nil
+}
+
+func newConnectionUpdateCommand(stateFor stateFactory) *cobra.Command {
+	var file string
+	cmd := &cobra.Command{Use: "update <connection-id>", Short: "Update metadata or replace stored credentials and validate them", Long: "Update a hosted connection from JSON. Secret replacement requires replace_secret=true and automatically validates the stored replacement. Failed validation retains the connection ID and prints PATCH metadata; use connections validate to recover. Metadata or clear-only updates do not validate. Provider validation does not prove asynchronous runtime adoption; rotate outside active imports.", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		var req sdk.UpdateProviderAuthRequest
+		if err := readRequestFile(cmd, file, &req); err != nil {
+			return err
+		}
+		if err := validateConnectionUpdate(req); err != nil {
+			return err
+		}
+		st, org, inst, err := importInstance(cmd, stateFor)
+		if err != nil {
+			return err
+		}
+		result, err := st.client.UpdateProviderAuth(cmd.Context(), org.ID, inst.ID, args[0], req)
+		if err != nil {
+			return err
+		}
+		if req.ReplaceSecret != nil && *req.ReplaceSecret {
+			validated, validationErr := st.client.ValidateProviderAuth(cmd.Context(), org.ID, inst.ID, args[0])
+			if validationErr == nil {
+				validationErr = connectionValidationResult(validated)
+			}
+			if validationErr != nil {
+				if err := st.out.PrintJSON(result); err != nil {
+					return err
+				}
+				return validationErr
+			}
+			result = validated
+		}
+		return st.out.PrintJSON(result)
+	}}
+	requestFileFlag(cmd, &file)
 	return cmd
 }

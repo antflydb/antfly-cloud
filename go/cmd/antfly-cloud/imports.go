@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/antflydb/antfly-cloud/go/pkg/sdk"
@@ -39,12 +41,22 @@ func readRequestFile(cmd *cobra.Command, path string, out any) error {
 		reader = file
 	}
 	decoder := json.NewDecoder(reader)
-	if err := decoder.Decode(out); err != nil {
+	var raw json.RawMessage
+	if err := decoder.Decode(&raw); err != nil {
 		return errors.New("invalid request JSON")
 	}
 	var extra any
 	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
 		return errors.New("request file must contain exactly one JSON object")
+	}
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || raw[0] != '{' {
+		return errors.New("request file must contain exactly one JSON object")
+	}
+	typed := json.NewDecoder(bytes.NewReader(raw))
+	typed.DisallowUnknownFields()
+	if err := typed.Decode(out); err != nil {
+		return errors.New("invalid request JSON")
 	}
 	return nil
 }
@@ -52,6 +64,20 @@ func readRequestFile(cmd *cobra.Command, path string, out any) error {
 func requestFileFlag(cmd *cobra.Command, file *string) {
 	cmd.Flags().StringVar(file, "file", "", "request JSON file; use - for stdin")
 	_ = cmd.MarkFlagRequired("file")
+}
+
+func requestSelector(cmd *cobra.Command, name, value string, target *string) error {
+	if !cmd.Flags().Changed(name) {
+		return nil
+	}
+	if strings.TrimSpace(value) == "" {
+		return errors.New("request selector must not be empty")
+	}
+	if *target != "" && *target != value {
+		return errors.New("request selector conflicts with JSON")
+	}
+	*target = value
+	return nil
 }
 
 func newImportCommand(stateFor stateFactory) *cobra.Command {
@@ -81,10 +107,16 @@ func newImportCommand(stateFor stateFactory) *cobra.Command {
 	}}
 	list.Flags().BoolVar(&includeArchived, "include-archived", false, "include archived jobs")
 	group.AddCommand(list)
-	var file string
+	var file, connection, table string
 	create := &cobra.Command{Use: "create", Short: "Create an import job from request JSON", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		var req sdk.CreateImportJobRequest
 		if err := readRequestFile(cmd, file, &req); err != nil {
+			return err
+		}
+		if err := requestSelector(cmd, "connection", connection, &req.ProviderAuthID); err != nil {
+			return err
+		}
+		if err := requestSelector(cmd, "table", table, &req.TargetTable); err != nil {
 			return err
 		}
 		st, org, inst, err := importInstance(cmd, stateFor)
@@ -98,6 +130,8 @@ func newImportCommand(stateFor stateFactory) *cobra.Command {
 		return st.out.PrintJSON(result)
 	}}
 	requestFileFlag(create, &file)
+	create.Flags().StringVar(&connection, "connection", "", "hosted connection ID; supplies provider_auth_id")
+	create.Flags().StringVar(&table, "table", "", "target table; supplies target_table")
 	group.AddCommand(create)
 	for _, action := range []string{"run", "retry-failed"} {
 		group.AddCommand(&cobra.Command{Use: action + " <job-id>", Short: "Queue an import run (returns its specific run ID)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {

@@ -41,26 +41,33 @@ func newInstanceQueryCommand(stateFor stateFactory) *cobra.Command {
 
 func newInstanceTableCommand(stateFor stateFactory) *cobra.Command {
 	group := &cobra.Command{Use: "table", Short: "Inspect or drop a named instance table"}
-	group.AddCommand(&cobra.Command{Use: "get <table-name>", Short: "Show table schema, indexes, and configuration", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	var getTable, dropTable string
+	get := &cobra.Command{Use: "get", Short: "Show table schema, indexes, and configuration", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		st, client, err := dataPlaneClient(cmd, stateFor)
 		if err != nil {
 			return err
 		}
-		result, err := client.GetTable(cmd.Context(), args[0])
+		result, err := client.GetTable(cmd.Context(), getTable)
 		if err != nil {
 			return err
 		}
 		return st.out.PrintJSON(result)
-	}})
-	group.AddCommand(&cobra.Command{Use: "drop <table-name>", Short: "Permanently drop this explicit table and its documents", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	}}
+	get.Flags().StringVar(&getTable, "table", "", "explicit table name")
+	_ = get.MarkFlagRequired("table")
+	group.AddCommand(get)
+	drop := &cobra.Command{Use: "drop", Short: "Permanently drop this explicit table and its documents", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
 		st, client, err := dataPlaneClient(cmd, stateFor)
 		if err != nil {
 			return err
 		}
-		if err := client.DropTable(cmd.Context(), args[0]); err != nil {
+		if err := client.DropTable(cmd.Context(), dropTable); err != nil {
 			return err
 		}
-		return st.out.PrintJSON(map[string]any{"table_name": args[0], "dropped": true})
-	}})
+		return st.out.PrintJSON(map[string]any{"table_name": dropTable, "dropped": true})
+	}}
+	drop.Flags().StringVar(&dropTable, "table", "", "explicit table name")
+	_ = drop.MarkFlagRequired("table")
+	group.AddCommand(drop)
 	return group
 }

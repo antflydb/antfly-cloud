@@ -338,7 +338,7 @@ func newUsageCommand(stateFor stateFactory) *cobra.Command {
 }
 
 func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Command {
-	cmd := &cobra.Command{Use: "instance", Short: "Inspect a cloud instance"}
+	cmd := &cobra.Command{Use: "instance", Short: "Inspect a cloud instance", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error { return cmd.Help() }}
 	cmd.AddCommand(newInstanceAPIKeyCommand(stateFor))
 	cmd.AddCommand(newInstanceQueryCommand(stateFor))
 	cmd.AddCommand(newInstanceTableCommand(stateFor))
@@ -467,7 +467,7 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 			return nil
 		})
 	}})
-	cmd.AddCommand(&cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: "Show connection URLs", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	cmd.AddCommand(&cobra.Command{Use: "endpoints <instance-id-or-slug>", Short: "Show instance endpoint URLs", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := resolveCommandInstance(cmd.Context(), stateFor, args[0])
 		if err != nil {
 			return err
@@ -482,23 +482,6 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 		})
 	}})
 	return cmd
-}
-
-func newConnectionCommand(stateFor stateFactory) *cobra.Command {
-	return &cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: "Show connection URLs for a cloud instance", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		st, org, inst, err := resolveCommandInstance(cmd.Context(), stateFor, args[0])
-		if err != nil {
-			return err
-		}
-		conn, err := st.client.Connection(cmd.Context(), org.ID, inst.ID)
-		if err != nil {
-			return err
-		}
-		return st.out.Print(conn, func() error {
-			fmt.Fprintf(st.out.W, "Status: %s\nProxy URL: %s\nAntfly Inference URL: %s\n", conn.Status, conn.ProxyURL, conn.AntflyInferenceProxyURL)
-			return nil
-		})
-	}}
 }
 
 func resolveCommandInstance(ctx context.Context, stateFor stateFactory, ref string) (*appState, Organization, CloudInstance, error) {

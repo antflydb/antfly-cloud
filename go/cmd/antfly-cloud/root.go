@@ -96,11 +96,10 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 	cmd.AddCommand(newInstancesCommand(stateFor))
 	cmd.AddCommand(newInstanceCommand(stateFor, &configFile))
 	cmd.AddCommand(newImportCommand(stateFor))
-	cmd.AddCommand(newProviderAuthCommand(stateFor))
+	cmd.AddCommand(newConnectionsCommand(stateFor))
 	cmd.AddCommand(newAntflyEnvCommand(stateFor))
 	cmd.AddCommand(newAntflyContextCommand(stateFor))
 	cmd.AddCommand(newAccessCommand(stateFor))
-	cmd.AddCommand(newConnectionCommand(stateFor))
 	cmd.AddCommand(newUsageCommand(stateFor))
 	cmd.AddCommand(newTUICommand(stateFor))
 	return cmd

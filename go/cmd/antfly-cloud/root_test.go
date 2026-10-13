@@ -91,6 +91,24 @@ func TestInstanceUseAndAntflyContext(t *testing.T) {
 		t.Fatalf("loaded config = %#v", loaded)
 	}
 
+	var endpointsOut, endpointsErr bytes.Buffer
+	endpointsCmd := newRootCommand(&endpointsOut, &endpointsErr)
+	endpointsCmd.SetArgs([]string{"--config", configPath, "instance", "endpoints", "prod", "--json"})
+	if err := endpointsCmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	var endpoints struct {
+		ProxyURL                string `json:"proxy_url"`
+		AntflyInferenceProxyURL string `json:"antfly_inference_proxy_url"`
+		Status                  string `json:"status"`
+	}
+	if err := json.Unmarshal(endpointsOut.Bytes(), &endpoints); err != nil {
+		t.Fatalf("unmarshal endpoints %q: %v", endpointsOut.String(), err)
+	}
+	if endpoints.Status != "ready" || endpoints.ProxyURL != "/cloud/v1/"+instID || endpoints.AntflyInferenceProxyURL != "/cloud/v1/"+instID+"/ai/v1" {
+		t.Fatalf("endpoints = %#v", endpoints)
+	}
+
 	var out, errb bytes.Buffer
 	cmd := newRootCommand(&out, &errb)
 	cmd.SetArgs([]string{"--config", configPath, "context", "--json"})
