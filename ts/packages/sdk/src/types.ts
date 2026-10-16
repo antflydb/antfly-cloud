@@ -645,11 +645,113 @@ export interface paths {
         };
         /**
          * List browser-access tables
-         * @description List instance-owned tables that may be granted to direct-browser API keys.
+         * @description List the tables that may be granted to direct-browser API keys. An isolated instance lists every table on it, including tables created through the data-plane API; a shared instance lists only tables Colony has an ownership record for.
          */
         get: operations["listCloudBrowserAccessTables"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        /** List instance provider credentials */
+        get: operations["listCloudProviderAuths"];
+        put?: never;
+        /** Create instance provider credential */
+        post: operations["createCloudProviderAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate instance provider credential before creation */
+        post: operations["validateCloudProviderAuthCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get instance provider credential */
+        get: operations["getCloudProviderAuth"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete instance provider credential
+         * @description Delete an unreferenced credential. Archived imports retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting import history.
+         */
+        delete: operations["deleteCloudProviderAuth"];
+        options?: never;
+        head?: never;
+        /**
+         * Update or revoke an instance provider credential
+         * @description Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
+         */
+        patch: operations["updateCloudProviderAuth"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate stored instance provider credential
+         * @description Validates the stored credential against the upstream provider and updates its validation status. Provider validation does not establish asynchronous runtime adoption.
+         */
+        post: operations["validateCloudProviderAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set default instance provider credential */
+        post: operations["setDefaultCloudProviderAuth"];
         delete?: never;
         options?: never;
         head?: never;
@@ -676,7 +778,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        /** List imports */
+        get: operations["listImports"];
+        put?: never;
+        /**
+         * Create import
+         * @description Save a bucket-backed import configuration. Submit a run separately. Requires write access to the target table.
+         */
+        post: operations["createImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get import capabilities */
+        get: operations["getImportCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -685,15 +830,18 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pause import job */
-        post: operations["pauseImportJob"];
+        /**
+         * Preview structured import records
+         * @description Preview mapping of structured records; this does not run unstructured document extraction.
+         */
+        post: operations["previewImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/infer-mapping": {
         parameters: {
             query?: never;
             header?: never;
@@ -702,15 +850,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Resume import job */
-        post: operations["resumeImportJob"];
+        /** Infer a structured import mapping */
+        post: operations["inferImportMapping"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -719,15 +867,126 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Archive import job */
-        post: operations["archiveImportJob"];
+        /**
+         * Run import
+         * @description Queue a durable run. A completed run can have success, partial, or failed outcome; inspect diagnostics.outcome.
+         */
+        post: operations["runImport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/retry-failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry failed import files
+         * @description Queue a new run restricted to retryable failed source files from the latest completed run.
+         */
+        post: operations["retryFailedImportFiles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List import runs */
+        get: operations["listImportRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get imported document coverage
+         * @description Coverage from the latest completed full-scope run. Retry-only runs do not replace this snapshot. Confirm retrieval separately.
+         */
+        get: operations["getImportHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause import */
+        post: operations["pauseImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume import */
+        post: operations["resumeImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive import */
+        post: operations["archiveImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -738,10 +997,10 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * Archive import job
-         * @description Archives the import job while retaining run history. This is an alias for the archive action.
+         * Archive import
+         * @description Archives the import while retaining run history. This performs the same transition as the archive action.
          */
-        delete: operations["deleteImportJob"];
+        delete: operations["deleteImport"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2529,11 +2788,15 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
-        /** @description Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors. */
+        /** @description Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation. */
         CloudHotStandby: {
             /** @enum {string} */
-            phase: "preparing" | "seeding" | "ready" | "degraded";
+            phase: "waiting_for_tables" | "preparing" | "seeding" | "ready" | "degraded";
             topology_id: string;
+            /** @description The stopped primary catalog has been validated for this topology. */
+            catalog_prepared?: boolean;
+            /** @description Whole-instance replication includes tables created after enablement. Requires a compatible runtime and operator. False retains the legacy single-table topology. */
+            catalog_replication?: boolean;
             table_name?: string;
             /** Format: uint64 */
             table_id?: number;
@@ -2711,7 +2974,7 @@ export interface components {
             is_default: boolean;
         };
         UpdateCloudInstanceRequest: {
-            /** @description Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates. */
+            /** @description Configure one synchronous standby for a single instance. Empty legacy v0.2.1 instances wait for one eligible table without provisioning or standby capacity charges. Catalog-capable v0.2.3 and later stable v0.2 patch instances activate immediately with zero or more tables. Requires a supported digest-pinned runtime, compatible operator, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates. */
             enable_hot_standby?: boolean;
             /** @description New display name */
             name?: string;
@@ -2841,6 +3104,8 @@ export interface components {
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
             /** @description Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits. */
             browser_access?: boolean;
+            /** @description Whether this instance key may call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. */
+            shared_inference?: boolean;
         };
         CloudBrowserAccessPolicy: {
             /** @description Whether direct browser requests are accepted for this instance. Disabled by default. */
@@ -2861,15 +3126,15 @@ export interface components {
              */
             table_name: string;
             /**
-             * @description Customer-facing table or import-job name.
+             * @description Customer-facing table or import name.
              * @example events
              */
             display_name: string;
             /**
-             * @description Authoritative Colony record that establishes ownership of the table.
+             * @description What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
              * @enum {string}
              */
-            source: "managed" | "import_job" | "shared";
+            source: "managed" | "import_job" | "shared" | "instance";
         };
         UpdateCloudBrowserAccessRequest: {
             enabled: boolean;
@@ -2895,9 +3160,9 @@ export interface components {
             tokens_per_minute?: number | null;
             /** @description Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer. */
             concurrent_requests?: number | null;
-            /** @description Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            /** @description Antfly-managed provider spend in cents per UTC calendar day, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
             managed_spend_cents_per_day?: number | null;
-            /** @description Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            /** @description Antfly-managed provider spend in cents per UTC calendar month, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
             managed_spend_cents_per_month?: number | null;
         };
         /** @description Returned only at creation time. The full key is never shown again. */
@@ -2913,6 +3178,7 @@ export interface components {
             name: string;
             key_type: components["schemas"]["CloudAPIKeyType"];
             browser_access?: boolean;
+            shared_inference?: boolean;
         };
         CreateCloudAPIKeyRequest: {
             /**
@@ -2927,8 +3193,10 @@ export interface components {
             /** @description Optional initial grants for the created API key. Colony assigns every grant to the newly created key. */
             grants?: components["schemas"]["CreateCloudAPIKeyGrantRequest"][];
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
-            /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions. */
+            /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables that belong to the instance and cannot receive write or admin actions. */
             browser_access?: boolean;
+            /** @description Allow this key to call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. Usage is billed to the instance's organization and bounded by hosted_inference_limits. Cannot be combined with browser_access. */
+            shared_inference?: boolean;
         };
         /** @description Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients. */
         CreateCloudAPIKeyGrantRequest: {
@@ -2957,7 +3225,7 @@ export interface components {
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
         };
         UpdateCloudAPIKeyRequest: {
-            /** @description Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits. */
+            /** @description Optional hosted inference limits update. Omit to leave unchanged; null clears every per-key limit. Within the object, omitted fields keep their stored values and a field set to null or 0 returns to inheriting. */
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"] | null;
         };
         ProvisioningEvent: {
@@ -3138,7 +3406,7 @@ export interface components {
             meta: components["schemas"]["PaginationMeta"];
         };
         CloudCreditEstimateRequest: {
-            /** @description Estimate one synchronous standby for this existing instance. */
+            /** @description Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation. */
             enable_hot_standby?: boolean;
             /**
              * @description Cloud operation being estimated
@@ -3369,7 +3637,211 @@ export interface components {
          *     empty files and is absent from historical summaries. Loaded rows alone do not
          *     establish full-text or semantic coverage.
          */
-        ImportJob: {
+        Import: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: uuid */
+            cloud_instance_id: string;
+            /** Format: uuid */
+            provider_auth_id: string;
+            table_name: string;
+            name: string;
+            /** @enum {string} */
+            mode: "structured" | "unstructured";
+            source_config: components["schemas"]["ImportSourceConfig"];
+            mapping_config?: {
+                [key: string]: unknown;
+            };
+            document_id_template?: string;
+            id_field?: string;
+            /** @enum {string} */
+            run_policy: "run_once" | "scheduled";
+            schedule_interval_seconds?: number;
+            /** @enum {string} */
+            status: "active" | "paused" | "archived";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            next_run_at?: string;
+            /** Format: date-time */
+            last_scheduled_enqueue_at?: string;
+            last_run?: components["schemas"]["ImportRun"];
+        } & {
+            [key: string]: unknown;
+        };
+        CreateCloudProviderAuthRequest: {
+            provider: string;
+            display_name: string;
+            auth_type?: string;
+            /** @description For S3, a JSON-encoded string containing access_key_id and secret_access_key. */
+            secret: string;
+            /** @description S3 settings include endpoint, region, use_ssl, path_style, and an explicit buckets allowlist. */
+            config?: {
+                [key: string]: unknown;
+            };
+            /** @default true */
+            enabled: boolean;
+            /** @default false */
+            is_default: boolean;
+        };
+        UpdateCloudProviderAuthRequest: {
+            display_name?: string;
+            /** @description Replacement secret; used only when replace_secret is true. */
+            secret?: string;
+            replace_secret?: boolean;
+            /** @description Permanently remove the stored secret; takes precedence over replacement. */
+            clear_secret?: boolean;
+            config?: {
+                [key: string]: unknown;
+            };
+            enabled?: boolean;
+            is_default?: boolean;
+        };
+        CloudProviderAuth: {
+            /** Format: uuid */
+            id: string;
+            provider: string;
+            display_name: string;
+            auth_type: string;
+            enabled: boolean;
+            status: string;
+            is_default: boolean;
+            has_secret: boolean;
+            config?: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * @description Provider-specific selection. S3-compatible sources use bucket and either
+         *     key or prefix, with optional suffixes, patterns, exclude_patterns, and
+         *     max_objects (at most 10000). max_objects bounds selection; it is not
+         *     pagination and does not imply the whole bucket was processed.
+         */
+        ImportSourceConfig: {
+            bucket?: string;
+            key?: string;
+            prefix?: string;
+            suffixes?: string[];
+            patterns?: string[];
+            exclude_patterns?: string[];
+            max_objects?: number;
+        } & {
+            [key: string]: unknown;
+        };
+        CreateImportRequest: {
+            name: string;
+            /** Format: uuid */
+            provider_auth_id: string;
+            /** @description Destination table name. Unstructured imports provision their document-search schema. */
+            target_table: string;
+            /**
+             * @default structured
+             * @enum {string}
+             */
+            mode: "structured" | "unstructured";
+            source_config: components["schemas"]["ImportSourceConfig"];
+            mapping_config?: {
+                [key: string]: unknown;
+            };
+            document_id_template?: string;
+            id_field?: string;
+            /**
+             * @default run_once
+             * @enum {string}
+             */
+            run_policy: "run_once" | "scheduled";
+            /** @enum {integer} */
+            schedule_interval_seconds?: 900 | 1800 | 3600 | 21600 | 43200 | 86400;
+        };
+        PreviewImportRequest: {
+            /** Format: uuid */
+            provider_auth_id?: string;
+            source_config?: components["schemas"]["ImportSourceConfig"];
+            mapping_config?: {
+                [key: string]: unknown;
+            };
+            document_id_template?: string;
+            id_field?: string;
+            sample_text?: string;
+            sample_filename?: string;
+            limit?: number;
+        };
+        InferImportMappingRequest: {
+            /** Format: uuid */
+            provider_auth_id?: string;
+            source_config?: components["schemas"]["ImportSourceConfig"];
+            sample_text?: string;
+            sample_filename?: string;
+            limit?: number;
+        };
+        ImportRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            import_id: string;
+            /** @enum {string} */
+            status: "pending" | "running" | "complete";
+            diagnostics: components["schemas"]["ImportRunDiagnostics"];
+            error_message?: string;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ImportRunDiagnostics: {
+            /**
+             * @description Terminal outcome; status complete alone does not mean success.
+             * @enum {string}
+             */
+            outcome?: "success" | "partial" | "failed";
+            phase?: string;
+            /** Format: date-time */
+            last_observed_progress_at?: string;
+            /** Format: uuid */
+            retry_of_run_id?: string;
+            /** @description File, source-row, chunk, full-text, and vector coverage counters. */
+            summary?: {
+                [key: string]: number;
+            };
+            diagnostics?: ({
+                level: string;
+                code: string;
+                detail: string;
+                source?: {
+                    [key: string]: unknown;
+                };
+            } & {
+                [key: string]: unknown;
+            })[];
+        } & {
+            [key: string]: unknown;
+        };
+        ImportHealth: {
+            table_name: string;
+            /** Format: uuid */
+            import_id: string;
+            /** Format: uuid */
+            last_run_id?: string;
+            last_run_outcome?: string;
+            last_run_status?: string;
+            semantic_search_available: boolean;
+            semantic_search_partial: boolean;
+            full_text_search_available: boolean;
+            generated_from_diagnostics: boolean;
+            known_failure_categories?: {
+                [key: string]: number;
+            };
+        } & {
             [key: string]: unknown;
         };
         UpdateCloudUserAttributesRequest: {
@@ -3735,8 +4207,8 @@ export interface components {
         Limit: number;
         /** @description Provider credential ID */
         AuthId: components["schemas"]["UUID"];
-        /** @description Import job ID */
-        JobId: components["schemas"]["UUID"];
+        /** @description Import ID */
+        ImportId: components["schemas"]["UUID"];
         /** @description Cloud group ID */
         GroupId: components["schemas"]["UUID"];
         /** @description API key ID */
@@ -5190,6 +5662,259 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listCloudProviderAuths: {
+        parameters: {
+            query?: {
+                provider?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential metadata, never secret values */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CloudProviderAuth"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCloudProviderAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Created credential metadata, without its secret */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    validateCloudProviderAuthCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCloudProviderAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Validation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        valid: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCloudProviderAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    validateCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Validated credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setDefaultCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listCloudInstanceProviderAuthObjects: {
         parameters: {
             query: {
@@ -5230,7 +5955,38 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    pauseImportJob: {
+    listImports: {
+        parameters: {
+            query?: {
+                include_archived?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved imports and their latest runs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Import"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5239,20 +5995,218 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Saved import */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getImportCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job paused */
+            /** @description Supported providers, modes, and file formats for this server */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    previewImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Preview records and mapping diagnostics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    inferImportMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InferImportMappingRequest"];
+            };
+        };
+        responses: {
+            /** @description Suggested mapping and document ID template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    runImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted run, including the run ID to monitor */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    retryFailedImportFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted failed-file retry run */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listImportRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Runs in newest-first order, with progress and diagnostics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ImportRun"][];
+                    };
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -5260,7 +6214,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    resumeImportJob: {
+    getImportHealth: {
         parameters: {
             query?: never;
             header?: never;
@@ -5269,20 +6223,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job resumed */
+            /** @description Source, extraction, full-text, and vector coverage */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["ImportHealth"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -5290,7 +6244,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    archiveImportJob: {
+    pauseImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5299,20 +6253,20 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job archived */
+            /** @description Import paused */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -5320,7 +6274,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    deleteImportJob: {
+    resumeImport: {
         parameters: {
             query?: never;
             header?: never;
@@ -5329,20 +6283,80 @@ export interface operations {
                 org_id: components["parameters"]["OrgId"];
                 /** @description Cloud instance ID */
                 instance_id: components["parameters"]["InstanceId"];
-                /** @description Import job ID */
-                job_id: components["parameters"]["JobId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Import job archived */
+            /** @description Import resumed */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJob"];
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    archiveImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Import ID */
+                import_id: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             401: components["responses"]["Unauthorized"];

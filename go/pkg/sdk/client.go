@@ -250,7 +250,8 @@ func (e *APIError) Error() string {
 
 // Client is a small ergonomic wrapper around the generated Antfly Cloud OpenAPI client.
 type Client struct {
-	client *oapi.ClientWithResponses
+	client    *oapi.ClientWithResponses
+	transport *oapi.Client
 }
 
 // NewClient creates a Antfly Cloud API client. baseURL should include the /api/v1 prefix.
@@ -265,11 +266,11 @@ func NewClient(baseURL, bearerToken string, httpClient *http.Client) (*Client, e
 			return nil
 		}))
 	}
-	client, err := oapi.NewClientWithResponses(strings.TrimRight(baseURL, "/"), opts...)
+	client, err := oapi.NewClient(strings.TrimRight(baseURL, "/"), opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: client}, nil
+	return &Client{client: &oapi.ClientWithResponses{ClientInterface: client}, transport: client}, nil
 }
 
 func (c *Client) CurrentUser(ctx context.Context) (*User, error) {
@@ -489,14 +490,11 @@ func (c *Client) CreateCloudAPIKey(ctx context.Context, org, instance string, re
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.client.CreateCloudAPIKeyWithResponse(ctx, orgID, instanceID, req)
-	if err != nil {
+	var created CloudAPIKeyCreated
+	if err := c.requestJSON(ctx, http.MethodPost, instanceAPIPath(orgID.String(), instanceID.String())+"/api-keys", req, &created, true); err != nil {
 		return nil, err
 	}
-	if resp.JSON201 == nil {
-		return nil, apiError(resp.StatusCode(), resp.Body)
-	}
-	return resp.JSON201, nil
+	return &created, nil
 }
 
 func (c *Client) Usage(ctx context.Context, org string) (*CloudUsageSummary, error) {

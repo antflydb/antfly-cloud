@@ -1701,7 +1701,7 @@ paths:
         description: Production
     get:
       summary: List browser-access tables
-      description: List instance-owned tables that may be granted to direct-browser API keys.
+      description: List the tables that may be granted to direct-browser API keys. An isolated instance lists every table on it, including tables created through the data-plane API; a shared instance lists only tables Colony has an ownership record for.
       operationId: listCloudBrowserAccessTables
       tags:
         - Instances
@@ -1724,6 +1724,252 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CloudBrowserAccessTable'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/InstanceId'
+    get:
+      summary: List instance provider credentials
+      operationId: listCloudProviderAuths
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credential metadata, never secret values
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CloudProviderAuth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Create instance provider credential
+      operationId: createCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCloudProviderAuthRequest'
+      responses:
+        '201':
+          description: Created credential metadata, without its secret
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/validate:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Validate instance provider credential before creation
+      operationId: validateCloudProviderAuthCreate
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCloudProviderAuthRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - valid
+                properties:
+                  valid:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get instance provider credential
+      operationId: getCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update or revoke an instance provider credential
+      description: Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
+      operationId: updateCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCloudProviderAuthRequest'
+      responses:
+        '200':
+          description: Updated credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete instance provider credential
+      description: Delete an unreferenced credential. Archived imports retain references, so use update with enabled=false, is_default=false, and clear_secret=true to revoke a referenced credential without deleting import history.
+      operationId: deleteCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '204':
+          description: Credential deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Validate stored instance provider credential
+      description: Validates the stored credential against the upstream provider and updates its validation status. Provider validation does not establish asynchronous runtime adoption.
+      operationId: validateCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Validated credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/default:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Set default instance provider credential
+      operationId: setDefaultCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Updated credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1786,13 +2032,78 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/pause:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/InstanceId'
+    get:
+      summary: List imports
+      operationId: listImports
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: include_archived
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Saved imports and their latest runs
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Import'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
-      summary: Pause import job
-      operationId: pauseImportJob
+      summary: Create import
+      description: Save a bucket-backed import configuration. Submit a run separately. Requires write access to the target table.
+      operationId: createImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Saved import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/capabilities:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get import capabilities
+      operationId: getImportCapabilities
       tags:
         - Instances
       security:
@@ -1800,27 +2111,31 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
       responses:
         '200':
-          description: Import job paused
+          description: Supported providers, modes, and file formats for this server
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/resume:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/preview:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Resume import job
-      operationId: resumeImportJob
+      summary: Preview structured import records
+      description: Preview mapping of structured records; this does not run unstructured document extraction.
+      operationId: previewImport
       tags:
         - Instances
       security:
@@ -1828,27 +2143,33 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewImportRequest'
       responses:
         '200':
-          description: Import job resumed
+          description: Preview records and mapping diagnostics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/archive:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/infer-mapping:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
-      summary: Archive import job
-      operationId: archiveImportJob
+      summary: Infer a structured import mapping
+      operationId: inferImportMapping
       tags:
         - Instances
       security:
@@ -1856,28 +2177,257 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferImportMappingRequest'
       responses:
         '200':
-          description: Import job archived
+          description: Suggested mapping and document ID template
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/run:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Run import
+      description: Queue a durable run. A completed run can have success, partial, or failed outcome; inspect diagnostics.outcome.
+      operationId: runImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '202':
+          description: Accepted run, including the run ID to monitor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}:
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/retry-failed:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Retry failed import files
+      description: Queue a new run restricted to retryable failed source files from the latest completed run.
+      operationId: retryFailedImportFiles
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '202':
+          description: Accepted failed-file retry run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/runs:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: List import runs
+      operationId: listImportRuns
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Runs in newest-first order, with progress and diagnostics
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ImportRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/health:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get imported document coverage
+      description: Coverage from the latest completed full-scope run. Retry-only runs do not replace this snapshot. Confirm retrieval separately.
+      operationId: getImportHealth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '200':
+          description: Source, extraction, full-text, and vector coverage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportHealth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/pause:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Pause import
+      operationId: pauseImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '200':
+          description: Import paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/resume:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Resume import
+      operationId: resumeImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '200':
+          description: Import resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}/archive:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Archive import
+      operationId: archiveImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/ImportId'
+      responses:
+        '200':
+          description: Import archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/imports/{import_id}:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     delete:
-      summary: Archive import job
-      description: Archives the import job while retaining run history. This is an alias for the archive action.
-      operationId: deleteImportJob
+      summary: Archive import
+      description: Archives the import while retaining run history. This performs the same transition as the archive action.
+      operationId: deleteImport
       tags:
         - Instances
       security:
@@ -1885,14 +2435,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - $ref: '#/components/parameters/InstanceId'
-        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/ImportId'
       responses:
         '200':
-          description: Import job archived
+          description: Import archived
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/Import'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4319,13 +4869,13 @@ components:
       schema:
         $ref: '#/components/schemas/UUID'
       description: Provider credential ID
-    JobId:
-      name: job_id
+    ImportId:
+      name: import_id
       in: path
       required: true
       schema:
         $ref: '#/components/schemas/UUID'
-      description: Import job ID
+      description: Import ID
     GroupId:
       name: group_id
       in: path
@@ -5542,7 +6092,7 @@ components:
     CloudHotStandby:
       type: object
       readOnly: true
-      description: Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors.
+      description: Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation.
       required:
         - phase
         - topology_id
@@ -5550,12 +6100,19 @@ components:
         phase:
           type: string
           enum:
+            - waiting_for_tables
             - preparing
             - seeding
             - ready
             - degraded
         topology_id:
           type: string
+        catalog_prepared:
+          type: boolean
+          description: The stopped primary catalog has been validated for this topology.
+        catalog_replication:
+          type: boolean
+          description: Whole-instance replication includes tables created after enablement. Requires a compatible runtime and operator. False retains the legacy single-table topology.
         table_name:
           type: string
         table_id:
@@ -5820,7 +6377,7 @@ components:
       properties:
         enable_hot_standby:
           type: boolean
-          description: Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
+          description: Configure one synchronous standby for a single instance. Empty legacy v0.2.1 instances wait for one eligible table without provisioning or standby capacity charges. Catalog-capable v0.2.3 and later stable v0.2 patch instances activate immediately with zero or more tables. Requires a supported digest-pinned runtime, compatible operator, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
         name:
           type: string
           minLength: 1
@@ -6015,6 +6572,9 @@ components:
         browser_access:
           type: boolean
           description: Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits.
+        shared_inference:
+          type: boolean
+          description: Whether this instance key may call the shared hosted inference endpoint (/ai/v1) on behalf of its instance.
     CloudBrowserAccessPolicy:
       type: object
       required:
@@ -6048,7 +6608,7 @@ components:
           example: acme_prod_events
         display_name:
           type: string
-          description: Customer-facing table or import-job name.
+          description: Customer-facing table or import name.
           example: events
         source:
           type: string
@@ -6056,7 +6616,8 @@ components:
             - managed
             - import_job
             - shared
-          description: Authoritative Colony record that establishes ownership of the table.
+            - instance
+          description: What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
     UpdateCloudBrowserAccessRequest:
       type: object
       required:
@@ -6120,12 +6681,12 @@ components:
           type: integer
           nullable: true
           minimum: 0
-          description: Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+          description: Antfly-managed provider spend in cents per UTC calendar day, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
         managed_spend_cents_per_month:
           type: integer
           nullable: true
           minimum: 0
-          description: Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+          description: Antfly-managed provider spend in cents per UTC calendar month, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -6150,6 +6711,8 @@ components:
         key_type:
           $ref: '#/components/schemas/CloudAPIKeyType'
         browser_access:
+          type: boolean
+        shared_inference:
           type: boolean
     CreateCloudAPIKeyRequest:
       type: object
@@ -6179,7 +6742,10 @@ components:
           $ref: '#/components/schemas/HostedInferenceLimits'
         browser_access:
           type: boolean
-          description: Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
+          description: Mark this read-only key for direct browser use. Browser keys require grants on named tables that belong to the instance and cannot receive write or admin actions.
+        shared_inference:
+          type: boolean
+          description: Allow this key to call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. Usage is billed to the instance's organization and bounded by hosted_inference_limits. Cannot be combined with browser_access.
     CreateCloudAPIKeyGrantRequest:
       type: object
       required:
@@ -6231,7 +6797,7 @@ components:
         hosted_inference_limits:
           nullable: true
           x-go-type-skip-optional-pointer: false
-          description: Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits.
+          description: Optional hosted inference limits update. Omit to leave unchanged; null clears every per-key limit. Within the object, omitted fields keep their stored values and a field set to null or 0 returns to inheriting.
           allOf:
             - $ref: '#/components/schemas/HostedInferenceLimits'
     ProvisioningEvent:
@@ -6583,7 +7149,7 @@ components:
       properties:
         enable_hot_standby:
           type: boolean
-          description: Estimate one synchronous standby for this existing instance.
+          description: Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation.
         operation:
           type: string
           enum:
@@ -6952,7 +7518,7 @@ components:
         truncated:
           type: boolean
           description: True when the listing reached the server-side object limit.
-    ImportJob:
+    Import:
       type: object
       additionalProperties: true
       description: |
@@ -6965,6 +7531,388 @@ components:
         counts distinct source files with verified searchable text; it excludes valid
         empty files and is absent from historical summaries. Loaded rows alone do not
         establish full-text or semantic coverage.
+      required:
+        - id
+        - organization_id
+        - cloud_instance_id
+        - provider_auth_id
+        - table_name
+        - name
+        - mode
+        - source_config
+        - run_policy
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        cloud_instance_id:
+          type: string
+          format: uuid
+        provider_auth_id:
+          type: string
+          format: uuid
+        table_name:
+          type: string
+        name:
+          type: string
+        mode:
+          type: string
+          enum:
+            - structured
+            - unstructured
+        source_config:
+          $ref: '#/components/schemas/ImportSourceConfig'
+        mapping_config:
+          type: object
+          additionalProperties: true
+        document_id_template:
+          type: string
+        id_field:
+          type: string
+        run_policy:
+          type: string
+          enum:
+            - run_once
+            - scheduled
+        schedule_interval_seconds:
+          type: integer
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - archived
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        next_run_at:
+          type: string
+          format: date-time
+        last_scheduled_enqueue_at:
+          type: string
+          format: date-time
+        last_run:
+          $ref: '#/components/schemas/ImportRun'
+    CreateCloudProviderAuthRequest:
+      type: object
+      required:
+        - provider
+        - display_name
+        - secret
+      properties:
+        provider:
+          type: string
+        display_name:
+          type: string
+        auth_type:
+          type: string
+        secret:
+          type: string
+          writeOnly: true
+          description: For S3, a JSON-encoded string containing access_key_id and secret_access_key.
+        config:
+          type: object
+          additionalProperties: true
+          description: S3 settings include endpoint, region, use_ssl, path_style, and an explicit buckets allowlist.
+        enabled:
+          type: boolean
+          default: true
+        is_default:
+          type: boolean
+          default: false
+    UpdateCloudProviderAuthRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        secret:
+          type: string
+          writeOnly: true
+          description: Replacement secret; used only when replace_secret is true.
+        replace_secret:
+          type: boolean
+        clear_secret:
+          type: boolean
+          description: Permanently remove the stored secret; takes precedence over replacement.
+        config:
+          type: object
+          additionalProperties: true
+        enabled:
+          type: boolean
+        is_default:
+          type: boolean
+    CloudProviderAuth:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - provider
+        - display_name
+        - auth_type
+        - enabled
+        - status
+        - is_default
+        - has_secret
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+        display_name:
+          type: string
+        auth_type:
+          type: string
+        enabled:
+          type: boolean
+        status:
+          type: string
+        is_default:
+          type: boolean
+        has_secret:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+    ImportSourceConfig:
+      type: object
+      additionalProperties: true
+      description: |
+        Provider-specific selection. S3-compatible sources use bucket and either
+        key or prefix, with optional suffixes, patterns, exclude_patterns, and
+        max_objects (at most 10000). max_objects bounds selection; it is not
+        pagination and does not imply the whole bucket was processed.
+      properties:
+        bucket:
+          type: string
+        key:
+          type: string
+        prefix:
+          type: string
+        suffixes:
+          type: array
+          items:
+            type: string
+        patterns:
+          type: array
+          items:
+            type: string
+        exclude_patterns:
+          type: array
+          items:
+            type: string
+        max_objects:
+          type: integer
+          minimum: 1
+          maximum: 10000
+    CreateImportRequest:
+      type: object
+      required:
+        - name
+        - provider_auth_id
+        - target_table
+        - source_config
+      properties:
+        name:
+          type: string
+        provider_auth_id:
+          type: string
+          format: uuid
+        target_table:
+          type: string
+          description: Destination table name. Unstructured imports provision their document-search schema.
+        mode:
+          type: string
+          enum:
+            - structured
+            - unstructured
+          default: structured
+        source_config:
+          $ref: '#/components/schemas/ImportSourceConfig'
+        mapping_config:
+          type: object
+          additionalProperties: true
+        document_id_template:
+          type: string
+        id_field:
+          type: string
+        run_policy:
+          type: string
+          enum:
+            - run_once
+            - scheduled
+          default: run_once
+        schedule_interval_seconds:
+          type: integer
+          enum:
+            - 900
+            - 1800
+            - 3600
+            - 21600
+            - 43200
+            - 86400
+    PreviewImportRequest:
+      type: object
+      properties:
+        provider_auth_id:
+          type: string
+          format: uuid
+        source_config:
+          $ref: '#/components/schemas/ImportSourceConfig'
+        mapping_config:
+          type: object
+          additionalProperties: true
+        document_id_template:
+          type: string
+        id_field:
+          type: string
+        sample_text:
+          type: string
+        sample_filename:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+    InferImportMappingRequest:
+      type: object
+      properties:
+        provider_auth_id:
+          type: string
+          format: uuid
+        source_config:
+          $ref: '#/components/schemas/ImportSourceConfig'
+        sample_text:
+          type: string
+        sample_filename:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+    ImportRun:
+      type: object
+      required:
+        - id
+        - import_id
+        - status
+        - diagnostics
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        import_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - complete
+        diagnostics:
+          $ref: '#/components/schemas/ImportRunDiagnostics'
+        error_message:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ImportRunDiagnostics:
+      type: object
+      additionalProperties: true
+      properties:
+        outcome:
+          type: string
+          enum:
+            - success
+            - partial
+            - failed
+          description: Terminal outcome; status complete alone does not mean success.
+        phase:
+          type: string
+        last_observed_progress_at:
+          type: string
+          format: date-time
+        retry_of_run_id:
+          type: string
+          format: uuid
+        summary:
+          type: object
+          additionalProperties:
+            type: integer
+          description: File, source-row, chunk, full-text, and vector coverage counters.
+        diagnostics:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            required:
+              - level
+              - code
+              - detail
+            properties:
+              level:
+                type: string
+              code:
+                type: string
+              detail:
+                type: string
+              source:
+                type: object
+                additionalProperties: true
+    ImportHealth:
+      type: object
+      additionalProperties: true
+      required:
+        - table_name
+        - import_id
+        - semantic_search_available
+        - semantic_search_partial
+        - full_text_search_available
+        - generated_from_diagnostics
+      properties:
+        table_name:
+          type: string
+        import_id:
+          type: string
+          format: uuid
+        last_run_id:
+          type: string
+          format: uuid
+        last_run_outcome:
+          type: string
+        last_run_status:
+          type: string
+        semantic_search_available:
+          type: boolean
+        semantic_search_partial:
+          type: boolean
+        full_text_search_available:
+          type: boolean
+        generated_from_diagnostics:
+          type: boolean
+        known_failure_categories:
+          type: object
+          additionalProperties:
+            type: integer
     UpdateCloudUserAttributesRequest:
       type: object
       required:
