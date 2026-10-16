@@ -516,6 +516,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/lite/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an independent Lite snapshot export
+         * @description Requires server-admitted managed Lite portability capability.
+         */
+        post: operations["startLiteExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get a short-lived generation-bound download URL
+         * @description Requires server-admitted managed Lite portability capability.
+         */
+        post: operations["createLiteDownload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get effective database capabilities
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        get: operations["getCloudCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reserve a new independent Lite import
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        post: operations["startLiteImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a Lite transfer operation
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        get: operations["getLiteOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}/upload-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get or resume a scoped upload session
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        post: operations["createLiteUploadSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}/seal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Seal a completed upload for worker verification
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        post: operations["sealLiteUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm creation of an independent Lite database
+         * @description Requires verified source dependencies and explicit acknowledgement of the snapshot boundary. Uses ordinary instance billing and provisioning admission atomically.
+         */
+        post: operations["confirmLiteImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/lite/operations/{operation_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request cancellation before database creation
+         * @description Managed Lite evaluation; availability is determined by server admission.
+         */
+        post: operations["cancelLiteOperation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/estimate": {
         parameters: {
             query?: never;
@@ -645,7 +825,7 @@ export interface paths {
         };
         /**
          * List browser-access tables
-         * @description List instance-owned tables that may be granted to direct-browser API keys.
+         * @description List the tables that may be granted to direct-browser API keys. An isolated instance lists every table on it, including tables created through the data-plane API; a shared instance lists only tables Colony has an ownership record for.
          */
         get: operations["listCloudBrowserAccessTables"];
         put?: never;
@@ -2429,6 +2609,74 @@ export interface components {
                 total: number;
             }[];
         };
+        StartLiteExportRequest: {
+            idempotency_key: string;
+        };
+        LiteDownload: {
+            /** @description Secret bearer capability. Do not log. Supports range requests; generation and SHA-256 stay fixed across refreshed links. */
+            download_url: string;
+            sha256: string;
+            /** Format: int64 */
+            size_bytes: number;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        ConfirmLiteImportRequest: {
+            /** Format: int64 */
+            revision: number;
+            /** @description Acknowledge this is an independent snapshot; later local writes are excluded and live application cutover requires an explicit write pause. */
+            snapshot_boundary_acknowledged: boolean;
+            instance: components["schemas"]["CreateCloudInstanceRequest"];
+        };
+        /** @description Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations. */
+        CloudCapabilities: {
+            create_lite: boolean;
+            import_lite: boolean;
+            export_lite: boolean;
+            /** Format: int64 */
+            max_import_bytes?: number;
+            max_active_transfers?: number;
+        };
+        StartLiteImportRequest: {
+            idempotency_key: string;
+            /** Format: int64 */
+            size_bytes: number;
+            sha256: string;
+        };
+        LiteUploadSession: {
+            /** @description Secret bearer capability for this single create-only object. Do not log or persist unencrypted. Use the GCS resumable protocol to query committed offset and resume. */
+            upload_url: string;
+        };
+        LiteTransferOperation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organization_id: string;
+            /** Format: uuid */
+            created_by?: string;
+            /** Format: uuid */
+            instance_id?: string;
+            /** @enum {string} */
+            kind: "import" | "export";
+            /** @enum {string} */
+            phase: "uploading" | "queued" | "verifying" | "awaiting_confirmation" | "provisioning" | "importing" | "ready" | "exporting" | "download_ready" | "cancel_requested" | "cancelled" | "failed" | "expired";
+            /** Format: int64 */
+            size_bytes: number;
+            /** Format: int64 */
+            revision: number;
+            attempts: number;
+            source?: {
+                [key: string]: unknown;
+            };
+            result?: {
+                [key: string]: unknown;
+            };
+            error?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
         AntflyInferenceRequestLog: {
             /** Format: uuid */
             id: string;
@@ -2529,11 +2777,15 @@ export interface components {
          * @enum {string}
          */
         CloudAPIKeyType: "read_only" | "read_write" | "admin";
-        /** @description Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors. */
+        /** @description Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation. */
         CloudHotStandby: {
             /** @enum {string} */
-            phase: "preparing" | "seeding" | "ready" | "degraded";
+            phase: "waiting_for_tables" | "preparing" | "seeding" | "ready" | "degraded";
             topology_id: string;
+            /** @description The stopped primary catalog has been validated for this topology. */
+            catalog_prepared?: boolean;
+            /** @description Whole-instance replication includes tables created after enablement. Requires a compatible runtime and operator. False retains the legacy single-table topology. */
+            catalog_replication?: boolean;
             table_name?: string;
             /** Format: uint64 */
             table_id?: number;
@@ -2549,8 +2801,18 @@ export interface components {
             applied_lsn?: number;
             message?: string;
         };
+        /**
+         * @description Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+         * @enum {string}
+         */
+        CloudDeploymentProfile: "standard" | "lite";
         /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
+            readonly deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
+            /** @description Server-bound import operation that must finish before the database starts serving. */
+            readonly lite_import_operation_id?: string;
+            /** @description Server-admitted immutable runtime image for an isolated Lite evaluation. Never supplied through capacity updates. */
+            readonly lite_runtime_image?: string;
             readonly hot_standby?: components["schemas"]["CloudHotStandby"];
             /**
              * @description Number of metadata (Raft consensus) nodes for replicated mode; ignored for single mode.
@@ -2607,6 +2869,7 @@ export interface components {
             shared_inference_mode?: "enabled" | "disabled";
         };
         CloudInstance: {
+            readonly deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
             id: components["schemas"]["UUID"];
             organization_id: components["schemas"]["UUID"];
             /**
@@ -2665,6 +2928,8 @@ export interface components {
             updated_at: components["schemas"]["Timestamp"];
         };
         CreateCloudInstanceRequest: {
+            /** @description Select Lite only when the environment and organization are enabled for evaluation. Requires single mode and a pinned runtime policy. */
+            deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
             /**
              * @description Display name
              * @example My Production DB
@@ -2711,7 +2976,7 @@ export interface components {
             is_default: boolean;
         };
         UpdateCloudInstanceRequest: {
-            /** @description Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates. */
+            /** @description Configure one synchronous standby for a single instance. Empty legacy v0.2.1 instances wait for one eligible table without provisioning or standby capacity charges. Catalog-capable v0.2.3 and later stable v0.2 patch instances activate immediately with zero or more tables. Requires a supported digest-pinned runtime, compatible operator, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates. */
             enable_hot_standby?: boolean;
             /** @description New display name */
             name?: string;
@@ -2841,6 +3106,8 @@ export interface components {
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
             /** @description Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits. */
             browser_access?: boolean;
+            /** @description Whether this instance key may call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. */
+            shared_inference?: boolean;
         };
         CloudBrowserAccessPolicy: {
             /** @description Whether direct browser requests are accepted for this instance. Disabled by default. */
@@ -2866,10 +3133,10 @@ export interface components {
              */
             display_name: string;
             /**
-             * @description Authoritative Colony record that establishes ownership of the table.
+             * @description What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
              * @enum {string}
              */
-            source: "managed" | "import_job" | "shared";
+            source: "managed" | "import_job" | "shared" | "instance";
         };
         UpdateCloudBrowserAccessRequest: {
             enabled: boolean;
@@ -2895,9 +3162,9 @@ export interface components {
             tokens_per_minute?: number | null;
             /** @description Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer. */
             concurrent_requests?: number | null;
-            /** @description Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            /** @description Antfly-managed provider spend in cents per UTC calendar day, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
             managed_spend_cents_per_day?: number | null;
-            /** @description Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
+            /** @description Antfly-managed provider spend in cents per UTC calendar month, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer. */
             managed_spend_cents_per_month?: number | null;
         };
         /** @description Returned only at creation time. The full key is never shown again. */
@@ -2913,6 +3180,7 @@ export interface components {
             name: string;
             key_type: components["schemas"]["CloudAPIKeyType"];
             browser_access?: boolean;
+            shared_inference?: boolean;
         };
         CreateCloudAPIKeyRequest: {
             /**
@@ -2927,8 +3195,10 @@ export interface components {
             /** @description Optional initial grants for the created API key. Colony assigns every grant to the newly created key. */
             grants?: components["schemas"]["CreateCloudAPIKeyGrantRequest"][];
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
-            /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions. */
+            /** @description Mark this read-only key for direct browser use. Browser keys require grants on named tables that belong to the instance and cannot receive write or admin actions. */
             browser_access?: boolean;
+            /** @description Allow this key to call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. Usage is billed to the instance's organization and bounded by hosted_inference_limits. Cannot be combined with browser_access. */
+            shared_inference?: boolean;
         };
         /** @description Initial data-plane access for a newly created API key. The grant subject is always the new key and must not be supplied by clients. */
         CreateCloudAPIKeyGrantRequest: {
@@ -2957,7 +3227,7 @@ export interface components {
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"];
         };
         UpdateCloudAPIKeyRequest: {
-            /** @description Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits. */
+            /** @description Optional hosted inference limits update. Omit to leave unchanged; null clears every per-key limit. Within the object, omitted fields keep their stored values and a field set to null or 0 returns to inheriting. */
             hosted_inference_limits?: components["schemas"]["HostedInferenceLimits"] | null;
         };
         ProvisioningEvent: {
@@ -3138,7 +3408,7 @@ export interface components {
             meta: components["schemas"]["PaginationMeta"];
         };
         CloudCreditEstimateRequest: {
-            /** @description Estimate one synchronous standby for this existing instance. */
+            /** @description Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation. */
             enable_hot_standby?: boolean;
             /**
              * @description Cloud operation being estimated
@@ -4883,6 +5153,311 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    startLiteExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartLiteExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Create an independent Lite snapshot export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteTransferOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    createLiteDownload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get a short-lived generation-bound download URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteDownload"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCloudCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get effective database capabilities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudCapabilities"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    startLiteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartLiteImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Reserve a new independent Lite import */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteTransferOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getLiteOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get a Lite transfer operation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteTransferOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createLiteUploadSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get or resume a scoped upload session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteUploadSession"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sealLiteUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seal a completed upload for worker verification */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteTransferOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirmLiteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmLiteImportRequest"];
+            };
+        };
+        responses: {
+            /** @description New database provisioning or exact confirmation retry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudInstance"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    cancelLiteOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request cancellation before database creation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiteTransferOperation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description Transfer service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     estimateCloudCredits: {

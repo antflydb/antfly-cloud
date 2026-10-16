@@ -9,6 +9,16 @@ compatibility:
   always-prefix-enum-values: true
 output-options:
   include-operation-ids:
+    - getCloudCapabilities
+    - createCloudInstance
+    - startLiteImport
+    - getLiteOperation
+    - createLiteUploadSession
+    - sealLiteUpload
+    - cancelLiteOperation
+    - confirmLiteImport
+    - startLiteExport
+    - createLiteDownload
     - getCurrentUser
     - listOrganizations
     - getOrganization

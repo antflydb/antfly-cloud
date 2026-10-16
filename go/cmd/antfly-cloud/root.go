@@ -93,6 +93,7 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 	cmd.AddCommand(newOrgsCommand(stateFor, &configFile))
 	cmd.AddCommand(newStatusCommand(stateFor))
 	cmd.AddCommand(newInstancesCommand(stateFor))
+	cmd.AddCommand(newLiteCommand(stateFor))
 	cmd.AddCommand(newInstanceCommand(stateFor, &configFile))
 	cmd.AddCommand(newAntflyEnvCommand(stateFor))
 	cmd.AddCommand(newAntflyContextCommand(stateFor))

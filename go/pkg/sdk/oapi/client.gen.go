@@ -50,6 +50,7 @@ func (e CloudAPIKeyType) Valid() bool {
 // Defines values for CloudBrowserAccessTableSource.
 const (
 	CloudBrowserAccessTableSourceImportJob CloudBrowserAccessTableSource = "import_job"
+	CloudBrowserAccessTableSourceInstance  CloudBrowserAccessTableSource = "instance"
 	CloudBrowserAccessTableSourceManaged   CloudBrowserAccessTableSource = "managed"
 	CloudBrowserAccessTableSourceShared    CloudBrowserAccessTableSource = "shared"
 )
@@ -59,9 +60,29 @@ func (e CloudBrowserAccessTableSource) Valid() bool {
 	switch e {
 	case CloudBrowserAccessTableSourceImportJob:
 		return true
+	case CloudBrowserAccessTableSourceInstance:
+		return true
 	case CloudBrowserAccessTableSourceManaged:
 		return true
 	case CloudBrowserAccessTableSourceShared:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CloudDeploymentProfile.
+const (
+	CloudDeploymentProfileLite     CloudDeploymentProfile = "lite"
+	CloudDeploymentProfileStandard CloudDeploymentProfile = "standard"
+)
+
+// Valid indicates whether the value is a known member of the CloudDeploymentProfile enum.
+func (e CloudDeploymentProfile) Valid() bool {
+	switch e {
+	case CloudDeploymentProfileLite:
+		return true
+	case CloudDeploymentProfileStandard:
 		return true
 	default:
 		return false
@@ -91,10 +112,11 @@ func (e CloudGrantSubjectType) Valid() bool {
 
 // Defines values for CloudHotStandbyPhase.
 const (
-	CloudHotStandbyPhaseDegraded  CloudHotStandbyPhase = "degraded"
-	CloudHotStandbyPhasePreparing CloudHotStandbyPhase = "preparing"
-	CloudHotStandbyPhaseReady     CloudHotStandbyPhase = "ready"
-	CloudHotStandbyPhaseSeeding   CloudHotStandbyPhase = "seeding"
+	CloudHotStandbyPhaseDegraded         CloudHotStandbyPhase = "degraded"
+	CloudHotStandbyPhasePreparing        CloudHotStandbyPhase = "preparing"
+	CloudHotStandbyPhaseReady            CloudHotStandbyPhase = "ready"
+	CloudHotStandbyPhaseSeeding          CloudHotStandbyPhase = "seeding"
+	CloudHotStandbyPhaseWaitingForTables CloudHotStandbyPhase = "waiting_for_tables"
 )
 
 // Valid indicates whether the value is a known member of the CloudHotStandbyPhase enum.
@@ -107,6 +129,8 @@ func (e CloudHotStandbyPhase) Valid() bool {
 	case CloudHotStandbyPhaseReady:
 		return true
 	case CloudHotStandbyPhaseSeeding:
+		return true
+	case CloudHotStandbyPhaseWaitingForTables:
 		return true
 	default:
 		return false
@@ -251,6 +275,75 @@ const (
 func (e InvitationResponse2Status) Valid() bool {
 	switch e {
 	case InvitationResponse2StatusInvited:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LiteTransferOperationKind.
+const (
+	LiteTransferOperationKindExport LiteTransferOperationKind = "export"
+	LiteTransferOperationKindImport LiteTransferOperationKind = "import"
+)
+
+// Valid indicates whether the value is a known member of the LiteTransferOperationKind enum.
+func (e LiteTransferOperationKind) Valid() bool {
+	switch e {
+	case LiteTransferOperationKindExport:
+		return true
+	case LiteTransferOperationKindImport:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LiteTransferOperationPhase.
+const (
+	LiteTransferOperationPhaseAwaitingConfirmation LiteTransferOperationPhase = "awaiting_confirmation"
+	LiteTransferOperationPhaseCancelRequested      LiteTransferOperationPhase = "cancel_requested"
+	LiteTransferOperationPhaseCancelled            LiteTransferOperationPhase = "cancelled"
+	LiteTransferOperationPhaseDownloadReady        LiteTransferOperationPhase = "download_ready"
+	LiteTransferOperationPhaseExpired              LiteTransferOperationPhase = "expired"
+	LiteTransferOperationPhaseExporting            LiteTransferOperationPhase = "exporting"
+	LiteTransferOperationPhaseFailed               LiteTransferOperationPhase = "failed"
+	LiteTransferOperationPhaseImporting            LiteTransferOperationPhase = "importing"
+	LiteTransferOperationPhaseProvisioning         LiteTransferOperationPhase = "provisioning"
+	LiteTransferOperationPhaseQueued               LiteTransferOperationPhase = "queued"
+	LiteTransferOperationPhaseReady                LiteTransferOperationPhase = "ready"
+	LiteTransferOperationPhaseUploading            LiteTransferOperationPhase = "uploading"
+	LiteTransferOperationPhaseVerifying            LiteTransferOperationPhase = "verifying"
+)
+
+// Valid indicates whether the value is a known member of the LiteTransferOperationPhase enum.
+func (e LiteTransferOperationPhase) Valid() bool {
+	switch e {
+	case LiteTransferOperationPhaseAwaitingConfirmation:
+		return true
+	case LiteTransferOperationPhaseCancelRequested:
+		return true
+	case LiteTransferOperationPhaseCancelled:
+		return true
+	case LiteTransferOperationPhaseDownloadReady:
+		return true
+	case LiteTransferOperationPhaseExpired:
+		return true
+	case LiteTransferOperationPhaseExporting:
+		return true
+	case LiteTransferOperationPhaseFailed:
+		return true
+	case LiteTransferOperationPhaseImporting:
+		return true
+	case LiteTransferOperationPhaseProvisioning:
+		return true
+	case LiteTransferOperationPhaseQueued:
+		return true
+	case LiteTransferOperationPhaseReady:
+		return true
+	case LiteTransferOperationPhaseUploading:
+		return true
+	case LiteTransferOperationPhaseVerifying:
 		return true
 	default:
 		return false
@@ -498,8 +591,9 @@ type CloudAPIKeyCreated struct {
 	KeyPrefix string `json:"key_prefix"`
 
 	// KeyType API key permission level
-	KeyType CloudAPIKeyType `json:"key_type"`
-	Name    string          `json:"name"`
+	KeyType         CloudAPIKeyType `json:"key_type"`
+	Name            string          `json:"name"`
+	SharedInference bool            `json:"shared_inference,omitempty,omitzero"`
 }
 
 // CloudAPIKeyType API key permission level
@@ -522,14 +616,14 @@ type CloudBrowserAccessTable struct {
 	// DisplayName Customer-facing table or import-job name.
 	DisplayName string `json:"display_name"`
 
-	// Source Authoritative Colony record that establishes ownership of the table.
+	// Source What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
 	Source CloudBrowserAccessTableSource `json:"source"`
 
 	// TableName Physical Antfly table name used in query routes and grants.
 	TableName string `json:"table_name"`
 }
 
-// CloudBrowserAccessTableSource Authoritative Colony record that establishes ownership of the table.
+// CloudBrowserAccessTableSource What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
 type CloudBrowserAccessTableSource string
 
 // CloudBrowserRateLimits Per-replica edge admission limits for browser-originated requests. Zero or omitted values use the service defaults. Use the fleet-wide WAF for volumetric abuse protection.
@@ -538,6 +632,18 @@ type CloudBrowserRateLimits struct {
 	RequestsPerMinutePerIp   int `json:"requests_per_minute_per_ip,omitempty,omitzero"`
 	RequestsPerMinutePerKey  int `json:"requests_per_minute_per_key,omitempty,omitzero"`
 }
+
+// CloudCapabilities Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations.
+type CloudCapabilities struct {
+	CreateLite         bool  `json:"create_lite"`
+	ExportLite         bool  `json:"export_lite"`
+	ImportLite         bool  `json:"import_lite"`
+	MaxActiveTransfers int   `json:"max_active_transfers,omitempty,omitzero"`
+	MaxImportBytes     int64 `json:"max_import_bytes,omitempty,omitzero"`
+}
+
+// CloudDeploymentProfile Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+type CloudDeploymentProfile string
 
 // CloudGrant defines model for CloudGrant.
 type CloudGrant struct {
@@ -616,19 +722,25 @@ type CloudGroupMember struct {
 	UserId UUID `json:"user_id"`
 }
 
-// CloudHotStandby Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors.
+// CloudHotStandby Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation.
 type CloudHotStandby struct {
-	AppliedLsn        uint64               `json:"applied_lsn,omitempty,omitzero"`
-	Message           string               `json:"message,omitempty,omitzero"`
-	Phase             CloudHotStandbyPhase `json:"phase"`
-	PrimaryGeneration int64                `json:"primary_generation,omitempty,omitzero"`
-	PrimaryLsn        uint64               `json:"primary_lsn,omitempty,omitzero"`
-	ShardId           uint64               `json:"shard_id,omitempty,omitzero"`
-	SourcePvcUid      string               `json:"source_pvc_uid,omitempty,omitzero"`
-	TableId           uint64               `json:"table_id,omitempty,omitzero"`
-	TableName         string               `json:"table_name,omitempty,omitzero"`
-	TargetPvcUid      string               `json:"target_pvc_uid,omitempty,omitzero"`
-	TopologyId        string               `json:"topology_id"`
+	AppliedLsn uint64 `json:"applied_lsn,omitempty,omitzero"`
+
+	// CatalogPrepared The stopped primary catalog has been validated for this topology.
+	CatalogPrepared bool `json:"catalog_prepared,omitempty,omitzero"`
+
+	// CatalogReplication Whole-instance replication includes tables created after enablement. Requires a compatible runtime and operator. False retains the legacy single-table topology.
+	CatalogReplication bool                 `json:"catalog_replication,omitempty,omitzero"`
+	Message            string               `json:"message,omitempty,omitzero"`
+	Phase              CloudHotStandbyPhase `json:"phase"`
+	PrimaryGeneration  int64                `json:"primary_generation,omitempty,omitzero"`
+	PrimaryLsn         uint64               `json:"primary_lsn,omitempty,omitzero"`
+	ShardId            uint64               `json:"shard_id,omitempty,omitzero"`
+	SourcePvcUid       string               `json:"source_pvc_uid,omitempty,omitzero"`
+	TableId            uint64               `json:"table_id,omitempty,omitzero"`
+	TableName          string               `json:"table_name,omitempty,omitzero"`
+	TargetPvcUid       string               `json:"target_pvc_uid,omitempty,omitzero"`
+	TopologyId         string               `json:"topology_id"`
 }
 
 // CloudHotStandbyPhase defines model for CloudHotStandby.Phase.
@@ -647,6 +759,9 @@ type CloudInstance struct {
 
 	// CurrentAntflyVersion Currently healthy Antfly runtime version.
 	CurrentAntflyVersion string `json:"current_antfly_version,omitempty,omitzero"`
+
+	// DeploymentProfile Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+	DeploymentProfile CloudDeploymentProfile `json:"deployment_profile,omitempty,omitzero"`
 
 	// Id RFC 4122 UUID identifier
 	Id UUID `json:"id"`
@@ -842,6 +957,15 @@ type CloudUserAttributes struct {
 	UserId UUID `json:"user_id"`
 }
 
+// ConfirmLiteImportRequest defines model for ConfirmLiteImportRequest.
+type ConfirmLiteImportRequest struct {
+	Instance CreateCloudInstanceRequest `json:"instance"`
+	Revision int64                      `json:"revision"`
+
+	// SnapshotBoundaryAcknowledged Acknowledge this is an independent snapshot; later local writes are excluded and live application cutover requires an explicit write pause.
+	SnapshotBoundaryAcknowledged bool `json:"snapshot_boundary_acknowledged"`
+}
+
 // ConnectionDetails defines model for ConnectionDetails.
 type ConnectionDetails struct {
 	// AntflyInferenceProxyUrl Colony proxy URL for accessing the attached Antfly Inference service for this instance
@@ -870,7 +994,7 @@ type CreateCloudAPIKeyGrantRequest struct {
 
 // CreateCloudAPIKeyRequest defines model for CreateCloudAPIKeyRequest.
 type CreateCloudAPIKeyRequest struct {
-	// BrowserAccess Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
+	// BrowserAccess Mark this read-only key for direct browser use. Browser keys require grants on named tables that belong to the instance and cannot receive write or admin actions.
 	BrowserAccess bool `json:"browser_access,omitempty,omitzero"`
 
 	// ExpiresAt ISO 8601 timestamp
@@ -890,6 +1014,9 @@ type CreateCloudAPIKeyRequest struct {
 
 	// QuotaQueriesPerMonth Per-key monthly query quota (null = unlimited)
 	QuotaQueriesPerMonth int `json:"quota_queries_per_month,omitempty,omitzero"`
+
+	// SharedInference Allow this key to call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. Usage is billed to the instance's organization and bounded by hosted_inference_limits. Cannot be combined with browser_access.
+	SharedInference bool `json:"shared_inference,omitempty,omitzero"`
 }
 
 // CreateCloudGroupRequest defines model for CreateCloudGroupRequest.
@@ -898,6 +1025,33 @@ type CreateCloudGroupRequest struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty,omitzero"`
 	Name        string                 `json:"name"`
 	Slug        string                 `json:"slug,omitempty,omitzero"`
+}
+
+// CreateCloudInstanceRequest defines model for CreateCloudInstanceRequest.
+type CreateCloudInstanceRequest struct {
+	// DeploymentProfile Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+	DeploymentProfile CloudDeploymentProfile `json:"deployment_profile,omitempty,omitzero"`
+
+	// Mode Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
+	Mode CloudInstanceMode `json:"mode,omitempty,omitzero"`
+
+	// Name Display name
+	Name string `json:"name"`
+
+	// NodeConfig Node configuration changes for scaling. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
+	NodeConfig NodeConfigUpdate `json:"node_config,omitempty,omitzero"`
+
+	// Region Deployment region (defaults to us-central1)
+	Region string `json:"region,omitempty,omitzero"`
+
+	// Slug URL-safe identifier (immutable, lowercase, alphanumeric + hyphens)
+	Slug string `json:"slug"`
+
+	// Tier Customer-facing cloud package baseline used for committed-capacity billing.
+	Tier CloudInstanceTier `json:"tier,omitempty,omitzero"`
+
+	// VersionPolicy Antfly runtime version policy for managed upgrades.
+	VersionPolicy CloudInstanceVersionPolicy `json:"version_policy,omitempty,omitzero"`
 }
 
 // Error defines model for Error.
@@ -935,10 +1089,10 @@ type HostedInferenceLimits struct {
 	// ConcurrentRequests Concurrent external hosted inference requests. Null or 0 inherits from the broader policy layer.
 	ConcurrentRequests int `json:"concurrent_requests,omitempty,omitzero"`
 
-	// ManagedSpendCentsPerDay Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+	// ManagedSpendCentsPerDay Antfly-managed provider spend in cents per UTC calendar day, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
 	ManagedSpendCentsPerDay int `json:"managed_spend_cents_per_day,omitempty,omitzero"`
 
-	// ManagedSpendCentsPerMonth Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+	// ManagedSpendCentsPerMonth Antfly-managed provider spend in cents per UTC calendar month, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
 	ManagedSpendCentsPerMonth int `json:"managed_spend_cents_per_month,omitempty,omitzero"`
 
 	// RequestsPerMinute External hosted inference requests per minute. Null or 0 inherits from the broader policy layer.
@@ -996,6 +1150,45 @@ type InvitationResponse2 struct {
 // InvitationResponse2Status Invitation status
 type InvitationResponse2Status string
 
+// LiteDownload defines model for LiteDownload.
+type LiteDownload struct {
+	// DownloadUrl Secret bearer capability. Do not log. Supports range requests; generation and SHA-256 stay fixed across refreshed links.
+	DownloadUrl string    `json:"download_url"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	Sha256      string    `json:"sha256"`
+	SizeBytes   int64     `json:"size_bytes"`
+}
+
+// LiteTransferOperation defines model for LiteTransferOperation.
+type LiteTransferOperation struct {
+	Attempts       int                        `json:"attempts"`
+	CreatedAt      time.Time                  `json:"created_at"`
+	CreatedBy      openapi_types.UUID         `json:"created_by,omitempty,omitzero"`
+	Error          string                     `json:"error,omitempty,omitzero"`
+	ExpiresAt      time.Time                  `json:"expires_at"`
+	Id             openapi_types.UUID         `json:"id"`
+	InstanceId     openapi_types.UUID         `json:"instance_id,omitempty,omitzero"`
+	Kind           LiteTransferOperationKind  `json:"kind"`
+	OrganizationId openapi_types.UUID         `json:"organization_id"`
+	Phase          LiteTransferOperationPhase `json:"phase"`
+	Result         map[string]interface{}     `json:"result,omitempty,omitzero"`
+	Revision       int64                      `json:"revision"`
+	SizeBytes      int64                      `json:"size_bytes"`
+	Source         map[string]interface{}     `json:"source,omitempty,omitzero"`
+}
+
+// LiteTransferOperationKind defines model for LiteTransferOperation.Kind.
+type LiteTransferOperationKind string
+
+// LiteTransferOperationPhase defines model for LiteTransferOperation.Phase.
+type LiteTransferOperationPhase string
+
+// LiteUploadSession defines model for LiteUploadSession.
+type LiteUploadSession struct {
+	// UploadUrl Secret bearer capability for this single create-only object. Do not log or persist unencrypted. Use the GCS resumable protocol to query committed offset and resume.
+	UploadUrl string `json:"upload_url"`
+}
+
 // MembershipStatus Membership status
 type MembershipStatus string
 
@@ -1019,8 +1212,17 @@ type NodeConfig struct {
 	// DataStorage Persistent storage per data node (e.g., "10Gi", "50Gi")
 	DataStorage string `json:"data_storage,omitempty,omitzero"`
 
-	// HotStandby Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors.
+	// DeploymentProfile Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+	DeploymentProfile CloudDeploymentProfile `json:"deployment_profile,omitempty,omitzero"`
+
+	// HotStandby Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation.
 	HotStandby *CloudHotStandby `json:"hot_standby,omitempty"`
+
+	// LiteImportOperationId Server-bound import operation that must finish before the database starts serving.
+	LiteImportOperationId string `json:"lite_import_operation_id,omitempty,omitzero"`
+
+	// LiteRuntimeImage Server-admitted immutable runtime image for an isolated Lite evaluation. Never supplied through capacity updates.
+	LiteRuntimeImage string `json:"lite_runtime_image,omitempty,omitzero"`
 
 	// Memory Memory request per node (e.g., "4Gi", "8Gi")
 	Memory string `json:"memory,omitempty,omitzero"`
@@ -1186,6 +1388,18 @@ type ResendInvitationResponse2 struct {
 	NewToken string `json:"new_token"`
 }
 
+// StartLiteExportRequest defines model for StartLiteExportRequest.
+type StartLiteExportRequest struct {
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
+// StartLiteImportRequest defines model for StartLiteImportRequest.
+type StartLiteImportRequest struct {
+	IdempotencyKey string `json:"idempotency_key"`
+	Sha256         string `json:"sha256"`
+	SizeBytes      int64  `json:"size_bytes"`
+}
+
 // Timestamp ISO 8601 timestamp
 type Timestamp = time.Time
 
@@ -1213,7 +1427,7 @@ type UpdateCloudInstanceRequest struct {
 	// ClearAntflyVersionTarget Clear a pending or failed manual Antfly runtime target without changing the live cluster image.
 	ClearAntflyVersionTarget bool `json:"clear_antfly_version_target,omitempty,omitzero"`
 
-	// EnableHotStandby Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
+	// EnableHotStandby Configure one synchronous standby for a single instance. Empty legacy v0.2.1 instances wait for one eligible table without provisioning or standby capacity charges. Catalog-capable v0.2.3 and later stable v0.2 patch instances activate immediately with zero or more tables. Requires a supported digest-pinned runtime, compatible operator, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
 	EnableHotStandby bool `json:"enable_hot_standby,omitempty,omitzero"`
 
 	// Mode Cloud deployment topology. `single` provisions one Antfly node; `replicated` provisions separate metadata and data node groups for HA.
@@ -1322,6 +1536,9 @@ type OrgId = UUID
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
+// Conflict defines model for Conflict.
+type Conflict = Error
+
 // Forbidden defines model for Forbidden.
 type Forbidden = Error
 
@@ -1330,6 +1547,9 @@ type InternalServerError = Error
 
 // NotFound defines model for NotFound.
 type NotFound = Error
+
+// PaymentRequired defines model for PaymentRequired.
+type PaymentRequired = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
@@ -1434,6 +1654,9 @@ type UpdateCloudGroupJSONRequestBody = UpdateCloudGroupRequest
 // AddCloudGroupMemberJSONRequestBody defines body for AddCloudGroupMember for application/json ContentType.
 type AddCloudGroupMemberJSONRequestBody = AddCloudGroupMemberRequest
 
+// CreateCloudInstanceJSONRequestBody defines body for CreateCloudInstance for application/json ContentType.
+type CreateCloudInstanceJSONRequestBody = CreateCloudInstanceRequest
+
 // UpdateCloudInstanceJSONRequestBody defines body for UpdateCloudInstance for application/json ContentType.
 type UpdateCloudInstanceJSONRequestBody = UpdateCloudInstanceRequest
 
@@ -1445,6 +1668,15 @@ type UpdateCloudBrowserAccessJSONRequestBody = UpdateCloudBrowserAccessRequest
 
 // UpsertCloudGrantJSONRequestBody defines body for UpsertCloudGrant for application/json ContentType.
 type UpsertCloudGrantJSONRequestBody = UpsertCloudGrantRequest
+
+// StartLiteExportJSONRequestBody defines body for StartLiteExport for application/json ContentType.
+type StartLiteExportJSONRequestBody = StartLiteExportRequest
+
+// StartLiteImportJSONRequestBody defines body for StartLiteImport for application/json ContentType.
+type StartLiteImportJSONRequestBody = StartLiteImportRequest
+
+// ConfirmLiteImportJSONRequestBody defines body for ConfirmLiteImport for application/json ContentType.
+type ConfirmLiteImportJSONRequestBody = ConfirmLiteImportRequest
 
 // SyncCloudSCIMGroupsJSONRequestBody defines body for SyncCloudSCIMGroups for application/json ContentType.
 type SyncCloudSCIMGroupsJSONRequestBody = CloudSCIMGroupSyncRequest
@@ -1555,6 +1787,9 @@ type ClientInterface interface {
 	// GetAntflyInferenceUsageSummary request
 	GetAntflyInferenceUsageSummary(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetCloudCapabilities request
+	GetCloudCapabilities(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListCloudGroups request
 	ListCloudGroups(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1581,6 +1816,11 @@ type ClientInterface interface {
 
 	// ListCloudInstances request
 	ListCloudInstances(ctx context.Context, orgId OrgId, params *ListCloudInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateCloudInstanceWithBody request with any body
+	CreateCloudInstanceWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCloudInstance(ctx context.Context, orgId OrgId, body CreateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCloudInstance request
 	GetCloudInstance(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1623,8 +1863,38 @@ type ClientInterface interface {
 	// DeleteCloudGrant request
 	DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// StartLiteExportWithBody request with any body
+	StartLiteExportWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	StartLiteExport(ctx context.Context, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCloudInstanceMetrics request
 	GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// StartLiteImportWithBody request with any body
+	StartLiteImportWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	StartLiteImport(ctx context.Context, orgId OrgId, body StartLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetLiteOperation request
+	GetLiteOperation(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelLiteOperation request
+	CancelLiteOperation(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfirmLiteImportWithBody request with any body
+	ConfirmLiteImportWithBody(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConfirmLiteImport(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, body ConfirmLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateLiteDownload request
+	CreateLiteDownload(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SealLiteUpload request
+	SealLiteUpload(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateLiteUploadSession request
+	CreateLiteUploadSession(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SyncCloudSCIMGroupsWithBody request with any body
 	SyncCloudSCIMGroupsWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1751,6 +2021,18 @@ func (c *Client) GetAntflyInferenceUsageSummary(ctx context.Context, orgId OrgId
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetCloudCapabilities(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCloudCapabilitiesRequest(c.Server, orgId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListCloudGroups(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListCloudGroupsRequest(c.Server, orgId)
 	if err != nil {
@@ -1861,6 +2143,30 @@ func (c *Client) RemoveCloudGroupMember(ctx context.Context, orgId OrgId, groupI
 
 func (c *Client) ListCloudInstances(ctx context.Context, orgId OrgId, params *ListCloudInstancesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListCloudInstancesRequest(c.Server, orgId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudInstanceWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudInstanceRequestWithBody(c.Server, orgId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCloudInstance(ctx context.Context, orgId OrgId, body CreateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCloudInstanceRequest(c.Server, orgId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2051,8 +2357,140 @@ func (c *Client) DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId I
 	return c.Client.Do(req)
 }
 
+func (c *Client) StartLiteExportWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartLiteExportRequestWithBody(c.Server, orgId, instanceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartLiteExport(ctx context.Context, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartLiteExportRequest(c.Server, orgId, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCloudInstanceMetricsRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartLiteImportWithBody(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartLiteImportRequestWithBody(c.Server, orgId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartLiteImport(ctx context.Context, orgId OrgId, body StartLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartLiteImportRequest(c.Server, orgId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetLiteOperation(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetLiteOperationRequest(c.Server, orgId, operationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CancelLiteOperation(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelLiteOperationRequest(c.Server, orgId, operationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfirmLiteImportWithBody(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfirmLiteImportRequestWithBody(c.Server, orgId, operationId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfirmLiteImport(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, body ConfirmLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfirmLiteImportRequest(c.Server, orgId, operationId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateLiteDownload(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateLiteDownloadRequest(c.Server, orgId, operationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SealLiteUpload(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSealLiteUploadRequest(c.Server, orgId, operationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateLiteUploadSession(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateLiteUploadSessionRequest(c.Server, orgId, operationId)
 	if err != nil {
 		return nil, err
 	}
@@ -2614,6 +3052,40 @@ func NewGetAntflyInferenceUsageSummaryRequest(server string, orgId OrgId, params
 	return req, nil
 }
 
+// NewGetCloudCapabilitiesRequest generates requests for GetCloudCapabilities
+func NewGetCloudCapabilitiesRequest(server string, orgId OrgId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/capabilities", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListCloudGroupsRequest generates requests for ListCloudGroups
 func NewListCloudGroupsRequest(server string, orgId OrgId) (*http.Request, error) {
 	var err error
@@ -2953,6 +3425,53 @@ func NewListCloudInstancesRequest(server string, orgId OrgId, params *ListCloudI
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewCreateCloudInstanceRequest calls the generic CreateCloudInstance builder with application/json body
+func NewCreateCloudInstanceRequest(server string, orgId OrgId, body CreateCloudInstanceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateCloudInstanceRequestWithBody(server, orgId, "application/json", bodyReader)
+}
+
+// NewCreateCloudInstanceRequestWithBody generates requests for CreateCloudInstance with any type of body
+func NewCreateCloudInstanceRequestWithBody(server string, orgId OrgId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -3498,6 +4017,60 @@ func NewDeleteCloudGrantRequest(server string, orgId OrgId, instanceId InstanceI
 	return req, nil
 }
 
+// NewStartLiteExportRequest calls the generic StartLiteExport builder with application/json body
+func NewStartLiteExportRequest(server string, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewStartLiteExportRequestWithBody(server, orgId, instanceId, "application/json", bodyReader)
+}
+
+// NewStartLiteExportRequestWithBody generates requests for StartLiteExport with any type of body
+func NewStartLiteExportRequestWithBody(server string, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/lite/exports", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetCloudInstanceMetricsRequest generates requests for GetCloudInstanceMetrics
 func NewGetCloudInstanceMetricsRequest(server string, orgId OrgId, instanceId InstanceId) (*http.Request, error) {
 	var err error
@@ -3532,6 +4105,312 @@ func NewGetCloudInstanceMetricsRequest(server string, orgId OrgId, instanceId In
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewStartLiteImportRequest calls the generic StartLiteImport builder with application/json body
+func NewStartLiteImportRequest(server string, orgId OrgId, body StartLiteImportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewStartLiteImportRequestWithBody(server, orgId, "application/json", bodyReader)
+}
+
+// NewStartLiteImportRequestWithBody generates requests for StartLiteImport with any type of body
+func NewStartLiteImportRequestWithBody(server string, orgId OrgId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/imports", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetLiteOperationRequest generates requests for GetLiteOperation
+func NewGetLiteOperationRequest(server string, orgId OrgId, operationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCancelLiteOperationRequest generates requests for CancelLiteOperation
+func NewCancelLiteOperationRequest(server string, orgId OrgId, operationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s/cancel", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewConfirmLiteImportRequest calls the generic ConfirmLiteImport builder with application/json body
+func NewConfirmLiteImportRequest(server string, orgId OrgId, operationId openapi_types.UUID, body ConfirmLiteImportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConfirmLiteImportRequestWithBody(server, orgId, operationId, "application/json", bodyReader)
+}
+
+// NewConfirmLiteImportRequestWithBody generates requests for ConfirmLiteImport with any type of body
+func NewConfirmLiteImportRequestWithBody(server string, orgId OrgId, operationId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s/confirm", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCreateLiteDownloadRequest generates requests for CreateLiteDownload
+func NewCreateLiteDownloadRequest(server string, orgId OrgId, operationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s/download", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSealLiteUploadRequest generates requests for SealLiteUpload
+func NewSealLiteUploadRequest(server string, orgId OrgId, operationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s/seal", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateLiteUploadSessionRequest generates requests for CreateLiteUploadSession
+func NewCreateLiteUploadSessionRequest(server string, orgId OrgId, operationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "operation_id", operationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/lite/operations/%s/upload-session", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -4067,6 +4946,9 @@ type ClientWithResponsesInterface interface {
 	// GetAntflyInferenceUsageSummaryWithResponse request
 	GetAntflyInferenceUsageSummaryWithResponse(ctx context.Context, orgId OrgId, params *GetAntflyInferenceUsageSummaryParams, reqEditors ...RequestEditorFn) (*GetAntflyInferenceUsageSummaryResponse, error)
 
+	// GetCloudCapabilitiesWithResponse request
+	GetCloudCapabilitiesWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*GetCloudCapabilitiesResponse, error)
+
 	// ListCloudGroupsWithResponse request
 	ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error)
 
@@ -4093,6 +4975,11 @@ type ClientWithResponsesInterface interface {
 
 	// ListCloudInstancesWithResponse request
 	ListCloudInstancesWithResponse(ctx context.Context, orgId OrgId, params *ListCloudInstancesParams, reqEditors ...RequestEditorFn) (*ListCloudInstancesResponse, error)
+
+	// CreateCloudInstanceWithBodyWithResponse request with any body
+	CreateCloudInstanceWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudInstanceResponse, error)
+
+	CreateCloudInstanceWithResponse(ctx context.Context, orgId OrgId, body CreateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudInstanceResponse, error)
 
 	// GetCloudInstanceWithResponse request
 	GetCloudInstanceWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceResponse, error)
@@ -4135,8 +5022,38 @@ type ClientWithResponsesInterface interface {
 	// DeleteCloudGrantWithResponse request
 	DeleteCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*DeleteCloudGrantResponse, error)
 
+	// StartLiteExportWithBodyWithResponse request with any body
+	StartLiteExportWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error)
+
+	StartLiteExportWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error)
+
 	// GetCloudInstanceMetricsWithResponse request
 	GetCloudInstanceMetricsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceMetricsResponse, error)
+
+	// StartLiteImportWithBodyWithResponse request with any body
+	StartLiteImportWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteImportResponse, error)
+
+	StartLiteImportWithResponse(ctx context.Context, orgId OrgId, body StartLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*StartLiteImportResponse, error)
+
+	// GetLiteOperationWithResponse request
+	GetLiteOperationWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLiteOperationResponse, error)
+
+	// CancelLiteOperationWithResponse request
+	CancelLiteOperationWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CancelLiteOperationResponse, error)
+
+	// ConfirmLiteImportWithBodyWithResponse request with any body
+	ConfirmLiteImportWithBodyWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmLiteImportResponse, error)
+
+	ConfirmLiteImportWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, body ConfirmLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmLiteImportResponse, error)
+
+	// CreateLiteDownloadWithResponse request
+	CreateLiteDownloadWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CreateLiteDownloadResponse, error)
+
+	// SealLiteUploadWithResponse request
+	SealLiteUploadWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*SealLiteUploadResponse, error)
+
+	// CreateLiteUploadSessionWithResponse request
+	CreateLiteUploadSessionWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CreateLiteUploadSessionResponse, error)
 
 	// SyncCloudSCIMGroupsWithBodyWithResponse request with any body
 	SyncCloudSCIMGroupsWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SyncCloudSCIMGroupsResponse, error)
@@ -4418,6 +5335,40 @@ func (r GetAntflyInferenceUsageSummaryResponse) ContentType() string {
 	return ""
 }
 
+type GetCloudCapabilitiesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudCapabilities
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCloudCapabilitiesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCloudCapabilitiesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCloudCapabilitiesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListCloudGroupsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4651,6 +5602,41 @@ func (r ListCloudInstancesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListCloudInstancesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateCloudInstanceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *CloudInstance
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON402      *PaymentRequired
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateCloudInstanceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateCloudInstanceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateCloudInstanceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -5029,6 +6015,40 @@ func (r DeleteCloudGrantResponse) ContentType() string {
 	return ""
 }
 
+type StartLiteExportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteTransferOperation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r StartLiteExportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartLiteExportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r StartLiteExportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetCloudInstanceMetricsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -5056,6 +6076,244 @@ func (r GetCloudInstanceMetricsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetCloudInstanceMetricsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type StartLiteImportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteTransferOperation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r StartLiteImportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartLiteImportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r StartLiteImportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetLiteOperationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteTransferOperation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r GetLiteOperationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetLiteOperationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetLiteOperationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CancelLiteOperationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteTransferOperation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelLiteOperationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelLiteOperationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelLiteOperationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ConfirmLiteImportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CloudInstance
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfirmLiteImportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfirmLiteImportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConfirmLiteImportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateLiteDownloadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteDownload
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateLiteDownloadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateLiteDownloadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateLiteDownloadResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SealLiteUploadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteTransferOperation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r SealLiteUploadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SealLiteUploadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SealLiteUploadResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateLiteUploadSessionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *LiteUploadSession
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON409      *Conflict
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateLiteUploadSessionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateLiteUploadSessionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateLiteUploadSessionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -5470,6 +6728,15 @@ func (c *ClientWithResponses) GetAntflyInferenceUsageSummaryWithResponse(ctx con
 	return ParseGetAntflyInferenceUsageSummaryResponse(rsp)
 }
 
+// GetCloudCapabilitiesWithResponse request returning *GetCloudCapabilitiesResponse
+func (c *ClientWithResponses) GetCloudCapabilitiesWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*GetCloudCapabilitiesResponse, error) {
+	rsp, err := c.GetCloudCapabilities(ctx, orgId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCloudCapabilitiesResponse(rsp)
+}
+
 // ListCloudGroupsWithResponse request returning *ListCloudGroupsResponse
 func (c *ClientWithResponses) ListCloudGroupsWithResponse(ctx context.Context, orgId OrgId, reqEditors ...RequestEditorFn) (*ListCloudGroupsResponse, error) {
 	rsp, err := c.ListCloudGroups(ctx, orgId, reqEditors...)
@@ -5555,6 +6822,23 @@ func (c *ClientWithResponses) ListCloudInstancesWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseListCloudInstancesResponse(rsp)
+}
+
+// CreateCloudInstanceWithBodyWithResponse request with arbitrary body returning *CreateCloudInstanceResponse
+func (c *ClientWithResponses) CreateCloudInstanceWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCloudInstanceResponse, error) {
+	rsp, err := c.CreateCloudInstanceWithBody(ctx, orgId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudInstanceResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateCloudInstanceWithResponse(ctx context.Context, orgId OrgId, body CreateCloudInstanceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCloudInstanceResponse, error) {
+	rsp, err := c.CreateCloudInstance(ctx, orgId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCloudInstanceResponse(rsp)
 }
 
 // GetCloudInstanceWithResponse request returning *GetCloudInstanceResponse
@@ -5688,6 +6972,23 @@ func (c *ClientWithResponses) DeleteCloudGrantWithResponse(ctx context.Context, 
 	return ParseDeleteCloudGrantResponse(rsp)
 }
 
+// StartLiteExportWithBodyWithResponse request with arbitrary body returning *StartLiteExportResponse
+func (c *ClientWithResponses) StartLiteExportWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error) {
+	rsp, err := c.StartLiteExportWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartLiteExportResponse(rsp)
+}
+
+func (c *ClientWithResponses) StartLiteExportWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error) {
+	rsp, err := c.StartLiteExport(ctx, orgId, instanceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartLiteExportResponse(rsp)
+}
+
 // GetCloudInstanceMetricsWithResponse request returning *GetCloudInstanceMetricsResponse
 func (c *ClientWithResponses) GetCloudInstanceMetricsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceMetricsResponse, error) {
 	rsp, err := c.GetCloudInstanceMetrics(ctx, orgId, instanceId, reqEditors...)
@@ -5695,6 +6996,85 @@ func (c *ClientWithResponses) GetCloudInstanceMetricsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseGetCloudInstanceMetricsResponse(rsp)
+}
+
+// StartLiteImportWithBodyWithResponse request with arbitrary body returning *StartLiteImportResponse
+func (c *ClientWithResponses) StartLiteImportWithBodyWithResponse(ctx context.Context, orgId OrgId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteImportResponse, error) {
+	rsp, err := c.StartLiteImportWithBody(ctx, orgId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartLiteImportResponse(rsp)
+}
+
+func (c *ClientWithResponses) StartLiteImportWithResponse(ctx context.Context, orgId OrgId, body StartLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*StartLiteImportResponse, error) {
+	rsp, err := c.StartLiteImport(ctx, orgId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartLiteImportResponse(rsp)
+}
+
+// GetLiteOperationWithResponse request returning *GetLiteOperationResponse
+func (c *ClientWithResponses) GetLiteOperationWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLiteOperationResponse, error) {
+	rsp, err := c.GetLiteOperation(ctx, orgId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetLiteOperationResponse(rsp)
+}
+
+// CancelLiteOperationWithResponse request returning *CancelLiteOperationResponse
+func (c *ClientWithResponses) CancelLiteOperationWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CancelLiteOperationResponse, error) {
+	rsp, err := c.CancelLiteOperation(ctx, orgId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelLiteOperationResponse(rsp)
+}
+
+// ConfirmLiteImportWithBodyWithResponse request with arbitrary body returning *ConfirmLiteImportResponse
+func (c *ClientWithResponses) ConfirmLiteImportWithBodyWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmLiteImportResponse, error) {
+	rsp, err := c.ConfirmLiteImportWithBody(ctx, orgId, operationId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfirmLiteImportResponse(rsp)
+}
+
+func (c *ClientWithResponses) ConfirmLiteImportWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, body ConfirmLiteImportJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmLiteImportResponse, error) {
+	rsp, err := c.ConfirmLiteImport(ctx, orgId, operationId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfirmLiteImportResponse(rsp)
+}
+
+// CreateLiteDownloadWithResponse request returning *CreateLiteDownloadResponse
+func (c *ClientWithResponses) CreateLiteDownloadWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CreateLiteDownloadResponse, error) {
+	rsp, err := c.CreateLiteDownload(ctx, orgId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateLiteDownloadResponse(rsp)
+}
+
+// SealLiteUploadWithResponse request returning *SealLiteUploadResponse
+func (c *ClientWithResponses) SealLiteUploadWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*SealLiteUploadResponse, error) {
+	rsp, err := c.SealLiteUpload(ctx, orgId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSealLiteUploadResponse(rsp)
+}
+
+// CreateLiteUploadSessionWithResponse request returning *CreateLiteUploadSessionResponse
+func (c *ClientWithResponses) CreateLiteUploadSessionWithResponse(ctx context.Context, orgId OrgId, operationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*CreateLiteUploadSessionResponse, error) {
+	rsp, err := c.CreateLiteUploadSession(ctx, orgId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateLiteUploadSessionResponse(rsp)
 }
 
 // SyncCloudSCIMGroupsWithBodyWithResponse request with arbitrary body returning *SyncCloudSCIMGroupsResponse
@@ -6194,6 +7574,60 @@ func ParseGetAntflyInferenceUsageSummaryResponse(rsp *http.Response) (*GetAntfly
 	return response, nil
 }
 
+// ParseGetCloudCapabilitiesResponse parses an HTTP response from a GetCloudCapabilitiesWithResponse call
+func ParseGetCloudCapabilitiesResponse(rsp *http.Response) (*GetCloudCapabilitiesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCloudCapabilitiesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudCapabilities
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListCloudGroupsResponse parses an HTTP response from a ListCloudGroupsWithResponse call
 func ParseListCloudGroupsResponse(rsp *http.Response) (*ListCloudGroupsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -6519,6 +7953,67 @@ func ParseListCloudInstancesResponse(rsp *http.Response) (*ListCloudInstancesRes
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateCloudInstanceResponse parses an HTTP response from a CreateCloudInstanceWithResponse call
+func ParseCreateCloudInstanceResponse(rsp *http.Response) (*CreateCloudInstanceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateCloudInstanceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CloudInstance
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 402:
+		var dest PaymentRequired
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON402 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	}
 
@@ -7057,6 +8552,60 @@ func ParseDeleteCloudGrantResponse(rsp *http.Response) (*DeleteCloudGrantRespons
 	return response, nil
 }
 
+// ParseStartLiteExportResponse parses an HTTP response from a StartLiteExportWithResponse call
+func ParseStartLiteExportResponse(rsp *http.Response) (*StartLiteExportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartLiteExportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteTransferOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetCloudInstanceMetricsResponse parses an HTTP response from a GetCloudInstanceMetricsWithResponse call
 func ParseGetCloudInstanceMetricsResponse(rsp *http.Response) (*GetCloudInstanceMetricsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -7098,6 +8647,384 @@ func ParseGetCloudInstanceMetricsResponse(rsp *http.Response) (*GetCloudInstance
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseStartLiteImportResponse parses an HTTP response from a StartLiteImportWithResponse call
+func ParseStartLiteImportResponse(rsp *http.Response) (*StartLiteImportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartLiteImportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteTransferOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetLiteOperationResponse parses an HTTP response from a GetLiteOperationWithResponse call
+func ParseGetLiteOperationResponse(rsp *http.Response) (*GetLiteOperationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetLiteOperationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteTransferOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCancelLiteOperationResponse parses an HTTP response from a CancelLiteOperationWithResponse call
+func ParseCancelLiteOperationResponse(rsp *http.Response) (*CancelLiteOperationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelLiteOperationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteTransferOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConfirmLiteImportResponse parses an HTTP response from a ConfirmLiteImportWithResponse call
+func ParseConfirmLiteImportResponse(rsp *http.Response) (*ConfirmLiteImportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfirmLiteImportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CloudInstance
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateLiteDownloadResponse parses an HTTP response from a CreateLiteDownloadWithResponse call
+func ParseCreateLiteDownloadResponse(rsp *http.Response) (*CreateLiteDownloadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateLiteDownloadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteDownload
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSealLiteUploadResponse parses an HTTP response from a SealLiteUploadWithResponse call
+func ParseSealLiteUploadResponse(rsp *http.Response) (*SealLiteUploadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SealLiteUploadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteTransferOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateLiteUploadSessionResponse parses an HTTP response from a CreateLiteUploadSessionWithResponse call
+func ParseCreateLiteUploadSessionResponse(rsp *http.Response) (*CreateLiteUploadSessionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateLiteUploadSessionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LiteUploadSession
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	}
 
@@ -7606,186 +9533,226 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
