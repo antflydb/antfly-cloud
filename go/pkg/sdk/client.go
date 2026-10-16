@@ -914,7 +914,7 @@ func mapOrganizationMember(m oapi.OrganizationMember) OrganizationMember {
 	}
 }
 
-func mapInvitation(inv oapi.SchemasInvitationResponse) *Invitation {
+func mapInvitation(inv oapi.InvitationResponse2) *Invitation {
 	return &Invitation{
 		ID:        inv.InvitationId.String(),
 		Email:     string(inv.Email),

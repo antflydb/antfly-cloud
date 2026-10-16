@@ -497,7 +497,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/schemas-InvitationResponse'
+                $ref: '#/components/schemas/InvitationResponse-2'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -779,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/schemas-GetInvitationResponse'
+                $ref: '#/components/schemas/GetInvitationResponse-2'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -839,7 +839,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/schemas-AcceptInvitationResponse'
+                $ref: '#/components/schemas/AcceptInvitationResponse-2'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -877,7 +877,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/schemas-ResendInvitationResponse'
+                $ref: '#/components/schemas/ResendInvitationResponse-2'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1793,10 +1793,74 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/validate:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Validate instance provider credential before creation
+      operationId: validateCloudProviderAuthCreate
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCloudProviderAuthRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - valid
+                properties:
+                  valid:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
+    get:
+      summary: Get instance provider credential
+      operationId: getCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
       summary: Update or revoke an instance provider credential
       description: Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
@@ -1845,6 +1909,67 @@ paths:
       responses:
         '204':
           description: Credential deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Validate stored instance provider credential
+      description: Validates the stored credential against the upstream provider and updates its validation status. Provider validation does not establish asynchronous runtime adoption.
+      operationId: validateCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Validated credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/default:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Set default instance provider credential
+      operationId: setDefaultCloudProviderAuth
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/AuthId'
+      responses:
+        '200':
+          description: Updated credential metadata; secrets are never returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudProviderAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5102,8 +5227,6 @@ components:
           example: Mozilla/5.0...
         created_at:
           $ref: '#/components/schemas/Timestamp'
-    UserOrganization:
-      $ref: '#/components/schemas/OrganizationMember'
     SlugCheckResult:
       type: object
       required:
@@ -5140,7 +5263,7 @@ components:
         require_two_factor:
           type: boolean
           description: Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API.
-    schemas-InvitationResponse:
+    InvitationResponse-2:
       type: object
       required:
         - invitation_id
@@ -5171,7 +5294,7 @@ components:
         token:
           type: string
           description: Invitation token for accepting the invitation
-    schemas-GetInvitationResponse:
+    GetInvitationResponse-2:
       type: object
       required:
         - invitation_id
@@ -5194,7 +5317,7 @@ components:
           type: string
         expires_at:
           $ref: '#/components/schemas/Timestamp'
-    schemas-AcceptInvitationResponse:
+    AcceptInvitationResponse-2:
       type: object
       required:
         - user_id
@@ -5210,7 +5333,7 @@ components:
           type: string
         joined_at:
           $ref: '#/components/schemas/Timestamp'
-    schemas-ResendInvitationResponse:
+    ResendInvitationResponse-2:
       type: object
       required:
         - message
@@ -6485,7 +6608,7 @@ components:
           example: acme_prod_events
         display_name:
           type: string
-          description: Customer-facing table or import-job name.
+          description: Customer-facing table or import name.
           example: events
         source:
           type: string
@@ -7525,8 +7648,6 @@ components:
           additionalProperties: true
         enabled:
           type: boolean
-        status:
-          type: string
         is_default:
           type: boolean
     CloudProviderAuth:
@@ -8457,11 +8578,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token from OAuth flow or API key
-    APIKeyAuth:
-      type: apiKey
-      in: header
-      name: X-API-Key
-      description: Cloud API key
     CookieAuth:
       type: apiKey
       in: cookie

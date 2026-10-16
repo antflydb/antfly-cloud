@@ -133,8 +133,14 @@ func newImportCommand(stateFor stateFactory) *cobra.Command {
 	create.Flags().StringVar(&connection, "connection", "", "hosted connection ID; supplies provider_auth_id")
 	create.Flags().StringVar(&table, "table", "", "target table; supplies target_table")
 	group.AddCommand(create)
-	for _, action := range []string{"run", "retry-failed"} {
-		group.AddCommand(&cobra.Command{Use: action + " <import-id>", Short: "Queue an import run (returns its specific run ID)", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	for _, spec := range []struct {
+		action, short string
+	}{
+		{"run", "Queue an import run (returns its specific run ID)"},
+		{"retry-failed", "Retry failed files from the latest completed run (returns the new run ID)"},
+	} {
+		action := spec.action
+		group.AddCommand(&cobra.Command{Use: action + " <import-id>", Short: spec.short, Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 			st, org, inst, err := importInstance(cmd, stateFor)
 			if err != nil {
 				return err

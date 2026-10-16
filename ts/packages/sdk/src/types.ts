@@ -679,7 +679,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}": {
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/validate": {
         parameters: {
             query?: never;
             header?: never;
@@ -687,6 +687,24 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        /** Validate instance provider credential before creation */
+        post: operations["validateCloudProviderAuthCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get instance provider credential */
+        get: operations["getCloudProviderAuth"];
         put?: never;
         post?: never;
         /**
@@ -701,6 +719,43 @@ export interface paths {
          * @description Set enabled=false, is_default=false, and clear_secret=true to remove usable credentials while preserving references from archived imports. This does not revoke the upstream provider key.
          */
         patch: operations["updateCloudProviderAuth"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate stored instance provider credential
+         * @description Validates the stored credential against the upstream provider and updates its validation status. Provider validation does not establish asynchronous runtime adoption.
+         */
+        post: operations["validateCloudProviderAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set default instance provider credential */
+        post: operations["setDefaultCloudProviderAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/objects": {
@@ -2292,7 +2347,6 @@ export interface components {
             user_agent?: string | null;
             created_at: components["schemas"]["Timestamp"];
         };
-        UserOrganization: components["schemas"]["OrganizationMember"];
         SlugCheckResult: {
             /**
              * @description Whether the slug is available
@@ -2323,7 +2377,7 @@ export interface components {
             /** @description Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API. */
             require_two_factor: boolean;
         };
-        "schemas-InvitationResponse": {
+        "InvitationResponse-2": {
             /** @description Unique invitation identifier */
             invitation_id: components["schemas"]["UUID"];
             /**
@@ -2343,7 +2397,7 @@ export interface components {
             /** @description Invitation token for accepting the invitation */
             token: string;
         };
-        "schemas-GetInvitationResponse": {
+        "GetInvitationResponse-2": {
             invitation_id: components["schemas"]["UUID"];
             /** Format: email */
             email: string;
@@ -2352,13 +2406,13 @@ export interface components {
             role: string;
             expires_at: components["schemas"]["Timestamp"];
         };
-        "schemas-AcceptInvitationResponse": {
+        "AcceptInvitationResponse-2": {
             user_id: components["schemas"]["UUID"];
             organization_id: components["schemas"]["UUID"];
             role: string;
             joined_at: components["schemas"]["Timestamp"];
         };
-        "schemas-ResendInvitationResponse": {
+        "ResendInvitationResponse-2": {
             /** @example Invitation email resent successfully */
             message: string;
             /** @description New invitation token */
@@ -3072,7 +3126,7 @@ export interface components {
              */
             table_name: string;
             /**
-             * @description Customer-facing table or import-job name.
+             * @description Customer-facing table or import name.
              * @example events
              */
             display_name: string;
@@ -3645,7 +3699,6 @@ export interface components {
                 [key: string]: unknown;
             };
             enabled?: boolean;
-            status?: string;
             is_default?: boolean;
         };
         CloudProviderAuth: {
@@ -4530,7 +4583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["schemas-InvitationResponse"];
+                    "application/json": components["schemas"]["InvitationResponse-2"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -4770,7 +4823,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["schemas-GetInvitationResponse"];
+                    "application/json": components["schemas"]["GetInvitationResponse-2"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -4820,7 +4873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["schemas-AcceptInvitationResponse"];
+                    "application/json": components["schemas"]["AcceptInvitationResponse-2"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -4848,7 +4901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["schemas-ResendInvitationResponse"];
+                    "application/json": components["schemas"]["ResendInvitationResponse-2"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -5672,6 +5725,71 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    validateCloudProviderAuthCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCloudProviderAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Validation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        valid: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     deleteCloudProviderAuth: {
         parameters: {
             query?: never;
@@ -5719,6 +5837,68 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateCloudProviderAuthRequest"];
             };
         };
+        responses: {
+            /** @description Updated credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    validateCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Validated credential metadata; secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudProviderAuth"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setDefaultCloudProviderAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+                /** @description Provider credential ID */
+                auth_id: components["parameters"]["AuthId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Updated credential metadata; secrets are never returned */
             200: {
