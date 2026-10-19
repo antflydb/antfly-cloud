@@ -38,13 +38,17 @@ preprocessing and dimensions; it must not silently substitute another model.
 ```sh
 antfly-cloud --org ORG lite confirm IMPORT_OPERATION_ID \
   --revision REVIEWED_REVISION --name 'My Lite database' --slug my-lite \
-  --storage 10Gi --acknowledge-snapshot-boundary
+  --acknowledge-snapshot-boundary --accept-lite-terms
 antfly-cloud --org ORG lite status IMPORT_OPERATION_ID
 ```
 
-Select capacity for the uploaded source, an independent snapshot and at least
-1 GiB of headroom, plus expected growth. The server checks capacity and applies
-its ordinary billing admission before creating the database. Confirmation
+The current Lite package uses a fixed 50 GiB disk. The uploaded source and an
+independent snapshot need at least 1 GiB of additional headroom, limiting the
+current import path to 24.5 GiB before expected growth. The server checks capacity
+and billing admission before creating the database. Review the server's current
+plan and explicitly accept its terms. Request `--claim-free-year` only when the
+capabilities report says the organization is eligible; that request never falls
+back to paid creation if the offer becomes unavailable. Confirmation
 retries with the same request return the original database. A different
 request cannot bind the same operation to a second database.
 
@@ -86,6 +90,19 @@ An embedded file binding has different lifecycle, transaction, query and result
 interfaces. Such applications need an explicit adapter or code changes; merely
 changing an endpoint does not convert an embedded connection into an HTTP
 client.
+
+## Sleep and resume
+
+After 30 days without customer data access, an admitted Lite database can stop
+serving compute while retaining its disk. Queries do not wake or replay work.
+Resume explicitly, then wait for the instance to become ready before retrying:
+
+```sh
+antfly-cloud --org ORG lite resume my-lite
+```
+
+The package remains billable while asleep after any introductory grant expires.
+Billing suspension must be resolved before resuming.
 
 ## Export and return
 
