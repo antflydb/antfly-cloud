@@ -168,3 +168,24 @@ func TestTransferTransportErrorsDoNotExposeCapabilities(t *testing.T) {
 		t.Fatalf("capability leaked: %v", err)
 	}
 }
+
+func TestLiteResumeUsesExplicitManagementRoute(t *testing.T) {
+	org, id := uuid.NewString(), uuid.NewString()
+	client := liteTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" || r.URL.Path != "/api/v1/organizations/"+org+"/cloud/instances/"+id+"/resume" {
+			t.Fatalf("wrong resume route: %s %s", r.Method, r.URL.Path)
+		}
+		if r.Header.Get("Authorization") != "Bearer CONTROL-PLANE-TOKEN" {
+			t.Fatal("missing authentication")
+		}
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprintf(w, `{"id":%q,"status":"waking","tier":"lite","deployment_profile":"lite","lite_free_until":"2027-10-19T00:00:00Z"}`, id)
+	})
+	result, err := client.ResumeLite(t.Context(), org, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.ID != id || result.Status != "waking" || result.Tier != "lite" || result.LiteFreeUntil == nil {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+}

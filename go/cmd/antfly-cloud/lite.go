@@ -37,6 +37,7 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 		})
 	}})
 	var name, slug, region, storage string
+	var acceptTerms, claimIntro bool
 	create := &cobra.Command{Use: "create", Short: "Create a new empty managed Lite database", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, err := stateFor(true)
 		if err != nil {
@@ -49,7 +50,7 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 		if name == "" || slug == "" {
 			return fmt.Errorf("--name and --slug are required")
 		}
-		instance, err := st.client.CreateInstance(cmd.Context(), org.ID, liteCreateRequest(name, slug, region, storage))
+		instance, err := st.client.CreateInstance(cmd.Context(), org.ID, liteCreateRequest(name, slug, region, storage, acceptTerms, claimIntro))
 		if err != nil {
 			return err
 		}
@@ -58,7 +59,9 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 	create.Flags().StringVar(&name, "name", "", "Database display name")
 	create.Flags().StringVar(&slug, "slug", "", "New database slug")
 	create.Flags().StringVar(&region, "region", "us-central1", "Database region")
-	create.Flags().StringVar(&storage, "storage", "10Gi", "Persistent capacity; ordinary Cloud billing admission applies")
+	create.Flags().StringVar(&storage, "storage", "50Gi", "Lite includes 50 GiB persistent disk")
+	create.Flags().BoolVar(&acceptTerms, "accept-lite-terms", false, "Accept USD 20/month after any free year, including while asleep with retained storage")
+	create.Flags().BoolVar(&claimIntro, "claim-free-year", false, "Claim the limited one-database free year for your organization; fail if unavailable")
 	root.AddCommand(create)
 	var key string
 	var wait bool
@@ -133,7 +136,7 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 	}})
 	var confirmName, confirmSlug, confirmRegion, confirmStorage string
 	var revision int64
-	var acknowledged bool
+	var acknowledged, confirmTerms, confirmIntro bool
 	confirm := &cobra.Command{Use: "confirm <operation-id>", Short: "Create a new database from a reviewed import report", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		if !acknowledged || revision <= 0 || confirmName == "" || confirmSlug == "" {
 			return fmt.Errorf("provide --revision from the reviewed report, --name, --slug and --acknowledge-snapshot-boundary")
@@ -146,7 +149,7 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		instance, err := st.client.ConfirmLiteImport(cmd.Context(), org.ID, args[0], sdk.ConfirmLiteImportRequest{Revision: revision, SnapshotBoundaryAcknowledged: true, Instance: liteCreateRequest(confirmName, confirmSlug, confirmRegion, confirmStorage)})
+		instance, err := st.client.ConfirmLiteImport(cmd.Context(), org.ID, args[0], sdk.ConfirmLiteImportRequest{Revision: revision, SnapshotBoundaryAcknowledged: true, Instance: liteCreateRequest(confirmName, confirmSlug, confirmRegion, confirmStorage, confirmTerms, confirmIntro)})
 		if err != nil {
 			return err
 		}
@@ -155,9 +158,11 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 	confirm.Flags().StringVar(&confirmName, "name", "", "New database name")
 	confirm.Flags().StringVar(&confirmSlug, "slug", "", "New database slug")
 	confirm.Flags().StringVar(&confirmRegion, "region", "us-central1", "Database region")
-	confirm.Flags().StringVar(&confirmStorage, "storage", "10Gi", "Capacity for source plus independent snapshot and 1 GiB headroom")
+	confirm.Flags().StringVar(&confirmStorage, "storage", "50Gi", "Capacity for source plus independent snapshot and 1 GiB headroom")
 	confirm.Flags().Int64Var(&revision, "revision", 0, "Revision from the reviewed awaiting_confirmation report")
 	confirm.Flags().BoolVar(&acknowledged, "acknowledge-snapshot-boundary", false, "Acknowledge independent copy, excluded later writes and explicit application write-pause boundary")
+	confirm.Flags().BoolVar(&confirmTerms, "accept-lite-terms", false, "Accept USD 20/month after any free year, including while asleep with retained storage")
+	confirm.Flags().BoolVar(&confirmIntro, "claim-free-year", false, "Claim the limited organization free year; fail if unavailable")
 	root.AddCommand(confirm)
 	var exportKey string
 	var exportWait bool
@@ -198,8 +203,19 @@ func newLiteCommand(stateFor stateFactory) *cobra.Command {
 		}
 		return st.out.Print(map[string]string{"path": args[1], "operation_id": args[0]}, func() error { fmt.Fprintf(st.out.W, "Verified Lite file: %s\n", args[1]); return nil })
 	}})
+	root.AddCommand(&cobra.Command{Use: "resume <instance-id-or-slug>", Short: "Resume the same Lite database on its retained disk; wait for ready before querying", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, org, instance, err := resolveCommandInstance(cmd.Context(), stateFor, args[0])
+		if err != nil {
+			return err
+		}
+		result, err := st.client.ResumeLite(cmd.Context(), org.ID, instance.ID)
+		if err != nil {
+			return err
+		}
+		return st.out.Print(result, func() error { printInstance(st.out.W, *result); return nil })
+	}})
 	return root
 }
-func liteCreateRequest(name, slug, region, storage string) sdk.CreateInstanceRequest {
-	return sdk.CreateInstanceRequest{Name: name, Slug: slug, Region: region, Mode: "single", Tier: "standard", DeploymentProfile: "lite", VersionPolicy: "pinned", NodeConfig: oapi.NodeConfigUpdate{DataStorage: storage}}
+func liteCreateRequest(name, slug, region, storage string, accept, intro bool) sdk.CreateInstanceRequest {
+	return sdk.CreateInstanceRequest{AcceptLiteTerms: accept, ClaimLiteIntro: intro, Name: name, Slug: slug, Region: region, Mode: "single", Tier: "lite", DeploymentProfile: "lite", VersionPolicy: "pinned", NodeConfig: oapi.NodeConfigUpdate{DataStorage: storage}}
 }

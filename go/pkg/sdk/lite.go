@@ -187,3 +187,24 @@ func (c *Client) StartLiteExport(ctx context.Context, org, instance, key string)
 	}
 	return response.JSON200, nil
 }
+
+// ResumeLite resumes the retained owner. Poll GetInstance until ready before
+// retrying a query or insert; no failed write is replayed by this operation.
+func (c *Client) ResumeLite(ctx context.Context, org, instance string) (*CloudInstance, error) {
+	orgID, err := parseUUID(org, "org")
+	if err != nil {
+		return nil, err
+	}
+	id, err := parseUUID(instance, "instance")
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.client.ResumeLiteInstanceWithResponse(ctx, orgID, id)
+	if err != nil {
+		return nil, err
+	}
+	if response.JSON202 == nil {
+		return nil, apiError(response.StatusCode(), response.Body)
+	}
+	return mapCloudInstance(*response.JSON202), nil
+}

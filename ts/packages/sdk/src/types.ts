@@ -1566,6 +1566,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume a sleeping Lite database
+         * @description Starts the existing owner on its retained volume. Idempotent while waking or ready. Poll the instance until ready before retrying a query or insert. Billing-suspended instances cannot be resumed here.
+         */
+        post: operations["resumeLiteInstance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels": {
         parameters: {
             query?: never;
@@ -2630,6 +2655,12 @@ export interface components {
         };
         /** @description Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations. */
         CloudCapabilities: {
+            /** @description Advisory eligibility for one free-year grant per organization. Availability is rechecked when creation commits. */
+            lite_intro_available?: boolean;
+            /** @description Customer price in USD cents, not hosting cost. */
+            lite_monthly_cents?: number;
+            lite_free_months?: number;
+            lite_idle_days?: number;
             create_lite: boolean;
             import_lite: boolean;
             export_lite: boolean;
@@ -2751,7 +2782,7 @@ export interface components {
          * @description Instance lifecycle status
          * @enum {string}
          */
-        CloudInstanceStatus: "pending" | "provisioning" | "ready" | "updating" | "degraded" | "suspended" | "deprovisioning" | "deleted" | "failed";
+        CloudInstanceStatus: "pending" | "provisioning" | "ready" | "updating" | "degraded" | "sleeping" | "waking" | "suspended" | "deprovisioning" | "deleted" | "failed";
         /**
          * @description Antfly runtime version policy for managed upgrades.
          * @enum {string}
@@ -2771,7 +2802,7 @@ export interface components {
          * @description Customer-facing cloud package baseline used for committed-capacity billing.
          * @enum {string}
          */
-        CloudInstanceTier: "starter" | "standard" | "pro";
+        CloudInstanceTier: "lite" | "starter" | "standard" | "pro";
         /**
          * @description API key permission level
          * @enum {string}
@@ -2869,6 +2900,11 @@ export interface components {
             shared_inference_mode?: "enabled" | "disabled";
         };
         CloudInstance: {
+            /**
+             * Format: date-time
+             * @description Exclusive end of this database's introductory free year. Present only when this instance owns the organization's grant.
+             */
+            readonly lite_free_until?: string;
             readonly deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
             id: components["schemas"]["UUID"];
             organization_id: components["schemas"]["UUID"];
@@ -2928,6 +2964,10 @@ export interface components {
             updated_at: components["schemas"]["Timestamp"];
         };
         CreateCloudInstanceRequest: {
+            /** @description Claim the limited one-database free year for this organization. Fails if unavailable; never silently charges the paid plan instead. The 12 calendar months start at committed creation, and deletion does not restore eligibility. */
+            claim_lite_intro?: boolean;
+            /** @description Explicit consent to the Lite price of USD 20 per month after any free year, including while sleeping with retained storage. Required for Lite creation. */
+            accept_lite_terms?: boolean;
             /** @description Select Lite only when the environment and organization are enabled for evaluation. Requires single mode and a pinned runtime policy. */
             deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
             /**
@@ -3408,6 +3448,9 @@ export interface components {
             meta: components["schemas"]["PaginationMeta"];
         };
         CloudCreditEstimateRequest: {
+            deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
+            /** @description Estimate the introductory offer without reserving it. Creation rechecks eligibility atomically. */
+            claim_lite_intro?: boolean;
             /** @description Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation. */
             enable_hot_standby?: boolean;
             /**
@@ -7254,6 +7297,32 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    resumeLiteInstance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: components["parameters"]["OrgId"];
+                /** @description Cloud instance ID */
+                instance_id: components["parameters"]["InstanceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumption accepted, or already ready */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloudInstance"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
         };
     };
     listMetricPanels: {

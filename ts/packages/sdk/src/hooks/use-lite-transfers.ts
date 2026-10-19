@@ -202,3 +202,17 @@ export function useDownloadLiteSnapshot(orgId: string | undefined) {
 		gcTime: 0,
 	});
 }
+
+export function useResumeLite(orgId: string | undefined, instanceId: string) {
+  const cache = useQueryClient();
+  return useMutation({
+    mutationFn: async () => checked(await client.POST(
+      "/organizations/{org_id}/cloud/instances/{instance_id}/resume",
+      {params: {path: {org_id: orgId!, instance_id: instanceId}}},
+    )),
+    onSuccess: (instance) => {
+      cache.setQueryData(["organizations", orgId, "cloud-instances", instanceId], instance);
+      void cache.invalidateQueries({queryKey: ["organizations", orgId, "cloud-instances"]});
+    },
+  });
+}

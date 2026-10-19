@@ -3610,6 +3610,30 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/resume:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/InstanceId'
+    post:
+      operationId: resumeLiteInstance
+      summary: Resume a sleeping Lite database
+      description: Starts the existing owner on its retained volume. Idempotent while waking or ready. Poll the instance until ready before retrying a query or insert. Billing-suspended instances cannot be resumed here.
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      responses:
+        '202':
+          description: Resumption accepted, or already ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -5710,6 +5734,16 @@ components:
         - export_lite
       description: Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations.
       properties:
+        lite_intro_available:
+          type: boolean
+          description: Advisory eligibility for one free-year grant per organization. Availability is rechecked when creation commits.
+        lite_monthly_cents:
+          type: integer
+          description: Customer price in USD cents, not hosting cost.
+        lite_free_months:
+          type: integer
+        lite_idle_days:
+          type: integer
         create_lite:
           type: boolean
         import_lite:
@@ -5986,6 +6020,8 @@ components:
         - ready
         - updating
         - degraded
+        - sleeping
+        - waking
         - suspended
         - deprovisioning
         - deleted
@@ -6017,6 +6053,7 @@ components:
     CloudInstanceTier:
       type: string
       enum:
+        - lite
         - starter
         - standard
         - pro
@@ -6167,6 +6204,11 @@ components:
         - created_at
         - updated_at
       properties:
+        lite_free_until:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Exclusive end of this database's introductory free year. Present only when this instance owns the organization's grant.
         deployment_profile:
           $ref: '#/components/schemas/CloudDeploymentProfile'
           readOnly: true
@@ -6254,6 +6296,12 @@ components:
         - name
         - slug
       properties:
+        claim_lite_intro:
+          type: boolean
+          description: Claim the limited one-database free year for this organization. Fails if unavailable; never silently charges the paid plan instead. The 12 calendar months start at committed creation, and deletion does not restore eligibility.
+        accept_lite_terms:
+          type: boolean
+          description: Explicit consent to the Lite price of USD 20 per month after any free year, including while sleeping with retained storage. Required for Lite creation.
         deployment_profile:
           $ref: '#/components/schemas/CloudDeploymentProfile'
           description: Select Lite only when the environment and organization are enabled for evaluation. Requires single mode and a pinned runtime policy.
@@ -7109,6 +7157,11 @@ components:
       required:
         - operation
       properties:
+        deployment_profile:
+          $ref: '#/components/schemas/CloudDeploymentProfile'
+        claim_lite_intro:
+          type: boolean
+          description: Estimate the introductory offer without reserving it. Creation rechecks eligibility atomically.
         enable_hot_standby:
           type: boolean
           description: Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation.

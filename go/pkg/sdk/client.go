@@ -29,6 +29,8 @@ type Organization struct {
 }
 
 type CloudInstance struct {
+ LiteFreeUntil *time.Time `json:"lite_free_until,omitempty"`
+ Tier string `json:"tier"`
 	DeploymentProfile         string     `json:"deployment_profile"`
 	ID                        string     `json:"id"`
 	OrganizationID            string     `json:"organization_id"`
@@ -932,6 +934,7 @@ func mapInvitation(inv oapi.InvitationResponse2) *Invitation {
 
 func mapCloudInstance(i oapi.CloudInstance) *CloudInstance {
 	return &CloudInstance{
+ LiteFreeUntil: optionalTime(i.LiteFreeUntil), Tier:string(i.Tier),
 		DeploymentProfile:         string(i.DeploymentProfile),
 		ID:                        i.Id.String(),
 		OrganizationID:            i.OrganizationId.String(),

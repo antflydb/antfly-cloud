@@ -19,6 +19,7 @@ output-options:
     - confirmLiteImport
     - startLiteExport
     - createLiteDownload
+    - resumeLiteInstance
     - getCurrentUser
     - listOrganizations
     - getOrganization
