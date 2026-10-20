@@ -3857,6 +3857,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthError'
+  /oauth/reconnect:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    get:
+      summary: Read the current browser's sign-in confirmation
+      operationId: getAuthOauthReconnect
+      security: []
+      tags:
+        - Login
+      description: Requires the HttpOnly reconnect cookie issued after fresh provider authentication.
+      responses:
+        '200':
+          description: Confirmation destination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthReconnectStatus'
+        '401':
+          description: Missing or expired confirmation
+  /oauth/reconnect/confirm:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    post:
+      summary: Confirm an existing account with an email code and any enrolled MFA
+      operationId: postAuthOauthReconnectConfirm
+      security: []
+      tags:
+        - Login
+      description: Consumes a browser-bound, single-use challenge. Unverified registrations must use account recovery.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthReconnectRequest'
+      responses:
+        '200':
+          description: Continue sign-in or supply the enrolled second factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid or exhausted challenge or second factor
+        '403':
+          description: Account recovery required
+        '409':
+          description: Account or provider binding changed
+        '429':
+          description: Too many attempts
+        '503':
+          description: Confirmation is temporarily unavailable
   /oauth/{provider}/login:
     servers:
       - url: https://auth.antfly.io/auth/v1
@@ -4469,40 +4525,14 @@ paths:
       - url: https://auth.antfly.io/auth/v1
         description: Production
     post:
-      summary: Initiate email change
-      description: Start email change flow (session-authed, requires password)
+      summary: Email changes are currently disabled
+      deprecated: true
       operationId: postAuthEmailChange
       tags:
         - Email
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeEmailRequest'
       responses:
-        '200':
-          description: Confirmation email sent
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request or invalid email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid password or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
+        '403':
+          description: Email changes are disabled, including previously issued confirmation links
           content:
             application/json:
               schema:
@@ -4512,33 +4542,14 @@ paths:
       - url: https://auth.antfly.io/auth/v1
         description: Production
     post:
-      summary: Confirm email change
-      description: Confirm email change with token from verification email
+      summary: Email changes are currently disabled
+      deprecated: true
       operationId: postAuthEmailConfirm
       tags:
         - Email
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmEmailChangeRequest'
       responses:
-        '200':
-          description: Email changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
+        '403':
+          description: Email changes are disabled, including previously issued confirmation links
           content:
             application/json:
               schema:
@@ -7802,6 +7813,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MetricSeries'
+    OAuthReconnectStatus:
+      type: object
+      required:
+        - provider
+        - masked_email
+      properties:
+        provider:
+          $ref: '#/components/schemas/AuthOAuthProviderType'
+        masked_email:
+          type: string
+    OAuthReconnectRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          pattern: ^[0-9]{8}$
+        totp_code:
+          type: string
+        backup_code:
+          type: string
     AuthOAuthProviderType:
       type: string
       enum:
@@ -8078,25 +8111,6 @@ components:
           type: string
           format: password
           minLength: 15
-    ChangeEmailRequest:
-      type: object
-      required:
-        - new_email
-        - password
-      properties:
-        new_email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-    ConfirmEmailChangeRequest:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
     UpdateProfileRequest:
       type: object
       required:

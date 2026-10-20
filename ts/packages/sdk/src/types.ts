@@ -1693,6 +1693,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/oauth/reconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the current browser's sign-in confirmation
+         * @description Requires the HttpOnly reconnect cookie issued after fresh provider authentication.
+         */
+        get: operations["getAuthOauthReconnect"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/reconnect/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm an existing account with an email code and any enrolled MFA
+         * @description Consumes a browser-bound, single-use challenge. Unverified registrations must use account recovery.
+         */
+        post: operations["postAuthOauthReconnectConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/oauth/{provider}/login": {
         parameters: {
             query?: never;
@@ -2031,8 +2071,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Initiate email change
-         * @description Start email change flow (session-authed, requires password)
+         * Email changes are currently disabled
+         * @deprecated
          */
         post: operations["postAuthEmailChange"];
         delete?: never;
@@ -2051,8 +2091,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Confirm email change
-         * @description Confirm email change with token from verification email
+         * Email changes are currently disabled
+         * @deprecated
          */
         post: operations["postAuthEmailConfirm"];
         delete?: never;
@@ -3795,6 +3835,15 @@ export interface components {
             range: components["schemas"]["MetricRange"];
             series: components["schemas"]["MetricSeries"][];
         };
+        OAuthReconnectStatus: {
+            provider: components["schemas"]["AuthOAuthProviderType"];
+            masked_email: string;
+        };
+        OAuthReconnectRequest: {
+            code: string;
+            totp_code?: string;
+            backup_code?: string;
+        };
         /** @enum {string} */
         AuthOAuthProviderType: "google" | "github";
         AuthError: {
@@ -3924,15 +3973,6 @@ export interface components {
         SetPasswordRequest: {
             /** Format: password */
             new_password: string;
-        };
-        ChangeEmailRequest: {
-            /** Format: email */
-            new_email: string;
-            /** Format: password */
-            password: string;
-        };
-        ConfirmEmailChangeRequest: {
-            token: string;
         };
         UpdateProfileRequest: {
             display_name: string;
@@ -7550,6 +7590,99 @@ export interface operations {
             };
         };
     };
+    getAuthOauthReconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmation destination */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthReconnectStatus"];
+                };
+            };
+            /** @description Missing or expired confirmation */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthOauthReconnectConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OAuthReconnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Continue sign-in or supply the enrolled second factor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or exhausted challenge or second factor */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account recovery required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account or provider binding changed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many attempts */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmation is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getAuthOauthProviderLogin: {
         parameters: {
             query?: {
@@ -8275,41 +8408,10 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangeEmailRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Confirmation email sent */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessResponse"];
-                };
-            };
-            /** @description Bad request or invalid email */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthError"];
-                };
-            };
-            /** @description Invalid password or authentication required */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthError"];
-                };
-            };
-            /** @description Email already in use */
-            409: {
+            /** @description Email changes are disabled, including previously issued confirmation links */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8326,32 +8428,10 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmEmailChangeRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Email changed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SuccessResponse"];
-                };
-            };
-            /** @description Invalid or expired token */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthError"];
-                };
-            };
-            /** @description Email already in use */
-            409: {
+            /** @description Email changes are disabled, including previously issued confirmation links */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
