@@ -5732,8 +5732,11 @@ components:
         - create_lite
         - import_lite
         - export_lite
-      description: Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations.
+      description: Organization creation capabilities. Existing instances remain manageable regardless of new-deployment admission.
       properties:
+        create_enterprise:
+          type: boolean
+          description: Whether Antfly has enabled new advanced deployments for this organization. Defaults to false; independent of the billing plan.
         lite_intro_available:
           type: boolean
           description: Advisory eligibility for one free-year grant per organization. Availability is rechecked when creation commits.

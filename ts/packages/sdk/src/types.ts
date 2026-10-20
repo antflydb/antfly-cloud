@@ -2653,8 +2653,10 @@ export interface components {
             snapshot_boundary_acknowledged: boolean;
             instance: components["schemas"]["CreateCloudInstanceRequest"];
         };
-        /** @description Additive Lite availability only. Existing grants and deployment capabilities remain authoritative for other operations. */
+        /** @description Organization creation capabilities. Existing instances remain manageable regardless of new-deployment admission. */
         CloudCapabilities: {
+            /** @description Whether Antfly has enabled new advanced deployments for this organization. Defaults to false; independent of the billing plan. */
+            create_enterprise?: boolean;
             /** @description Advisory eligibility for one free-year grant per organization. Availability is rechecked when creation commits. */
             lite_intro_available?: boolean;
             /** @description Customer price in USD cents, not hosting cost. */
