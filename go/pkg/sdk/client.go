@@ -250,7 +250,8 @@ func (e *APIError) Error() string {
 
 // Client is a small ergonomic wrapper around the generated Antfly Cloud OpenAPI client.
 type Client struct {
-	client *oapi.ClientWithResponses
+	client    *oapi.ClientWithResponses
+	transport *oapi.Client
 }
 
 // NewClient creates a Antfly Cloud API client. baseURL should include the /api/v1 prefix.
@@ -265,11 +266,11 @@ func NewClient(baseURL, bearerToken string, httpClient *http.Client) (*Client, e
 			return nil
 		}))
 	}
-	client, err := oapi.NewClientWithResponses(strings.TrimRight(baseURL, "/"), opts...)
+	transport, err := oapi.NewClient(strings.TrimRight(baseURL, "/"), opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: client}, nil
+	return &Client{client: &oapi.ClientWithResponses{ClientInterface: transport}, transport: transport}, nil
 }
 
 func (c *Client) CurrentUser(ctx context.Context) (*User, error) {
