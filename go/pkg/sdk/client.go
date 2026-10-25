@@ -29,6 +29,9 @@ type Organization struct {
 }
 
 type CloudInstance struct {
+ LiteFreeUntil *time.Time `json:"lite_free_until,omitempty"`
+ Tier string `json:"tier"`
+	DeploymentProfile         string     `json:"deployment_profile"`
 	ID                        string     `json:"id"`
 	OrganizationID            string     `json:"organization_id"`
 	Name                      string     `json:"name"`
@@ -56,6 +59,8 @@ type CloudInstance struct {
 }
 
 type NodeConfig struct {
+	DeploymentProfile string `json:"deployment_profile"`
+	LiteRuntimeImage  string `json:"lite_runtime_image,omitempty"`
 	MetadataNodes     int    `json:"metadata_nodes"`
 	DataNodes         int    `json:"data_nodes"`
 	CPU               string `json:"cpu"`
@@ -929,6 +934,8 @@ func mapInvitation(inv oapi.InvitationResponse2) *Invitation {
 
 func mapCloudInstance(i oapi.CloudInstance) *CloudInstance {
 	return &CloudInstance{
+ LiteFreeUntil: optionalTime(i.LiteFreeUntil), Tier:string(i.Tier),
+		DeploymentProfile:         string(i.DeploymentProfile),
 		ID:                        i.Id.String(),
 		OrganizationID:            i.OrganizationId.String(),
 		Name:                      i.Name,
@@ -958,6 +965,7 @@ func mapCloudInstance(i oapi.CloudInstance) *CloudInstance {
 
 func mapNodeConfig(n oapi.NodeConfig) NodeConfig {
 	return NodeConfig{
+		DeploymentProfile: string(n.DeploymentProfile), LiteRuntimeImage: n.LiteRuntimeImage,
 		MetadataNodes:     n.MetadataNodes,
 		DataNodes:         n.DataNodes,
 		CPU:               n.Cpu,
