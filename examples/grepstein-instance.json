@@ -1,0 +1,13 @@
+{
+  "name": "Grepstein",
+  "slug": "grepstein",
+  "tier": "standard",
+  "mode": "single",
+  "region": "us-central1",
+  "version_policy": "pinned",
+  "node_config": {
+    "cpu": "8000m",
+    "memory": "32Gi",
+    "data_storage": "200Gi"
+  }
+}

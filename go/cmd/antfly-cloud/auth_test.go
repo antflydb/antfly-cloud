@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -85,5 +86,27 @@ func TestDefaultOrgForLogin(t *testing.T) {
 				t.Fatalf("defaultOrgForLogin(%q) = %q, want %q", tt.current, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDeviceLoginEmailHint(t *testing.T) {
+	got, err := deviceLoginURL("https://auth.example/device?user_code=ABCD-1234", "https://auth.example", "user@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := url.Parse(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed.Query().Get("user_code") != "ABCD-1234" || parsed.Query().Get("login_hint") != "user@example.com" {
+		t.Fatal(got)
+	}
+	for _, target := range []string{"https://evil.example/device", "http://auth.example/device", "https://user@auth.example/device", "/device"} {
+		if _, err := deviceLoginURL(target, "https://auth.example", "user@example.com"); err == nil {
+			t.Errorf("accepted %s", target)
+		}
+	}
+	if _, err := deviceLoginURL("https://auth.example/device", "https://auth.example", "Name <user@example.com>"); err == nil {
+		t.Fatal("accepted display name")
 	}
 }

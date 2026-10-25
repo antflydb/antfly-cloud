@@ -1,0 +1,7 @@
+{
+  "node_config": {
+    "cpu": "16000m",
+    "memory": "64Gi",
+    "data_storage": "500Gi"
+  }
+}

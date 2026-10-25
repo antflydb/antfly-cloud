@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"os/exec"
 	"runtime"
@@ -246,4 +247,29 @@ func refreshConfigIfNeeded(ctx context.Context, cfg Config, httpClient *http.Cli
 	}
 	cfg.Token = ""
 	return cfg, true, nil
+}
+
+// Restrict an email hint to the issuer origin so it cannot leak to a supplied
+// cross-origin verification URL. The hint is only for account discovery.
+func deviceLoginURL(rawURL, issuer, email string) (string, error) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return rawURL, nil
+	}
+	address, err := mail.ParseAddress(email)
+	if err != nil || address.Address != email {
+		return "", fmt.Errorf("--email must be an email address")
+	}
+	target, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid device verification URL")
+	}
+	origin, err := url.Parse(issuer)
+	if err != nil || target.Host == "" || target.Scheme != origin.Scheme || !strings.EqualFold(target.Host, origin.Host) || target.User != nil {
+		return "", fmt.Errorf("cannot send --email to a verification URL outside the OIDC issuer origin")
+	}
+	values := target.Query()
+	values.Set("login_hint", email)
+	target.RawQuery = values.Encode()
+	return target.String(), nil
 }

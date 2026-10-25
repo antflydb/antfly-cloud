@@ -13,7 +13,7 @@ import (
 type stateFactory func(requireToken bool) (*appState, error)
 
 func newLoginCommand(stdout io.Writer, stateFor stateFactory, configFile *string) *cobra.Command {
-	var tokenFlag, oidcIssuer, oidcClientID string
+	var tokenFlag, oidcIssuer, oidcClientID, loginEmail string
 	var noBrowser bool
 	cmd := &cobra.Command{
 		Use:   "login",
@@ -45,6 +45,10 @@ func newLoginCommand(stdout io.Writer, stateFor stateFactory, configFile *string
 			authURL := authz.VerificationURIComplete
 			if authURL == "" {
 				authURL = authz.VerificationURI
+			}
+			authURL, err = deviceLoginURL(authURL, issuer, loginEmail)
+			if err != nil {
+				return err
 			}
 			fmt.Fprintf(stdout, "Open this URL to approve Antfly Cloud CLI login:\n%s\n\nCode: %s\n", authURL, authz.UserCode)
 			if noBrowser {
@@ -94,6 +98,7 @@ func newLoginCommand(stdout io.Writer, stateFor stateFactory, configFile *string
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&loginEmail, "email", "", "email hint for enterprise SSO discovery (does not authenticate)")
 	cmd.Flags().StringVar(&tokenFlag, "token", "", "management token to store (avoids browser login)")
 	cmd.Flags().StringVar(&oidcIssuer, "oidc-issuer", "", "OIDC issuer URL (default inferred from --api-url)")
 	cmd.Flags().StringVar(&oidcClientID, "oidc-client-id", "", "OIDC client ID")
@@ -338,7 +343,8 @@ func newUsageCommand(stateFor stateFactory) *cobra.Command {
 }
 
 func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Command {
-	cmd := &cobra.Command{Use: "instance", Short: "Inspect a cloud instance"}
+	cmd := &cobra.Command{Use: "instance", Short: "Create, resize, and inspect managed instances"}
+	cmd.AddCommand(newInstanceCreateCommand(stateFor), newInstanceResizeCommand(stateFor))
 	cmd.AddCommand(&cobra.Command{Use: "use <instance-id-or-slug>", Short: "Set the default cloud instance", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, err := stateFor(true)
 		if err != nil {
