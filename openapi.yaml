@@ -1414,6 +1414,334 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/lite/exports:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Create an independent Lite snapshot export
+      description: Requires server-admitted managed Lite portability capability.
+      operationId: startLiteExport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartLiteExportRequest'
+      responses:
+        '200':
+          description: Create an independent Lite snapshot export
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteTransferOperation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}/download:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Get a short-lived generation-bound download URL
+      description: Requires server-admitted managed Lite portability capability.
+      operationId: createLiteDownload
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Get a short-lived generation-bound download URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteDownload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/capabilities:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get effective database capabilities
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: getCloudCapabilities
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+      responses:
+        '200':
+          description: Get effective database capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudCapabilities'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
+  /organizations/{org_id}/cloud/lite/imports:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Reserve a new independent Lite import
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: startLiteImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartLiteImportRequest'
+      responses:
+        '200':
+          description: Reserve a new independent Lite import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteTransferOperation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    get:
+      summary: Get a Lite transfer operation
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: getLiteOperation
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Get a Lite transfer operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteTransferOperation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}/upload-session:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Get or resume a scoped upload session
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: createLiteUploadSession
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Get or resume a scoped upload session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteUploadSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}/seal:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Seal a completed upload for worker verification
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: sealLiteUpload
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Seal a completed upload for worker verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteTransferOperation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}/confirm:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Confirm creation of an independent Lite database
+      description: Requires verified source dependencies and explicit acknowledgement of the snapshot boundary. Uses ordinary instance billing and provisioning admission atomically.
+      operationId: confirmLiteImport
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmLiteImportRequest'
+      responses:
+        '200':
+          description: New database provisioning or exact confirmation retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /organizations/{org_id}/cloud/lite/operations/{operation_id}/cancel:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    post:
+      summary: Request cancellation before database creation
+      description: Managed Lite evaluation; availability is determined by server admission.
+      operationId: cancelLiteOperation
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: operation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Request cancellation before database creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiteTransferOperation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          description: Transfer service unavailable
   /organizations/{org_id}/cloud/estimate:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -1701,7 +2029,7 @@ paths:
         description: Production
     get:
       summary: List browser-access tables
-      description: List instance-owned tables that may be granted to direct-browser API keys.
+      description: List the tables that may be granted to direct-browser API keys. An isolated instance lists every table on it, including tables created through the data-plane API; a shared instance lists only tables Colony has an ownership record for.
       operationId: listCloudBrowserAccessTables
       tags:
         - Instances
@@ -3282,6 +3610,30 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /organizations/{org_id}/cloud/instances/{instance_id}/resume:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+        description: Production
+    parameters:
+      - $ref: '#/components/parameters/OrgId'
+      - $ref: '#/components/parameters/InstanceId'
+    post:
+      operationId: resumeLiteInstance
+      summary: Resume a sleeping Lite database
+      description: Starts the existing owner on its retained volume. Idempotent while waking or ready. Poll the instance until ready before retrying a query or insert. Billing-suspended instances cannot be resumed here.
+      tags:
+        - Instances
+      security:
+        - BearerAuth: []
+      responses:
+        '202':
+          description: Resumption accepted, or already ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -3505,6 +3857,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthError'
+  /oauth/reconnect:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    get:
+      summary: Read the current browser's sign-in confirmation
+      operationId: getAuthOauthReconnect
+      security: []
+      tags:
+        - Login
+      description: Requires the HttpOnly reconnect cookie issued after fresh provider authentication.
+      responses:
+        '200':
+          description: Confirmation destination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthReconnectStatus'
+        '401':
+          description: Missing or expired confirmation
+  /oauth/reconnect/confirm:
+    servers:
+      - url: https://auth.antfly.io/auth/v1
+        description: Production
+    post:
+      summary: Confirm an existing account with an email code and any enrolled MFA
+      operationId: postAuthOauthReconnectConfirm
+      security: []
+      tags:
+        - Login
+      description: Consumes a browser-bound, single-use challenge. Unverified registrations must use account recovery.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthReconnectRequest'
+      responses:
+        '200':
+          description: Continue sign-in or supply the enrolled second factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid or exhausted challenge or second factor
+        '403':
+          description: Account recovery required
+        '409':
+          description: Account or provider binding changed
+        '429':
+          description: Too many attempts
+        '503':
+          description: Confirmation is temporarily unavailable
   /oauth/{provider}/login:
     servers:
       - url: https://auth.antfly.io/auth/v1
@@ -4117,40 +4525,14 @@ paths:
       - url: https://auth.antfly.io/auth/v1
         description: Production
     post:
-      summary: Initiate email change
-      description: Start email change flow (session-authed, requires password)
+      summary: Email changes are currently disabled
+      deprecated: true
       operationId: postAuthEmailChange
       tags:
         - Email
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeEmailRequest'
       responses:
-        '200':
-          description: Confirmation email sent
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          description: Bad request or invalid email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '401':
-          description: Invalid password or authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
+        '403':
+          description: Email changes are disabled, including previously issued confirmation links
           content:
             application/json:
               schema:
@@ -4160,33 +4542,14 @@ paths:
       - url: https://auth.antfly.io/auth/v1
         description: Production
     post:
-      summary: Confirm email change
-      description: Confirm email change with token from verification email
+      summary: Email changes are currently disabled
+      deprecated: true
       operationId: postAuthEmailConfirm
       tags:
         - Email
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmEmailChangeRequest'
       responses:
-        '200':
-          description: Email changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthError'
-        '409':
-          description: Email already in use
+        '403':
+          description: Email changes are disabled, including previously issued confirmation links
           content:
             application/json:
               schema:
@@ -5328,6 +5691,180 @@ components:
                 type: integer
                 minimum: 0
                 description: Total usage for this billing cycle
+    StartLiteExportRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - idempotency_key
+      properties:
+        idempotency_key:
+          type: string
+          minLength: 1
+          maxLength: 128
+    LiteDownload:
+      type: object
+      required:
+        - download_url
+        - sha256
+        - size_bytes
+        - expires_at
+      properties:
+        download_url:
+          type: string
+          description: Secret bearer capability. Do not log. Supports range requests; generation and SHA-256 stay fixed across refreshed links.
+        sha256:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        expires_at:
+          type: string
+          format: date-time
+    ConfirmLiteImportRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - snapshot_boundary_acknowledged
+        - instance
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        snapshot_boundary_acknowledged:
+          type: boolean
+          description: Acknowledge this is an independent snapshot; later local writes are excluded and live application cutover requires an explicit write pause.
+        instance:
+          $ref: '#/components/schemas/CreateCloudInstanceRequest'
+    CloudCapabilities:
+      type: object
+      required:
+        - create_lite
+        - import_lite
+        - export_lite
+      description: Organization creation capabilities. Existing instances remain manageable regardless of new-deployment admission.
+      properties:
+        create_enterprise:
+          type: boolean
+          description: Whether Antfly has enabled new advanced deployments for this organization. Defaults to false; independent of the billing plan.
+        lite_intro_available:
+          type: boolean
+          description: Advisory eligibility for one free-year grant per organization. Availability is rechecked when creation commits.
+        lite_monthly_cents:
+          type: integer
+          description: Customer price in USD cents, not hosting cost.
+        lite_free_months:
+          type: integer
+        lite_idle_days:
+          type: integer
+        create_lite:
+          type: boolean
+        import_lite:
+          type: boolean
+        export_lite:
+          type: boolean
+        max_import_bytes:
+          type: integer
+          format: int64
+        max_active_transfers:
+          type: integer
+    StartLiteImportRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - idempotency_key
+        - size_bytes
+        - sha256
+      properties:
+        idempotency_key:
+          type: string
+          minLength: 1
+          maxLength: 128
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 68719476736
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+    LiteUploadSession:
+      type: object
+      required:
+        - upload_url
+      properties:
+        upload_url:
+          type: string
+          description: Secret bearer capability for this single create-only object. Do not log or persist unencrypted. Use the GCS resumable protocol to query committed offset and resume.
+    LiteTransferOperation:
+      type: object
+      required:
+        - id
+        - organization_id
+        - kind
+        - phase
+        - size_bytes
+        - revision
+        - attempts
+        - created_at
+        - expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - import
+            - export
+        phase:
+          type: string
+          enum:
+            - uploading
+            - queued
+            - verifying
+            - awaiting_confirmation
+            - provisioning
+            - importing
+            - ready
+            - exporting
+            - download_ready
+            - cancel_requested
+            - cancelled
+            - failed
+            - expired
+        size_bytes:
+          type: integer
+          format: int64
+        revision:
+          type: integer
+          format: int64
+        attempts:
+          type: integer
+        source:
+          type: object
+          additionalProperties: true
+        result:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
     AntflyInferenceRequestLog:
       type: object
       required:
@@ -5497,6 +6034,8 @@ components:
         - ready
         - updating
         - degraded
+        - sleeping
+        - waking
         - suspended
         - deprovisioning
         - deleted
@@ -5528,6 +6067,7 @@ components:
     CloudInstanceTier:
       type: string
       enum:
+        - lite
         - starter
         - standard
         - pro
@@ -5542,7 +6082,7 @@ components:
     CloudHotStandby:
       type: object
       readOnly: true
-      description: Durable enablement and observed replication state. Configuration remains frozen throughout this lifecycle, including errors.
+      description: Durable enablement and observed replication state. Empty legacy single-table topologies wait without standby provisioning or capacity charges. Catalog-replicating topologies activate immediately, including empty instances, and may create tables once ready. Unreplicated configuration remains frozen after activation.
       required:
         - phase
         - topology_id
@@ -5550,12 +6090,19 @@ components:
         phase:
           type: string
           enum:
+            - waiting_for_tables
             - preparing
             - seeding
             - ready
             - degraded
         topology_id:
           type: string
+        catalog_prepared:
+          type: boolean
+          description: The stopped primary catalog has been validated for this topology.
+        catalog_replication:
+          type: boolean
+          description: Whole-instance replication includes tables created after enablement. Requires a compatible runtime and operator. False retains the legacy single-table topology.
         table_name:
           type: string
         table_id:
@@ -5579,10 +6126,27 @@ components:
           format: uint64
         message:
           type: string
+    CloudDeploymentProfile:
+      type: string
+      enum:
+        - standard
+        - lite
+      description: Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
     NodeConfig:
       type: object
       description: Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
       properties:
+        deployment_profile:
+          $ref: '#/components/schemas/CloudDeploymentProfile'
+          readOnly: true
+        lite_import_operation_id:
+          type: string
+          readOnly: true
+          description: Server-bound import operation that must finish before the database starts serving.
+        lite_runtime_image:
+          type: string
+          readOnly: true
+          description: Server-admitted immutable runtime image for an isolated Lite evaluation. Never supplied through capacity updates.
         hot_standby:
           $ref: '#/components/schemas/CloudHotStandby'
           readOnly: true
@@ -5654,6 +6218,14 @@ components:
         - created_at
         - updated_at
       properties:
+        lite_free_until:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Exclusive end of this database's introductory free year. Present only when this instance owns the organization's grant.
+        deployment_profile:
+          $ref: '#/components/schemas/CloudDeploymentProfile'
+          readOnly: true
         id:
           $ref: '#/components/schemas/UUID'
         organization_id:
@@ -5738,6 +6310,15 @@ components:
         - name
         - slug
       properties:
+        claim_lite_intro:
+          type: boolean
+          description: Claim the limited one-database free year for this organization. Fails if unavailable; never silently charges the paid plan instead. The 12 calendar months start at committed creation, and deletion does not restore eligibility.
+        accept_lite_terms:
+          type: boolean
+          description: Explicit consent to the Lite price of USD 20 per month after any free year, including while sleeping with retained storage. Required for Lite creation.
+        deployment_profile:
+          $ref: '#/components/schemas/CloudDeploymentProfile'
+          description: Select Lite only when the environment and organization are enabled for evaluation. Requires single mode and a pinned runtime policy.
         name:
           type: string
           minLength: 1
@@ -5820,7 +6401,7 @@ components:
       properties:
         enable_hot_standby:
           type: boolean
-          description: Enable one synchronous standby for a configured single instance. Requires Antfly v0.2.1, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
+          description: Configure one synchronous standby for a single instance. Empty legacy v0.2.1 instances wait for one eligible table without provisioning or standby capacity charges. Catalog-capable v0.2.3 and later stable v0.2 patch instances activate immediately with zero or more tables. Requires a supported digest-pinned runtime, compatible operator, Starter, Standard or Pro, and acknowledgement of the maintenance window and frozen configuration. Cannot be combined with other updates.
         name:
           type: string
           minLength: 1
@@ -6015,6 +6596,9 @@ components:
         browser_access:
           type: boolean
           description: Whether this read-only, explicitly table-scoped key is intended for direct browser use and receives browser edge admission limits.
+        shared_inference:
+          type: boolean
+          description: Whether this instance key may call the shared hosted inference endpoint (/ai/v1) on behalf of its instance.
     CloudBrowserAccessPolicy:
       type: object
       required:
@@ -6056,7 +6640,8 @@ components:
             - managed
             - import_job
             - shared
-          description: Authoritative Colony record that establishes ownership of the table.
+            - instance
+          description: What establishes that the table belongs to the instance. `managed`, `import_job`, and `shared` are Colony ownership records. `instance` means the table exists on an isolated instance without a record, for example one created through the data-plane API.
     UpdateCloudBrowserAccessRequest:
       type: object
       required:
@@ -6120,12 +6705,12 @@ components:
           type: integer
           nullable: true
           minimum: 0
-          description: Antfly-managed provider spend in cents per UTC calendar day, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+          description: Antfly-managed provider spend in cents per UTC calendar day, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
         managed_spend_cents_per_month:
           type: integer
           nullable: true
           minimum: 0
-          description: Antfly-managed provider spend in cents per UTC calendar month, before credits and markup. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
+          description: Antfly-managed provider spend in cents per UTC calendar month, before credits. Does not apply to BYOK provider spend. Null or 0 inherits from the broader policy layer.
     CloudAPIKeyCreated:
       type: object
       description: Returned only at creation time. The full key is never shown again.
@@ -6150,6 +6735,8 @@ components:
         key_type:
           $ref: '#/components/schemas/CloudAPIKeyType'
         browser_access:
+          type: boolean
+        shared_inference:
           type: boolean
     CreateCloudAPIKeyRequest:
       type: object
@@ -6179,7 +6766,10 @@ components:
           $ref: '#/components/schemas/HostedInferenceLimits'
         browser_access:
           type: boolean
-          description: Mark this read-only key for direct browser use. Browser keys require grants on named tables and cannot receive write or admin actions.
+          description: Mark this read-only key for direct browser use. Browser keys require grants on named tables that belong to the instance and cannot receive write or admin actions.
+        shared_inference:
+          type: boolean
+          description: Allow this key to call the shared hosted inference endpoint (/ai/v1) on behalf of its instance. Usage is billed to the instance's organization and bounded by hosted_inference_limits. Cannot be combined with browser_access.
     CreateCloudAPIKeyGrantRequest:
       type: object
       required:
@@ -6231,7 +6821,7 @@ components:
         hosted_inference_limits:
           nullable: true
           x-go-type-skip-optional-pointer: false
-          description: Optional hosted inference limits update. Omit to leave unchanged; null or an empty object clears per-key limits.
+          description: Optional hosted inference limits update. Omit to leave unchanged; null clears every per-key limit. Within the object, omitted fields keep their stored values and a field set to null or 0 returns to inheriting.
           allOf:
             - $ref: '#/components/schemas/HostedInferenceLimits'
     ProvisioningEvent:
@@ -6581,9 +7171,14 @@ components:
       required:
         - operation
       properties:
+        deployment_profile:
+          $ref: '#/components/schemas/CloudDeploymentProfile'
+        claim_lite_intro:
+          type: boolean
+          description: Estimate the introductory offer without reserving it. Creation rechecks eligibility atomically.
         enable_hot_standby:
           type: boolean
-          description: Estimate one synchronous standby for this existing instance.
+          description: Estimate one synchronous standby for this existing instance at current activation-time prices. Empty instances incur no standby capacity charge until activation.
         operation:
           type: string
           enum:
@@ -7218,6 +7813,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MetricSeries'
+    OAuthReconnectStatus:
+      type: object
+      required:
+        - provider
+        - masked_email
+      properties:
+        provider:
+          $ref: '#/components/schemas/AuthOAuthProviderType'
+        masked_email:
+          type: string
+    OAuthReconnectRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          pattern: ^[0-9]{8}$
+        totp_code:
+          type: string
+        backup_code:
+          type: string
     AuthOAuthProviderType:
       type: string
       enum:
@@ -7494,25 +8111,6 @@ components:
           type: string
           format: password
           minLength: 15
-    ChangeEmailRequest:
-      type: object
-      required:
-        - new_email
-        - password
-      properties:
-        new_email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-    ConfirmEmailChangeRequest:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
     UpdateProfileRequest:
       type: object
       required:
