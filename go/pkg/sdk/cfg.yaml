@@ -19,6 +19,8 @@ output-options:
     - removeOrganizationMember
     - revokeInvitation
     - resendInvitation
+    - estimateCloudCredits
+    - createCloudInstance
     - listCloudInstances
     - getCloudInstance
     - updateCloudInstance

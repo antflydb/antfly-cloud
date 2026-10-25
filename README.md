@@ -32,3 +32,12 @@ The SDKs are generated from `openapi.yaml`. Colony is responsible for producing
 the public API bundle; this repository is responsible for validating and
 releasing public clients.
 
+
+See [managed instance capacity](docs/instance-capacity.md) for CLI creation, live credit estimates, and resizing.
+
+For enterprise SSO, `antfly-cloud login --email you@your-company.com` pre-fills
+account discovery in the browser. Your identity provider completes sign-in,
+then you approve the CLI device request. If SSO reports
+`SSO_MFA_POLICY_REQUIRED`, an organization admin must delegate authentication
+in Settings > Identity, verify the provider, and enable it again. This delegates
+MFA policy to your identity provider. The CLI cannot override that decision.
