@@ -1591,6 +1591,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listSourceConnections
+         * @description Lists stored connections; provider may filter source and existing credential kinds. This endpoint does not return provider secrets.
+         */
+        get: operations["listSourceConnections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** startSourceInstallation */
+        post: operations["startSourceInstallation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install/{flow_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getSourceInstallationStatus */
+        get: operations["getSourceInstallationStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listSourceResources */
+        get: operations["listSourceResources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/preview-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** previewConnectedSource */
+        post: operations["previewConnectedSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listConnectedSourceJobs */
+        get: operations["listConnectedSourceJobs"];
+        put?: never;
+        /** createConnectedSource */
+        post: operations["createConnectedSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** syncConnectedSource */
+        post: operations["syncConnectedSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels": {
         parameters: {
             query?: never;
@@ -2360,7 +2483,7 @@ export interface components {
             error?: string | null;
         };
         OrganizationMfaPolicy: {
-            /** @description Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API. */
+            /** @description Whether MFA is required for human organization access. Password sign-in uses Antfly MFA. Enterprise OIDC/SAML and explicitly trusted social providers delegate MFA enforcement to the configured provider; delegated authentication is not proof of an Antfly MFA challenge. This can only transition from false to true through the public API. */
             require_two_factor: boolean;
         };
         "InvitationResponse-2": {
@@ -3714,7 +3837,16 @@ export interface components {
             truncated: boolean;
         };
         /**
-         * @description Configuration and status for structured-record or unstructured-file imports.
+         * @description Configuration and status for structured-record, unstructured-file or canonical
+         *     connected-source imports. mode=source publishes complete canonical UTF-8 items
+         *     in the versioned grep envelope, with explicit source_config.permissions.
+         *     It supports GitHub repositories/community, Google Workspace (Drive, Gmail and Calendar), Slack, Discord, S3 and GCS. Attachments are opt-in and require complete text extraction.
+         *     Binary extraction/rendering is not implied by source mode; unsupported items
+         *     produce diagnostics and preserve last-good output. Source-mode completion
+         *     verifies snapshot-capable query visibility for the selected revision.
+         *     Source selections are namespaced by job, and can share destination tables.
+         *     Source-mode jobs publish the ordinary Antfly catalog table. Discovery and search
+         *     use existing table queries; management uses the existing import-job routes.
          *     GitHub Markdown and MDX files emit directly indexed section records; other
          *     documents retain native extraction. Run summaries count selected, supported,
          *     native, section, and valid empty files separately from emitted rows and native
@@ -3803,6 +3935,89 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             };
+        };
+        SourceSelection: {
+            /** @enum {string} */
+            resource?: "drive" | "gmail" | "calendar";
+            folder_id?: string;
+            shared_drive_id?: string;
+            label_ids?: string[];
+            calendar_ids?: string[];
+            team_id?: string;
+            guild_id?: string;
+            channel_ids?: string[];
+            /** @default true */
+            include_threads: boolean;
+            /** @default false */
+            attachments: boolean;
+            permissions?: {
+                public: boolean;
+                readers: string[];
+            };
+        };
+        SourceConnection: {
+            /** Format: uuid */
+            id: string;
+            provider: string;
+            display_name: string;
+            status: string;
+            enabled: boolean;
+            config?: {
+                [key: string]: unknown;
+            };
+        };
+        SourceInstallation: {
+            /** Format: uri */
+            authorization_url: string;
+            flow_id: string;
+        };
+        SourceInstallationStatus: {
+            /** @enum {string} */
+            status: "pending" | "exchanging" | "connected" | "denied" | "failed";
+            /** Format: uuid */
+            provider_auth_id?: string | null;
+        };
+        SourceResource: {
+            id: string;
+            name: string;
+            parent_id?: string;
+            readable: boolean;
+            folder?: boolean;
+        };
+        SourceResourcePage: {
+            data: components["schemas"]["SourceResource"][];
+            next_cursor?: string;
+        };
+        SourceContentPreview: {
+            data: {
+                path: string;
+                uri: string;
+                text: string;
+                metadata?: {
+                    [key: string]: unknown;
+                };
+            }[];
+        };
+        ConnectedSourceJob: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            mode: string;
+            status: string;
+            source_config?: components["schemas"]["SourceSelection"];
+        };
+        CreateConnectedSource: {
+            name: string;
+            /** Format: uuid */
+            provider_auth_id: string;
+            target_table: string;
+            /** @enum {string} */
+            mode: "source";
+            source_config: components["schemas"]["SourceSelection"];
+            /** @enum {string} */
+            run_policy?: "run_once" | "scheduled";
+            /** @enum {integer} */
+            schedule_interval_seconds?: 300 | 900 | 1800 | 3600 | 21600 | 43200 | 86400;
         };
         MetricPanel: {
             id: string;
@@ -7365,6 +7580,505 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+        };
+    };
+    listSourceConnections: {
+        parameters: {
+            query?: {
+                provider?: string;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SourceConnection"][];
+                    };
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    startSourceInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                provider: "google_workspace" | "slack" | "discord";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    services?: ("drive" | "gmail" | "calendar")[];
+                    auth_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceInstallation"];
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSourceInstallationStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                provider: "google_workspace" | "slack" | "discord";
+                flow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceInstallationStatus"];
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listSourceResources: {
+        parameters: {
+            query?: {
+                resource?: string;
+                parent_id?: string;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                auth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceResourcePage"];
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    previewConnectedSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                auth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceSelection"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceContentPreview"];
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listConnectedSourceJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ConnectedSourceJob"][];
+                    };
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createConnectedSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConnectedSource"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectedSourceJob"];
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    syncConnectedSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        status: string;
+                    };
+                };
+            };
+            /** @description Invalid selection or consent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection or flow unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider installation is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     listMetricPanels: {

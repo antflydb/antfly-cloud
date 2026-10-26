@@ -56,6 +56,9 @@ tags:
   - name: CloudBilling
     description: Cloud committed-capacity billing and credits
     x-displayName: CloudBilling
+  - name: CloudSources
+    description: Authorize source providers, select content and synchronize canonical source documents.
+    x-displayName: CloudSources
   - name: CloudObservability
     description: Observability metrics for cloud instances
     x-displayName: CloudObservability
@@ -3634,6 +3637,438 @@ paths:
                 $ref: '#/components/schemas/CloudInstance'
         '400':
           $ref: '#/components/responses/BadRequest'
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    get:
+      tags:
+        - CloudSources
+      operationId: listSourceConnections
+      summary: listSourceConnections
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SourceConnection'
+                required:
+                  - data
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      description: Lists stored connections; provider may filter source and existing credential kinds. This endpoint does not return provider secrets.
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: startSourceInstallation
+      summary: startSourceInstallation
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - google_workspace
+              - slack
+              - discord
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceInstallation'
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                services:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - drive
+                      - gmail
+                      - calendar
+                auth_id:
+                  type: string
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install/{flow_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    get:
+      tags:
+        - CloudSources
+      operationId: getSourceInstallationStatus
+      summary: getSourceInstallationStatus
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - google_workspace
+              - slack
+              - discord
+        - name: flow_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{64}$
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceInstallationStatus'
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/resources:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    get:
+      tags:
+        - CloudSources
+      operationId: listSourceResources
+      summary: listSourceResources
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: resource
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: parent_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceResourcePage'
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/preview-source:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: previewConnectedSource
+      summary: previewConnectedSource
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceContentPreview'
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceSelection'
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    get:
+      tags:
+        - CloudSources
+      operationId: listConnectedSourceJobs
+      summary: listConnectedSourceJobs
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectedSourceJob'
+                required:
+                  - data
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      security:
+        - BearerAuth: []
+    post:
+      tags:
+        - CloudSources
+      operationId: createConnectedSource
+      summary: createConnectedSource
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectedSourceJob'
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConnectedSource'
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/import-jobs/{job_id}/run:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: syncConnectedSource
+      summary: syncConnectedSource
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                required:
+                  - id
+                  - status
+        '400':
+          description: Invalid selection or consent
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+        '503':
+          description: Provider installation is not configured
+      security:
+        - BearerAuth: []
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -5075,7 +5510,7 @@ components:
       properties:
         require_two_factor:
           type: boolean
-          description: Whether Antfly-managed MFA is enforced for human organization access using password or social login. Enterprise OIDC/SAML delegates authentication policy, including MFA, to the configured identity provider. This can only transition from false to true through the public API.
+          description: Whether MFA is required for human organization access. Password sign-in uses Antfly MFA. Enterprise OIDC/SAML and explicitly trusted social providers delegate MFA enforcement to the configured provider; delegated authentication is not proof of an Antfly MFA challenge. This can only transition from false to true through the public API.
     InvitationResponse-2:
       type: object
       required:
@@ -7551,7 +7986,16 @@ components:
       type: object
       additionalProperties: true
       description: |
-        Configuration and status for structured-record or unstructured-file imports.
+        Configuration and status for structured-record, unstructured-file or canonical
+        connected-source imports. mode=source publishes complete canonical UTF-8 items
+        in the versioned grep envelope, with explicit source_config.permissions.
+        It supports GitHub repositories/community, Google Workspace (Drive, Gmail and Calendar), Slack, Discord, S3 and GCS. Attachments are opt-in and require complete text extraction.
+        Binary extraction/rendering is not implied by source mode; unsupported items
+        produce diagnostics and preserve last-good output. Source-mode completion
+        verifies snapshot-capable query visibility for the selected revision.
+        Source selections are namespaced by job, and can share destination tables.
+        Source-mode jobs publish the ordinary Antfly catalog table. Discovery and search
+        use existing table queries; management uses the existing import-job routes.
         GitHub Markdown and MDX files emit directly indexed section records; other
         documents retain native extraction. Run summaries count selected, supported,
         native, section, and valid empty files separately from emitted rows and native
@@ -7734,6 +8178,212 @@ components:
         metadata:
           type: object
           additionalProperties: true
+    SourceSelection:
+      type: object
+      properties:
+        resource:
+          type: string
+          enum:
+            - drive
+            - gmail
+            - calendar
+        folder_id:
+          type: string
+        shared_drive_id:
+          type: string
+        label_ids:
+          type: array
+          items:
+            type: string
+        calendar_ids:
+          type: array
+          items:
+            type: string
+        team_id:
+          type: string
+        guild_id:
+          type: string
+        channel_ids:
+          type: array
+          items:
+            type: string
+        include_threads:
+          type: boolean
+          default: true
+        attachments:
+          type: boolean
+          default: false
+        permissions:
+          type: object
+          properties:
+            public:
+              type: boolean
+            readers:
+              type: array
+              items:
+                type: string
+          required:
+            - public
+            - readers
+    SourceConnection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+        display_name:
+          type: string
+        status:
+          type: string
+        enabled:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - provider
+        - display_name
+        - status
+        - enabled
+    SourceInstallation:
+      type: object
+      properties:
+        authorization_url:
+          type: string
+          format: uri
+        flow_id:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+      required:
+        - authorization_url
+        - flow_id
+    SourceInstallationStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - exchanging
+            - connected
+            - denied
+            - failed
+        provider_auth_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+        - status
+    SourceResource:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        parent_id:
+          type: string
+        readable:
+          type: boolean
+        folder:
+          type: boolean
+      required:
+        - id
+        - name
+        - readable
+    SourceResourcePage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceResource'
+        next_cursor:
+          type: string
+      required:
+        - data
+    SourceContentPreview:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              uri:
+                type: string
+              text:
+                type: string
+              metadata:
+                type: object
+                additionalProperties: true
+            required:
+              - path
+              - uri
+              - text
+      required:
+        - data
+    ConnectedSourceJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        mode:
+          type: string
+        status:
+          type: string
+        source_config:
+          $ref: '#/components/schemas/SourceSelection'
+      required:
+        - id
+        - name
+        - mode
+        - status
+    CreateConnectedSource:
+      type: object
+      properties:
+        name:
+          type: string
+        provider_auth_id:
+          type: string
+          format: uuid
+        target_table:
+          type: string
+        mode:
+          type: string
+          enum:
+            - source
+        source_config:
+          $ref: '#/components/schemas/SourceSelection'
+        run_policy:
+          type: string
+          enum:
+            - run_once
+            - scheduled
+        schedule_interval_seconds:
+          type: integer
+          enum:
+            - 300
+            - 900
+            - 1800
+            - 3600
+            - 21600
+            - 43200
+            - 86400
+      required:
+        - name
+        - provider_auth_id
+        - target_table
+        - mode
+        - source_config
     MetricPanel:
       type: object
       required:
@@ -8255,6 +8905,9 @@ x-tagGroups:
       - CloudBackups
       - CloudRBAC
       - CloudBilling
+  - name: Antfly Cloud Source Connections
+    tags:
+      - CloudSources
   - name: Colony Cloud Metrics API
     tags:
       - CloudObservability

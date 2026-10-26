@@ -41,3 +41,5 @@ then you approve the CLI device request. If SSO reports
 `SSO_MFA_POLICY_REQUIRED`, an organization admin must delegate authentication
 in Settings > Identity, verify the provider, and enable it again. This delegates
 MFA policy to your identity provider. The CLI cannot override that decision.
+
+See [connected sources](docs/connected-sources.md) for browser authorization, resource selection, attachment previews and private sync.
