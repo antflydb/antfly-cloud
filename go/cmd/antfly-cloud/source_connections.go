@@ -47,14 +47,11 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		target, err := url.Parse(result.AuthorizationURL)
-		if err != nil || target.Scheme != "https" || target.User != nil {
-			return fmt.Errorf("invalid provider authorization URL")
+		if err := st.client.ValidateSourceInstallationURL(result.AuthorizationURL, provider, result.FlowID); err != nil {
+			return err
 		}
-		expected := map[string]string{"google_workspace": "accounts.google.com", "slack": "slack.com", "discord": "discord.com"}
-		if target.Host != expected[provider] {
-			return fmt.Errorf("unexpected provider authorization origin")
-		}
+		target, _ := url.Parse(result.AuthorizationURL)
+
 		if noWait {
 			return st.out.PrintJSON(result)
 		}

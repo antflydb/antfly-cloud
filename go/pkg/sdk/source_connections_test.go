@@ -57,3 +57,20 @@ func TestSourceInstallationAndResourceClientContract(t *testing.T) {
 		t.Fatal("invalid connection ID accepted")
 	}
 }
+
+func TestSourceInstallationRejectsUntrustedRedirects(t *testing.T) {
+	client, err := NewClient("https://platform.antfly.io/api/v1", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	flow := strings.Repeat("a", 64)
+	path := "/api/v1/source-oauth/google_workspace/install/" + flow
+	for _, raw := range []string{"https://accounts.google.com/authorize", "https://evil.test" + path, "http://platform.antfly.io" + path, "https://user@platform.antfly.io" + path, "https://platform.antfly.io" + path + "?next=https://evil.test", "https://platform.antfly.io/api/v1/other"} {
+		if client.ValidateSourceInstallationURL(raw, "google_workspace", flow) == nil {
+			t.Errorf("accepted %s", raw)
+		}
+	}
+	if err := client.ValidateSourceInstallationURL("https://platform.antfly.io"+path, "google_workspace", flow); err != nil {
+		t.Fatal(err)
+	}
+}

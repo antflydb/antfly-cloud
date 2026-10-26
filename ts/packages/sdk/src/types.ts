@@ -1714,6 +1714,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install/{flow_id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authenticate the initiating browser before provider consent */
+        post: operations["authorizeSourceInstallation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels": {
         parameters: {
             query?: never;
@@ -3967,7 +3984,10 @@ export interface components {
             };
         };
         SourceInstallation: {
-            /** Format: uri */
+            /**
+             * Format: uri
+             * @description Antfly browser installation entry; authenticates the initiating browser before provider consent.
+             */
             authorization_url: string;
             flow_id: string;
         };
@@ -4018,6 +4038,10 @@ export interface components {
             run_policy?: "run_once" | "scheduled";
             /** @enum {integer} */
             schedule_interval_seconds?: 300 | 900 | 1800 | 3600 | 21600 | 43200 | 86400;
+        };
+        SourceAuthorization: {
+            /** Format: uri */
+            authorization_url: string;
         };
         MetricPanel: {
             id: string;
@@ -8074,6 +8098,45 @@ export interface operations {
             };
             /** @description Provider installation is not configured */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    authorizeSourceInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                provider: "google_workspace" | "slack" | "discord";
+                flow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider authorization URL for the authenticated initiating user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceAuthorization"];
+                };
+            };
+            /** @description Source manager access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Flow expired or belongs to another user */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

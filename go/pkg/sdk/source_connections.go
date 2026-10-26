@@ -3,6 +3,7 @@ package sdk
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -223,4 +224,29 @@ func (c *Client) SyncSource(ctx context.Context, org, instance, id string) error
 		return err
 	}
 	return c.sourceDo(ctx, "POST", base+"/import-jobs/"+id+"/run", nil, nil)
+}
+
+// ValidateSourceInstallationURL allows only the Antfly management API bootstrap.
+// Provider consent URLs are issued after browser sign-in, never opened directly by the CLI.
+func (c *Client) ValidateSourceInstallationURL(raw, provider, flow string) error {
+	if _, err := hex.DecodeString(flow); err != nil || len(flow) != 64 {
+		return fmt.Errorf("invalid installation flow")
+	}
+	if provider != "google_workspace" && provider != "slack" && provider != "discord" {
+		return fmt.Errorf("invalid installation provider")
+	}
+	target, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("invalid installation URL")
+	}
+	base, err := url.Parse(c.sourceBase)
+	if err != nil {
+		return err
+	}
+	local := base.Scheme == "http" && (base.Hostname() == "localhost" || base.Hostname() == "127.0.0.1" || base.Hostname() == "::1")
+	expected := strings.TrimRight(base.Path, "/") + "/source-oauth/" + url.PathEscape(provider) + "/install/" + url.PathEscape(flow)
+	if (target.Scheme != "https" && !local) || target.Scheme != base.Scheme || target.Host != base.Host || target.User != nil || target.Path != expected || target.RawQuery != "" || target.Fragment != "" {
+		return fmt.Errorf("unexpected installation URL; expected Antfly management origin")
+	}
+	return nil
 }

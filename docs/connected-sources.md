@@ -12,7 +12,8 @@ antfly-cloud login
 antfly-cloud --org YOUR_ORG --instance YOUR_INSTANCE connections connect google-workspace --services drive,gmail,calendar
 ```
 
-Approve access using the same Antfly user in the browser. The command waits for the
+The link opens Antfly first. Sign in using the same Antfly user that started the
+command, then continue to Google, Discord or Slack to approve access. The command waits for the
 installation result and prints the connection ID. `--no-browser` prints the URL
 without opening it; `--no-wait` returns the URL and flow ID immediately. An existing
 Google connection can enable additional services with `--reconnect CONNECTION_ID`.
@@ -41,7 +42,8 @@ antfly-cloud sources sync SOURCE_ID
 
 The default sharing policy is private to the current user. `--shared` explicitly
 shares with all readers authorized for the destination table. Attachments are
-opt-in. Calendar Drive attachments also need the connection's Drive grant. The
+opt-in. Previews include one parent and up to eight attachment samples, with each
+text sample limited to 8 KiB. Calendar Drive attachments also need the connection's Drive grant. The
 server needs PDF/OCR extraction tools for those attachment formats.
 
 Source creation queues the first sync; queue acceptance does not mean the content
@@ -60,3 +62,6 @@ After successful publication, use the normal selected Cloud context with
 `antfly-grep --cloud --files` and search the source alias. Provider authorization,
 destination table access and source sharing are separate checks. Unsupported API
 versions and unavailable installations return explicit errors.
+
+Organization owners/admins can select source connections. A destination table write
+grant alone does not authorize importing another user’s private provider content.

@@ -4069,6 +4069,55 @@ paths:
           description: Provider installation is not configured
       security:
         - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{provider}/install/{flow_id}/authorize:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: authorizeSourceInstallation
+      summary: Authenticate the initiating browser before provider consent
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - google_workspace
+              - slack
+              - discord
+        - name: flow_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[a-f0-9]{64}$
+      responses:
+        '200':
+          description: Provider authorization URL for the authenticated initiating user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceAuthorization'
+        '403':
+          description: Source manager access required
+        '404':
+          description: Flow expired or belongs to another user
+      security:
+        - BearerAuth: []
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -8254,6 +8303,7 @@ components:
         authorization_url:
           type: string
           format: uri
+          description: Antfly browser installation entry; authenticates the initiating browser before provider consent.
         flow_id:
           type: string
           pattern: ^[a-f0-9]{64}$
@@ -8384,6 +8434,14 @@ components:
         - target_table
         - mode
         - source_config
+    SourceAuthorization:
+      type: object
+      required:
+        - authorization_url
+      properties:
+        authorization_url:
+          type: string
+          format: uri
     MetricPanel:
       type: object
       required:

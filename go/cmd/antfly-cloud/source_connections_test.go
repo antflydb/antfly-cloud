@@ -29,7 +29,7 @@ func TestConnectionsConnectUsesManagedBrowserFlow(t *testing.T) {
 			if len(body["services"].([]any)) != 2 {
 				t.Error("selected services missing")
 			}
-			json.NewEncoder(w).Encode(map[string]any{"authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?state=opaque", "flow_id": strings.Repeat("a", 64)})
+			json.NewEncoder(w).Encode(map[string]any{"authorization_url": "http://" + r.Host + "/api/v1/source-oauth/google_workspace/install/" + strings.Repeat("a", 64), "flow_id": strings.Repeat("a", 64)})
 		default:
 			http.Error(w, r.URL.Path, 404)
 		}
@@ -48,7 +48,7 @@ func TestConnectionsConnectUsesManagedBrowserFlow(t *testing.T) {
 	if err := command.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(output.String(), "accounts.google.com") || !strings.Contains(output.String(), "flow_id") {
+	if !strings.Contains(output.String(), "/source-oauth/google_workspace/install/") || !strings.Contains(output.String(), "flow_id") {
 		t.Fatalf("missing browser flow: %s", output.String())
 	}
 	if strings.Contains(output.String(), "client_secret") || strings.Contains(output.String(), "management") {
@@ -85,8 +85,8 @@ func TestSourceSetupFlow(t *testing.T) {
 					value = map[string]any{"data": []any{map[string]any{"id": instance, "slug": "test", "name": "Test"}}}
 				case base + "/provider-auths/" + provider + "/install":
 					stages = append(stages, "authorize")
-					host := map[string]string{"google_workspace": "accounts.google.com", "slack": "slack.com", "discord": "discord.com"}[provider]
-					value = map[string]any{"authorization_url": "https://" + host + "/authorize?state=opaque", "flow_id": strings.Repeat("a", 64)}
+					host := r.Host
+					value = map[string]any{"authorization_url": "http://" + host + "/api/v1/source-oauth/" + provider + "/install/" + strings.Repeat("a", 64), "flow_id": strings.Repeat("a", 64)}
 				case base + "/provider-auths/" + provider + "/install/" + strings.Repeat("a", 64):
 					stages = append(stages, "connected")
 					value = map[string]any{"status": "connected", "provider_auth_id": connection}

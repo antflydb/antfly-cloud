@@ -58,6 +58,7 @@ output-options:
     - upsertCloudGrant
     - deleteCloudGrant
     - listSourceConnections
+    - authorizeSourceInstallation
     - startSourceInstallation
     - getSourceInstallationStatus
     - listSourceResources
