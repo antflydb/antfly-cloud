@@ -311,6 +311,72 @@ func (e CloudInstanceVersionUpgradeStatus) Valid() bool {
 	}
 }
 
+// Defines values for CreateConnectedSourceMode.
+const (
+	CreateConnectedSourceModeSource CreateConnectedSourceMode = "source"
+)
+
+// Valid indicates whether the value is a known member of the CreateConnectedSourceMode enum.
+func (e CreateConnectedSourceMode) Valid() bool {
+	switch e {
+	case CreateConnectedSourceModeSource:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateConnectedSourceRunPolicy.
+const (
+	CreateConnectedSourceRunPolicyRunOnce   CreateConnectedSourceRunPolicy = "run_once"
+	CreateConnectedSourceRunPolicyScheduled CreateConnectedSourceRunPolicy = "scheduled"
+)
+
+// Valid indicates whether the value is a known member of the CreateConnectedSourceRunPolicy enum.
+func (e CreateConnectedSourceRunPolicy) Valid() bool {
+	switch e {
+	case CreateConnectedSourceRunPolicyRunOnce:
+		return true
+	case CreateConnectedSourceRunPolicyScheduled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateConnectedSourceScheduleIntervalSeconds.
+const (
+	CreateConnectedSourceScheduleIntervalSecondsN1800  CreateConnectedSourceScheduleIntervalSeconds = 1800
+	CreateConnectedSourceScheduleIntervalSecondsN21600 CreateConnectedSourceScheduleIntervalSeconds = 21600
+	CreateConnectedSourceScheduleIntervalSecondsN300   CreateConnectedSourceScheduleIntervalSeconds = 300
+	CreateConnectedSourceScheduleIntervalSecondsN3600  CreateConnectedSourceScheduleIntervalSeconds = 3600
+	CreateConnectedSourceScheduleIntervalSecondsN43200 CreateConnectedSourceScheduleIntervalSeconds = 43200
+	CreateConnectedSourceScheduleIntervalSecondsN86400 CreateConnectedSourceScheduleIntervalSeconds = 86400
+	CreateConnectedSourceScheduleIntervalSecondsN900   CreateConnectedSourceScheduleIntervalSeconds = 900
+)
+
+// Valid indicates whether the value is a known member of the CreateConnectedSourceScheduleIntervalSeconds enum.
+func (e CreateConnectedSourceScheduleIntervalSeconds) Valid() bool {
+	switch e {
+	case CreateConnectedSourceScheduleIntervalSecondsN1800:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN21600:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN300:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN3600:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN43200:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN86400:
+		return true
+	case CreateConnectedSourceScheduleIntervalSecondsN900:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InvitationResponse2Status.
 const (
 	InvitationResponse2StatusInvited InvitationResponse2Status = "invited"
@@ -476,6 +542,54 @@ func (e OrganizationStatus) Valid() bool {
 	}
 }
 
+// Defines values for SourceInstallationStatusStatus.
+const (
+	SourceInstallationStatusStatusConnected  SourceInstallationStatusStatus = "connected"
+	SourceInstallationStatusStatusDenied     SourceInstallationStatusStatus = "denied"
+	SourceInstallationStatusStatusExchanging SourceInstallationStatusStatus = "exchanging"
+	SourceInstallationStatusStatusFailed     SourceInstallationStatusStatus = "failed"
+	SourceInstallationStatusStatusPending    SourceInstallationStatusStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the SourceInstallationStatusStatus enum.
+func (e SourceInstallationStatusStatus) Valid() bool {
+	switch e {
+	case SourceInstallationStatusStatusConnected:
+		return true
+	case SourceInstallationStatusStatusDenied:
+		return true
+	case SourceInstallationStatusStatusExchanging:
+		return true
+	case SourceInstallationStatusStatusFailed:
+		return true
+	case SourceInstallationStatusStatusPending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SourceSelectionResource.
+const (
+	SourceSelectionResourceCalendar SourceSelectionResource = "calendar"
+	SourceSelectionResourceDrive    SourceSelectionResource = "drive"
+	SourceSelectionResourceGmail    SourceSelectionResource = "gmail"
+)
+
+// Valid indicates whether the value is a known member of the SourceSelectionResource enum.
+func (e SourceSelectionResource) Valid() bool {
+	switch e {
+	case SourceSelectionResourceCalendar:
+		return true
+	case SourceSelectionResourceDrive:
+		return true
+	case SourceSelectionResourceGmail:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UpdateCloudInstanceRequestSharedInferenceMode.
 const (
 	UpdateCloudInstanceRequestSharedInferenceModeDisabled UpdateCloudInstanceRequestSharedInferenceMode = "disabled"
@@ -530,6 +644,90 @@ func (e UserStatus) Valid() bool {
 	case UserStatusDeleted:
 		return true
 	case UserStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StartSourceInstallationParamsProvider.
+const (
+	StartSourceInstallationParamsProviderDiscord         StartSourceInstallationParamsProvider = "discord"
+	StartSourceInstallationParamsProviderGoogleWorkspace StartSourceInstallationParamsProvider = "google_workspace"
+	StartSourceInstallationParamsProviderSlack           StartSourceInstallationParamsProvider = "slack"
+)
+
+// Valid indicates whether the value is a known member of the StartSourceInstallationParamsProvider enum.
+func (e StartSourceInstallationParamsProvider) Valid() bool {
+	switch e {
+	case StartSourceInstallationParamsProviderDiscord:
+		return true
+	case StartSourceInstallationParamsProviderGoogleWorkspace:
+		return true
+	case StartSourceInstallationParamsProviderSlack:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StartSourceInstallationJSONBodyServices.
+const (
+	StartSourceInstallationJSONBodyServicesCalendar StartSourceInstallationJSONBodyServices = "calendar"
+	StartSourceInstallationJSONBodyServicesDrive    StartSourceInstallationJSONBodyServices = "drive"
+	StartSourceInstallationJSONBodyServicesGmail    StartSourceInstallationJSONBodyServices = "gmail"
+)
+
+// Valid indicates whether the value is a known member of the StartSourceInstallationJSONBodyServices enum.
+func (e StartSourceInstallationJSONBodyServices) Valid() bool {
+	switch e {
+	case StartSourceInstallationJSONBodyServicesCalendar:
+		return true
+	case StartSourceInstallationJSONBodyServicesDrive:
+		return true
+	case StartSourceInstallationJSONBodyServicesGmail:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSourceInstallationStatusParamsProvider.
+const (
+	GetSourceInstallationStatusParamsProviderDiscord         GetSourceInstallationStatusParamsProvider = "discord"
+	GetSourceInstallationStatusParamsProviderGoogleWorkspace GetSourceInstallationStatusParamsProvider = "google_workspace"
+	GetSourceInstallationStatusParamsProviderSlack           GetSourceInstallationStatusParamsProvider = "slack"
+)
+
+// Valid indicates whether the value is a known member of the GetSourceInstallationStatusParamsProvider enum.
+func (e GetSourceInstallationStatusParamsProvider) Valid() bool {
+	switch e {
+	case GetSourceInstallationStatusParamsProviderDiscord:
+		return true
+	case GetSourceInstallationStatusParamsProviderGoogleWorkspace:
+		return true
+	case GetSourceInstallationStatusParamsProviderSlack:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuthorizeSourceInstallationParamsProvider.
+const (
+	AuthorizeSourceInstallationParamsProviderDiscord         AuthorizeSourceInstallationParamsProvider = "discord"
+	AuthorizeSourceInstallationParamsProviderGoogleWorkspace AuthorizeSourceInstallationParamsProvider = "google_workspace"
+	AuthorizeSourceInstallationParamsProviderSlack           AuthorizeSourceInstallationParamsProvider = "slack"
+)
+
+// Valid indicates whether the value is a known member of the AuthorizeSourceInstallationParamsProvider enum.
+func (e AuthorizeSourceInstallationParamsProvider) Valid() bool {
+	switch e {
+	case AuthorizeSourceInstallationParamsProviderDiscord:
+		return true
+	case AuthorizeSourceInstallationParamsProviderGoogleWorkspace:
+		return true
+	case AuthorizeSourceInstallationParamsProviderSlack:
 		return true
 	default:
 		return false
@@ -1124,6 +1322,15 @@ type ConfirmLiteImportRequest struct {
 	SnapshotBoundaryAcknowledged bool `json:"snapshot_boundary_acknowledged"`
 }
 
+// ConnectedSourceJob defines model for ConnectedSourceJob.
+type ConnectedSourceJob struct {
+	Id           openapi_types.UUID `json:"id"`
+	Mode         string             `json:"mode"`
+	Name         string             `json:"name"`
+	SourceConfig SourceSelection    `json:"source_config,omitempty,omitzero"`
+	Status       string             `json:"status"`
+}
+
 // ConnectionDetails defines model for ConnectionDetails.
 type ConnectionDetails struct {
 	// AntflyInferenceProxyUrl Colony proxy URL for accessing the attached Antfly Inference service for this instance
@@ -1217,6 +1424,26 @@ type CreateCloudInstanceRequest struct {
 	// VersionPolicy Antfly runtime version policy for managed upgrades.
 	VersionPolicy CloudInstanceVersionPolicy `json:"version_policy,omitempty,omitzero"`
 }
+
+// CreateConnectedSource defines model for CreateConnectedSource.
+type CreateConnectedSource struct {
+	Mode                    CreateConnectedSourceMode                    `json:"mode"`
+	Name                    string                                       `json:"name"`
+	ProviderAuthId          openapi_types.UUID                           `json:"provider_auth_id"`
+	RunPolicy               CreateConnectedSourceRunPolicy               `json:"run_policy,omitempty,omitzero"`
+	ScheduleIntervalSeconds CreateConnectedSourceScheduleIntervalSeconds `json:"schedule_interval_seconds,omitempty,omitzero"`
+	SourceConfig            SourceSelection                              `json:"source_config"`
+	TargetTable             string                                       `json:"target_table"`
+}
+
+// CreateConnectedSourceMode defines model for CreateConnectedSource.Mode.
+type CreateConnectedSourceMode string
+
+// CreateConnectedSourceRunPolicy defines model for CreateConnectedSource.RunPolicy.
+type CreateConnectedSourceRunPolicy string
+
+// CreateConnectedSourceScheduleIntervalSeconds defines model for CreateConnectedSource.ScheduleIntervalSeconds.
+type CreateConnectedSourceScheduleIntervalSeconds int
 
 // Error defines model for Error.
 type Error struct {
@@ -1552,6 +1779,86 @@ type ResendInvitationResponse2 struct {
 	NewToken string `json:"new_token"`
 }
 
+// SourceAuthorization defines model for SourceAuthorization.
+type SourceAuthorization struct {
+	AuthorizationUrl string `json:"authorization_url"`
+}
+
+// SourceConnection defines model for SourceConnection.
+type SourceConnection struct {
+	Config      map[string]interface{} `json:"config,omitempty,omitzero"`
+	DisplayName string                 `json:"display_name"`
+	Enabled     bool                   `json:"enabled"`
+	Id          openapi_types.UUID     `json:"id"`
+	Provider    string                 `json:"provider"`
+	Status      string                 `json:"status"`
+}
+
+// SourceContentPreview defines model for SourceContentPreview.
+type SourceContentPreview struct {
+	Data []struct {
+		Metadata map[string]interface{} `json:"metadata,omitempty,omitzero"`
+		Path     string                 `json:"path"`
+		Text     string                 `json:"text"`
+		Uri      string                 `json:"uri"`
+	} `json:"data"`
+}
+
+// SourceInstallation defines model for SourceInstallation.
+type SourceInstallation struct {
+	// AuthorizationUrl Antfly browser installation entry; authenticates the initiating browser before provider consent.
+	AuthorizationUrl string `json:"authorization_url"`
+	FlowId           string `json:"flow_id"`
+}
+
+// SourceInstallationStatus defines model for SourceInstallationStatus.
+type SourceInstallationStatus struct {
+	ProviderAuthId openapi_types.UUID             `json:"provider_auth_id,omitempty,omitzero"`
+	Status         SourceInstallationStatusStatus `json:"status"`
+}
+
+// SourceInstallationStatusStatus defines model for SourceInstallationStatus.Status.
+type SourceInstallationStatusStatus string
+
+// SourceResource defines model for SourceResource.
+type SourceResource struct {
+	Folder   bool   `json:"folder,omitempty,omitzero"`
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	ParentId string `json:"parent_id,omitempty,omitzero"`
+	Readable bool   `json:"readable"`
+}
+
+// SourceResourcePage defines model for SourceResourcePage.
+type SourceResourcePage struct {
+	Data       []SourceResource `json:"data"`
+	NextCursor string           `json:"next_cursor,omitempty,omitzero"`
+}
+
+// SourceSelection defines model for SourceSelection.
+type SourceSelection struct {
+	Attachments    bool     `json:"attachments,omitempty,omitzero"`
+	CalendarIds    []string `json:"calendar_ids,omitempty,omitzero"`
+	ChannelIds     []string `json:"channel_ids,omitempty,omitzero"`
+	FolderId       string   `json:"folder_id,omitempty,omitzero"`
+	GuildId        string   `json:"guild_id,omitempty,omitzero"`
+	IncludeThreads bool     `json:"include_threads,omitempty,omitzero"`
+	LabelIds       []string `json:"label_ids,omitempty,omitzero"`
+
+	// PermissionTtlSeconds Maximum age of successful provider access checks. Refreshed independently of the content sync schedule; expired leases stop search.
+	PermissionTtlSeconds int `json:"permission_ttl_seconds,omitempty,omitzero"`
+	Permissions          struct {
+		Public  bool     `json:"public"`
+		Readers []string `json:"readers"`
+	} `json:"permissions,omitempty,omitzero"`
+	Resource      SourceSelectionResource `json:"resource,omitempty,omitzero"`
+	SharedDriveId string                  `json:"shared_drive_id,omitempty,omitzero"`
+	TeamId        string                  `json:"team_id,omitempty,omitzero"`
+}
+
+// SourceSelectionResource defines model for SourceSelection.Resource.
+type SourceSelectionResource string
+
 // StartLiteExportRequest defines model for StartLiteExportRequest.
 type StartLiteExportRequest struct {
 	IdempotencyKey string `json:"idempotency_key"`
@@ -1778,6 +2085,36 @@ type ListCloudInstanceEventsParams struct {
 	Limit Limit `form:"limit,omitempty" json:"limit,omitempty,omitzero"`
 }
 
+// ListSourceConnectionsParams defines parameters for ListSourceConnections.
+type ListSourceConnectionsParams struct {
+	Provider string `form:"provider,omitempty" json:"provider,omitempty,omitzero"`
+}
+
+// ListSourceResourcesParams defines parameters for ListSourceResources.
+type ListSourceResourcesParams struct {
+	Resource string `form:"resource,omitempty" json:"resource,omitempty,omitzero"`
+	ParentId string `form:"parent_id,omitempty" json:"parent_id,omitempty,omitzero"`
+	Cursor   string `form:"cursor,omitempty" json:"cursor,omitempty,omitzero"`
+}
+
+// StartSourceInstallationJSONBody defines parameters for StartSourceInstallation.
+type StartSourceInstallationJSONBody struct {
+	AuthId   string                                    `json:"auth_id,omitempty,omitzero"`
+	Services []StartSourceInstallationJSONBodyServices `json:"services,omitempty,omitzero"`
+}
+
+// StartSourceInstallationParamsProvider defines parameters for StartSourceInstallation.
+type StartSourceInstallationParamsProvider string
+
+// StartSourceInstallationJSONBodyServices defines parameters for StartSourceInstallation.
+type StartSourceInstallationJSONBodyServices string
+
+// GetSourceInstallationStatusParamsProvider defines parameters for GetSourceInstallationStatus.
+type GetSourceInstallationStatusParamsProvider string
+
+// AuthorizeSourceInstallationParamsProvider defines parameters for AuthorizeSourceInstallation.
+type AuthorizeSourceInstallationParamsProvider string
+
 // ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
 type ListOrganizationMembersParams struct {
 	// Offset Number of items to skip
@@ -1836,8 +2173,17 @@ type UpdateCloudBrowserAccessJSONRequestBody = UpdateCloudBrowserAccessRequest
 // UpsertCloudGrantJSONRequestBody defines body for UpsertCloudGrant for application/json ContentType.
 type UpsertCloudGrantJSONRequestBody = UpsertCloudGrantRequest
 
+// CreateConnectedSourceJSONRequestBody defines body for CreateConnectedSource for application/json ContentType.
+type CreateConnectedSourceJSONRequestBody = CreateConnectedSource
+
 // StartLiteExportJSONRequestBody defines body for StartLiteExport for application/json ContentType.
 type StartLiteExportJSONRequestBody = StartLiteExportRequest
+
+// PreviewConnectedSourceJSONRequestBody defines body for PreviewConnectedSource for application/json ContentType.
+type PreviewConnectedSourceJSONRequestBody = SourceSelection
+
+// StartSourceInstallationJSONRequestBody defines body for StartSourceInstallation for application/json ContentType.
+type StartSourceInstallationJSONRequestBody StartSourceInstallationJSONBody
 
 // StartLiteImportJSONRequestBody defines body for StartLiteImport for application/json ContentType.
 type StartLiteImportJSONRequestBody = StartLiteImportRequest
@@ -2035,6 +2381,17 @@ type ClientInterface interface {
 	// DeleteCloudGrant request
 	DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListConnectedSourceJobs request
+	ListConnectedSourceJobs(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateConnectedSourceWithBody request with any body
+	CreateConnectedSourceWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, body CreateConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SyncConnectedSource request
+	SyncConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, jobId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// StartLiteExportWithBody request with any body
 	StartLiteExportWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -2042,6 +2399,28 @@ type ClientInterface interface {
 
 	// GetCloudInstanceMetrics request
 	GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListSourceConnections request
+	ListSourceConnections(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, params *ListSourceConnectionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewConnectedSourceWithBody request with any body
+	PreviewConnectedSourceWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PreviewConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, body PreviewConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListSourceResources request
+	ListSourceResources(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, params *ListSourceResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// StartSourceInstallationWithBody request with any body
+	StartSourceInstallationWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	StartSourceInstallation(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, body StartSourceInstallationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSourceInstallationStatus request
+	GetSourceInstallationStatus(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider GetSourceInstallationStatusParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthorizeSourceInstallation request
+	AuthorizeSourceInstallation(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider AuthorizeSourceInstallationParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ResumeLiteInstance request
 	ResumeLiteInstance(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2556,6 +2935,54 @@ func (c *Client) DeleteCloudGrant(ctx context.Context, orgId OrgId, instanceId I
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListConnectedSourceJobs(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListConnectedSourceJobsRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateConnectedSourceWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateConnectedSourceRequestWithBody(c.Server, orgId, instanceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, body CreateConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateConnectedSourceRequest(c.Server, orgId, instanceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SyncConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, jobId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSyncConnectedSourceRequest(c.Server, orgId, instanceId, jobId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) StartLiteExportWithBody(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStartLiteExportRequestWithBody(c.Server, orgId, instanceId, contentType, body)
 	if err != nil {
@@ -2582,6 +3009,102 @@ func (c *Client) StartLiteExport(ctx context.Context, orgId OrgId, instanceId In
 
 func (c *Client) GetCloudInstanceMetrics(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCloudInstanceMetricsRequest(c.Server, orgId, instanceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListSourceConnections(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, params *ListSourceConnectionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSourceConnectionsRequest(c.Server, orgId, instanceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PreviewConnectedSourceWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewConnectedSourceRequestWithBody(c.Server, orgId, instanceId, authId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PreviewConnectedSource(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, body PreviewConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewConnectedSourceRequest(c.Server, orgId, instanceId, authId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListSourceResources(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, params *ListSourceResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListSourceResourcesRequest(c.Server, orgId, instanceId, authId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartSourceInstallationWithBody(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartSourceInstallationRequestWithBody(c.Server, orgId, instanceId, provider, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StartSourceInstallation(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, body StartSourceInstallationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStartSourceInstallationRequest(c.Server, orgId, instanceId, provider, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSourceInstallationStatus(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider GetSourceInstallationStatusParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSourceInstallationStatusRequest(c.Server, orgId, instanceId, provider, flowId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthorizeSourceInstallation(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider AuthorizeSourceInstallationParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthorizeSourceInstallationRequest(c.Server, orgId, instanceId, provider, flowId)
 	if err != nil {
 		return nil, err
 	}
@@ -4275,6 +4798,149 @@ func NewDeleteCloudGrantRequest(server string, orgId OrgId, instanceId InstanceI
 	return req, nil
 }
 
+// NewListConnectedSourceJobsRequest generates requests for ListConnectedSourceJobs
+func NewListConnectedSourceJobsRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/import-jobs", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateConnectedSourceRequest calls the generic CreateConnectedSource builder with application/json body
+func NewCreateConnectedSourceRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, body CreateConnectedSourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateConnectedSourceRequestWithBody(server, orgId, instanceId, "application/json", bodyReader)
+}
+
+// NewCreateConnectedSourceRequestWithBody generates requests for CreateConnectedSource with any type of body
+func NewCreateConnectedSourceRequestWithBody(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/import-jobs", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSyncConnectedSourceRequest generates requests for SyncConnectedSource
+func NewSyncConnectedSourceRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, jobId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "job_id", jobId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/import-jobs/%s/run", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewStartLiteExportRequest calls the generic StartLiteExport builder with application/json body
 func NewStartLiteExportRequest(server string, orgId OrgId, instanceId InstanceId, body StartLiteExportJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4363,6 +5029,389 @@ func NewGetCloudInstanceMetricsRequest(server string, orgId OrgId, instanceId In
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListSourceConnectionsRequest generates requests for ListSourceConnections
+func NewListSourceConnectionsRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, params *ListSourceConnectionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "provider", params.Provider, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPreviewConnectedSourceRequest calls the generic PreviewConnectedSource builder with application/json body
+func NewPreviewConnectedSourceRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, body PreviewConnectedSourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPreviewConnectedSourceRequestWithBody(server, orgId, instanceId, authId, "application/json", bodyReader)
+}
+
+// NewPreviewConnectedSourceRequestWithBody generates requests for PreviewConnectedSource with any type of body
+func NewPreviewConnectedSourceRequestWithBody(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "auth_id", authId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths/%s/preview-source", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListSourceResourcesRequest generates requests for ListSourceResources
+func NewListSourceResourcesRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, params *ListSourceResourcesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "auth_id", authId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths/%s/resources", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resource", params.Resource, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "parent_id", params.ParentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewStartSourceInstallationRequest calls the generic StartSourceInstallation builder with application/json body
+func NewStartSourceInstallationRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, body StartSourceInstallationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewStartSourceInstallationRequestWithBody(server, orgId, instanceId, provider, "application/json", bodyReader)
+}
+
+// NewStartSourceInstallationRequestWithBody generates requests for StartSourceInstallation with any type of body
+func NewStartSourceInstallationRequestWithBody(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "provider", provider, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths/%s/install", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetSourceInstallationStatusRequest generates requests for GetSourceInstallationStatus
+func NewGetSourceInstallationStatusRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider GetSourceInstallationStatusParamsProvider, flowId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "provider", provider, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "flow_id", flowId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths/%s/install/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAuthorizeSourceInstallationRequest generates requests for AuthorizeSourceInstallation
+func NewAuthorizeSourceInstallationRequest(server string, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider AuthorizeSourceInstallationParamsProvider, flowId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "org_id", orgId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "instance_id", instanceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "provider", provider, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "flow_id", flowId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/organizations/%s/cloud/instances/%s/provider-auths/%s/install/%s/authorize", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5326,6 +6375,17 @@ type ClientWithResponsesInterface interface {
 	// DeleteCloudGrantWithResponse request
 	DeleteCloudGrantWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, grantId UUID, reqEditors ...RequestEditorFn) (*DeleteCloudGrantResponse, error)
 
+	// ListConnectedSourceJobsWithResponse request
+	ListConnectedSourceJobsWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListConnectedSourceJobsResponse, error)
+
+	// CreateConnectedSourceWithBodyWithResponse request with any body
+	CreateConnectedSourceWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateConnectedSourceResponse, error)
+
+	CreateConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, body CreateConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateConnectedSourceResponse, error)
+
+	// SyncConnectedSourceWithResponse request
+	SyncConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, jobId openapi_types.UUID, reqEditors ...RequestEditorFn) (*SyncConnectedSourceResponse, error)
+
 	// StartLiteExportWithBodyWithResponse request with any body
 	StartLiteExportWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error)
 
@@ -5333,6 +6393,28 @@ type ClientWithResponsesInterface interface {
 
 	// GetCloudInstanceMetricsWithResponse request
 	GetCloudInstanceMetricsWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*GetCloudInstanceMetricsResponse, error)
+
+	// ListSourceConnectionsWithResponse request
+	ListSourceConnectionsWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, params *ListSourceConnectionsParams, reqEditors ...RequestEditorFn) (*ListSourceConnectionsResponse, error)
+
+	// PreviewConnectedSourceWithBodyWithResponse request with any body
+	PreviewConnectedSourceWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewConnectedSourceResponse, error)
+
+	PreviewConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, body PreviewConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewConnectedSourceResponse, error)
+
+	// ListSourceResourcesWithResponse request
+	ListSourceResourcesWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, params *ListSourceResourcesParams, reqEditors ...RequestEditorFn) (*ListSourceResourcesResponse, error)
+
+	// StartSourceInstallationWithBodyWithResponse request with any body
+	StartSourceInstallationWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartSourceInstallationResponse, error)
+
+	StartSourceInstallationWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, body StartSourceInstallationJSONRequestBody, reqEditors ...RequestEditorFn) (*StartSourceInstallationResponse, error)
+
+	// GetSourceInstallationStatusWithResponse request
+	GetSourceInstallationStatusWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider GetSourceInstallationStatusParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*GetSourceInstallationStatusResponse, error)
+
+	// AuthorizeSourceInstallationWithResponse request
+	AuthorizeSourceInstallationWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider AuthorizeSourceInstallationParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*AuthorizeSourceInstallationResponse, error)
 
 	// ResumeLiteInstanceWithResponse request
 	ResumeLiteInstanceWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, reqEditors ...RequestEditorFn) (*ResumeLiteInstanceResponse, error)
@@ -6355,6 +7437,101 @@ func (r DeleteCloudGrantResponse) ContentType() string {
 	return ""
 }
 
+type ListConnectedSourceJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []ConnectedSourceJob `json:"data"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r ListConnectedSourceJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListConnectedSourceJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListConnectedSourceJobsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateConnectedSourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ConnectedSourceJob
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateConnectedSourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateConnectedSourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateConnectedSourceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SyncConnectedSourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *struct {
+		Id     openapi_types.UUID `json:"id"`
+		Status string             `json:"status"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r SyncConnectedSourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SyncConnectedSourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SyncConnectedSourceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type StartLiteExportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6416,6 +7593,188 @@ func (r GetCloudInstanceMetricsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetCloudInstanceMetricsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListSourceConnectionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Data []SourceConnection `json:"data"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSourceConnectionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSourceConnectionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSourceConnectionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PreviewConnectedSourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SourceContentPreview
+}
+
+// Status returns HTTPResponse.Status
+func (r PreviewConnectedSourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PreviewConnectedSourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PreviewConnectedSourceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListSourceResourcesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SourceResourcePage
+}
+
+// Status returns HTTPResponse.Status
+func (r ListSourceResourcesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListSourceResourcesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListSourceResourcesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type StartSourceInstallationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SourceInstallation
+}
+
+// Status returns HTTPResponse.Status
+func (r StartSourceInstallationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StartSourceInstallationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r StartSourceInstallationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetSourceInstallationStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SourceInstallationStatus
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSourceInstallationStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSourceInstallationStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetSourceInstallationStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AuthorizeSourceInstallationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SourceAuthorization
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthorizeSourceInstallationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthorizeSourceInstallationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AuthorizeSourceInstallationResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -7360,6 +8719,41 @@ func (c *ClientWithResponses) DeleteCloudGrantWithResponse(ctx context.Context, 
 	return ParseDeleteCloudGrantResponse(rsp)
 }
 
+// ListConnectedSourceJobsWithResponse request returning *ListConnectedSourceJobsResponse
+func (c *ClientWithResponses) ListConnectedSourceJobsWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListConnectedSourceJobsResponse, error) {
+	rsp, err := c.ListConnectedSourceJobs(ctx, orgId, instanceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListConnectedSourceJobsResponse(rsp)
+}
+
+// CreateConnectedSourceWithBodyWithResponse request with arbitrary body returning *CreateConnectedSourceResponse
+func (c *ClientWithResponses) CreateConnectedSourceWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateConnectedSourceResponse, error) {
+	rsp, err := c.CreateConnectedSourceWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateConnectedSourceResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, body CreateConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateConnectedSourceResponse, error) {
+	rsp, err := c.CreateConnectedSource(ctx, orgId, instanceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateConnectedSourceResponse(rsp)
+}
+
+// SyncConnectedSourceWithResponse request returning *SyncConnectedSourceResponse
+func (c *ClientWithResponses) SyncConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, jobId openapi_types.UUID, reqEditors ...RequestEditorFn) (*SyncConnectedSourceResponse, error) {
+	rsp, err := c.SyncConnectedSource(ctx, orgId, instanceId, jobId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSyncConnectedSourceResponse(rsp)
+}
+
 // StartLiteExportWithBodyWithResponse request with arbitrary body returning *StartLiteExportResponse
 func (c *ClientWithResponses) StartLiteExportWithBodyWithResponse(ctx context.Context, orgId OrgId, instanceId InstanceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartLiteExportResponse, error) {
 	rsp, err := c.StartLiteExportWithBody(ctx, orgId, instanceId, contentType, body, reqEditors...)
@@ -7384,6 +8778,76 @@ func (c *ClientWithResponses) GetCloudInstanceMetricsWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseGetCloudInstanceMetricsResponse(rsp)
+}
+
+// ListSourceConnectionsWithResponse request returning *ListSourceConnectionsResponse
+func (c *ClientWithResponses) ListSourceConnectionsWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, params *ListSourceConnectionsParams, reqEditors ...RequestEditorFn) (*ListSourceConnectionsResponse, error) {
+	rsp, err := c.ListSourceConnections(ctx, orgId, instanceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSourceConnectionsResponse(rsp)
+}
+
+// PreviewConnectedSourceWithBodyWithResponse request with arbitrary body returning *PreviewConnectedSourceResponse
+func (c *ClientWithResponses) PreviewConnectedSourceWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewConnectedSourceResponse, error) {
+	rsp, err := c.PreviewConnectedSourceWithBody(ctx, orgId, instanceId, authId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewConnectedSourceResponse(rsp)
+}
+
+func (c *ClientWithResponses) PreviewConnectedSourceWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, body PreviewConnectedSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewConnectedSourceResponse, error) {
+	rsp, err := c.PreviewConnectedSource(ctx, orgId, instanceId, authId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewConnectedSourceResponse(rsp)
+}
+
+// ListSourceResourcesWithResponse request returning *ListSourceResourcesResponse
+func (c *ClientWithResponses) ListSourceResourcesWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, authId openapi_types.UUID, params *ListSourceResourcesParams, reqEditors ...RequestEditorFn) (*ListSourceResourcesResponse, error) {
+	rsp, err := c.ListSourceResources(ctx, orgId, instanceId, authId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListSourceResourcesResponse(rsp)
+}
+
+// StartSourceInstallationWithBodyWithResponse request with arbitrary body returning *StartSourceInstallationResponse
+func (c *ClientWithResponses) StartSourceInstallationWithBodyWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartSourceInstallationResponse, error) {
+	rsp, err := c.StartSourceInstallationWithBody(ctx, orgId, instanceId, provider, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartSourceInstallationResponse(rsp)
+}
+
+func (c *ClientWithResponses) StartSourceInstallationWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider StartSourceInstallationParamsProvider, body StartSourceInstallationJSONRequestBody, reqEditors ...RequestEditorFn) (*StartSourceInstallationResponse, error) {
+	rsp, err := c.StartSourceInstallation(ctx, orgId, instanceId, provider, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStartSourceInstallationResponse(rsp)
+}
+
+// GetSourceInstallationStatusWithResponse request returning *GetSourceInstallationStatusResponse
+func (c *ClientWithResponses) GetSourceInstallationStatusWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider GetSourceInstallationStatusParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*GetSourceInstallationStatusResponse, error) {
+	rsp, err := c.GetSourceInstallationStatus(ctx, orgId, instanceId, provider, flowId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSourceInstallationStatusResponse(rsp)
+}
+
+// AuthorizeSourceInstallationWithResponse request returning *AuthorizeSourceInstallationResponse
+func (c *ClientWithResponses) AuthorizeSourceInstallationWithResponse(ctx context.Context, orgId openapi_types.UUID, instanceId openapi_types.UUID, provider AuthorizeSourceInstallationParamsProvider, flowId string, reqEditors ...RequestEditorFn) (*AuthorizeSourceInstallationResponse, error) {
+	rsp, err := c.AuthorizeSourceInstallation(ctx, orgId, instanceId, provider, flowId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthorizeSourceInstallationResponse(rsp)
 }
 
 // ResumeLiteInstanceWithResponse request returning *ResumeLiteInstanceResponse
@@ -8996,6 +10460,89 @@ func ParseDeleteCloudGrantResponse(rsp *http.Response) (*DeleteCloudGrantRespons
 	return response, nil
 }
 
+// ParseListConnectedSourceJobsResponse parses an HTTP response from a ListConnectedSourceJobsWithResponse call
+func ParseListConnectedSourceJobsResponse(rsp *http.Response) (*ListConnectedSourceJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListConnectedSourceJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []ConnectedSourceJob `json:"data"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateConnectedSourceResponse parses an HTTP response from a CreateConnectedSourceWithResponse call
+func ParseCreateConnectedSourceResponse(rsp *http.Response) (*CreateConnectedSourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateConnectedSourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ConnectedSourceJob
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSyncConnectedSourceResponse parses an HTTP response from a SyncConnectedSourceWithResponse call
+func ParseSyncConnectedSourceResponse(rsp *http.Response) (*SyncConnectedSourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SyncConnectedSourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest struct {
+			Id     openapi_types.UUID `json:"id"`
+			Status string             `json:"status"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseStartLiteExportResponse parses an HTTP response from a StartLiteExportWithResponse call
 func ParseStartLiteExportResponse(rsp *http.Response) (*StartLiteExportResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -9091,6 +10638,164 @@ func ParseGetCloudInstanceMetricsResponse(rsp *http.Response) (*GetCloudInstance
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSourceConnectionsResponse parses an HTTP response from a ListSourceConnectionsWithResponse call
+func ParseListSourceConnectionsResponse(rsp *http.Response) (*ListSourceConnectionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSourceConnectionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Data []SourceConnection `json:"data"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePreviewConnectedSourceResponse parses an HTTP response from a PreviewConnectedSourceWithResponse call
+func ParsePreviewConnectedSourceResponse(rsp *http.Response) (*PreviewConnectedSourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PreviewConnectedSourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SourceContentPreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListSourceResourcesResponse parses an HTTP response from a ListSourceResourcesWithResponse call
+func ParseListSourceResourcesResponse(rsp *http.Response) (*ListSourceResourcesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListSourceResourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SourceResourcePage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseStartSourceInstallationResponse parses an HTTP response from a StartSourceInstallationWithResponse call
+func ParseStartSourceInstallationResponse(rsp *http.Response) (*StartSourceInstallationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StartSourceInstallationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SourceInstallation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSourceInstallationStatusResponse parses an HTTP response from a GetSourceInstallationStatusWithResponse call
+func ParseGetSourceInstallationStatusResponse(rsp *http.Response) (*GetSourceInstallationStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSourceInstallationStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SourceInstallationStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthorizeSourceInstallationResponse parses an HTTP response from a AuthorizeSourceInstallationWithResponse call
+func ParseAuthorizeSourceInstallationResponse(rsp *http.Response) (*AuthorizeSourceInstallationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthorizeSourceInstallationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SourceAuthorization
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
@@ -10010,249 +11715,275 @@ func ParseGetCurrentUserResponse(rsp *http.Response) (*GetCurrentUserResponse, e
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"zJCdmx96bq54LmSIgFQ9kfm9//n65+v/MwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

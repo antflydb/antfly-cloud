@@ -29,8 +29,8 @@ type Organization struct {
 }
 
 type CloudInstance struct {
- LiteFreeUntil *time.Time `json:"lite_free_until,omitempty"`
- Tier string `json:"tier"`
+	LiteFreeUntil             *time.Time `json:"lite_free_until,omitempty"`
+	Tier                      string     `json:"tier"`
 	DeploymentProfile         string     `json:"deployment_profile"`
 	ID                        string     `json:"id"`
 	OrganizationID            string     `json:"organization_id"`
@@ -255,7 +255,9 @@ func (e *APIError) Error() string {
 
 // Client is a small ergonomic wrapper around the generated Antfly Cloud OpenAPI client.
 type Client struct {
-	client *oapi.ClientWithResponses
+	client                  *oapi.ClientWithResponses
+	sourceBase, sourceToken string
+	sourceHTTP              *http.Client
 }
 
 // NewClient creates a Antfly Cloud API client. baseURL should include the /api/v1 prefix.
@@ -274,7 +276,10 @@ func NewClient(baseURL, bearerToken string, httpClient *http.Client) (*Client, e
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: client}, nil
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: 30 * time.Second}
+	}
+	return &Client{client: client, sourceBase: strings.TrimRight(baseURL, "/"), sourceToken: bearerToken, sourceHTTP: httpClient}, nil
 }
 
 func (c *Client) CurrentUser(ctx context.Context) (*User, error) {
@@ -934,7 +939,7 @@ func mapInvitation(inv oapi.InvitationResponse2) *Invitation {
 
 func mapCloudInstance(i oapi.CloudInstance) *CloudInstance {
 	return &CloudInstance{
- LiteFreeUntil: optionalTime(i.LiteFreeUntil), Tier:string(i.Tier),
+		LiteFreeUntil: optionalTime(i.LiteFreeUntil), Tier: string(i.Tier),
 		DeploymentProfile:         string(i.DeploymentProfile),
 		ID:                        i.Id.String(),
 		OrganizationID:            i.OrganizationId.String(),

@@ -57,5 +57,14 @@ output-options:
     - listCloudGrants
     - upsertCloudGrant
     - deleteCloudGrant
+    - listSourceConnections
+    - authorizeSourceInstallation
+    - startSourceInstallation
+    - getSourceInstallationStatus
+    - listSourceResources
+    - previewConnectedSource
+    - listConnectedSourceJobs
+    - createConnectedSource
+    - syncConnectedSource
   prefer-skip-optional-pointer: true
   prefer-skip-optional-pointer-with-omitzero: true
