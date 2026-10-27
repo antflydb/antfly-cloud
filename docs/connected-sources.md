@@ -73,3 +73,11 @@ access checks less than a minute old. Hosted workers schedule recurring checks
 at their due times; search pauses if checks cannot complete before the lease
 expires. The default validity is 15 minutes. Adding another service to the same
 Workspace connection preserves access checks for its existing sources.
+
+
+Slack previews reuse their sampled message and attachment bytes instead of fetching
+the same history again. Background attachment throttling honors the provider's
+Retry-After deadline across worker restarts; repeated manual sync requests are
+unnecessary during that cooldown. Adding a Google service to the same Workspace
+account preserves running backfill checkpoints as well as published access checks.
+Account, selection and processing changes still require a fresh run.
