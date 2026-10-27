@@ -110,7 +110,7 @@ func TestSourceSetupFlow(t *testing.T) {
 					if provider == "slack" && config["team_id"] != "T123" {
 						t.Error("workspace binding lost")
 					}
-					value = map[string]any{"data": []any{map[string]any{"path": "test", "uri": "test://item", "text": "message and attachment text"}}}
+					value = map[string]any{"data": []any{map[string]any{"path": "test", "uri": "test://item", "text": "message and attachment text", "metadata": map[string]any{"parent_identity": "workspace://parent", "related_resources": []any{map[string]any{"kind": "drive", "id": "file"}}}}}}
 				case base + "/import-jobs":
 					stages = append(stages, "create")
 					if err := json.NewDecoder(r.Body).Decode(&created); err != nil {
@@ -146,12 +146,29 @@ func TestSourceSetupFlow(t *testing.T) {
 			if err := resources.Execute(); err != nil {
 				t.Fatal(err)
 			}
+			output.Reset()
+			preview := newSourcesCommand(factory)
+			preview.SetArgs([]string{"preview", "--connection", connection, "--resource", "gmail", "--select", "selected", "--attachments"})
+			if err := preview.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			var previewOutput struct {
+				Data []struct {
+					Metadata map[string]any `json:"metadata"`
+				} `json:"data"`
+			}
+			if err := json.Unmarshal(output.Bytes(), &previewOutput); err != nil {
+				t.Fatal(err)
+			}
+			if len(previewOutput.Data) != 1 || previewOutput.Data[0].Metadata["parent_identity"] != "workspace://parent" || previewOutput.Data[0].Metadata["related_resources"] == nil {
+				t.Fatalf("preview output lost metadata: %s", output.String())
+			}
 			source := newSourcesCommand(factory)
 			source.SetArgs([]string{"add", "--connection", connection, "--resource", "gmail", "--select", "selected", "--attachments", "--name", "Test", "--table", "qualification", "--every", "24h", "--permission-ttl", "1m"})
 			if err := source.Execute(); err != nil {
 				t.Fatal(err)
 			}
-			if strings.Join(stages, ",") != "authorize,connected,select,preview,create,sync" {
+			if strings.Join(stages, ",") != "authorize,connected,select,preview,preview,create,sync" {
 				t.Fatalf("unexpected flow: %v", stages)
 			}
 			if created["mode"] != "source" || created["schedule_interval_seconds"] != float64(86400) {

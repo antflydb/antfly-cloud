@@ -43,9 +43,10 @@ type SourceResourcePage struct {
 }
 type SourcePreview struct {
 	Data []struct {
-		Path string `json:"path"`
-		URI  string `json:"uri"`
-		Text string `json:"text"`
+		Path     string         `json:"path"`
+		URI      string         `json:"uri"`
+		Text     string         `json:"text"`
+		Metadata map[string]any `json:"metadata,omitempty"`
 	} `json:"data"`
 }
 type SourceJob struct {

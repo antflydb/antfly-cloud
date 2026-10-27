@@ -74,3 +74,37 @@ func TestSourceInstallationRejectsUntrustedRedirects(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestSourcePreviewPreservesRelationshipMetadata(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"data":[{"path":"calendar/cal/event/attachments/file","uri":"https://drive.google.com/file/d/file/view","text":"sample","metadata":{"parent_identity":"workspace://parent","attachment_id":"file","related_resources":[{"kind":"drive","id":"file"}],"calendar_invitation":true}}]}`))
+	}))
+	defer server.Close()
+	client, err := NewClient(server.URL+"/api/v1", "fixture", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	preview, err := client.PreviewSource(context.Background(), "9a17e518-6274-4f79-8dff-80eb53e6d86c", "3bf7206e-c22c-47df-8126-366d4f53752d", "631cd87b-035c-4e05-ae2e-421eae4c0f96", map[string]any{"resource": "calendar"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(preview.Data) != 1 {
+		t.Fatalf("unexpected preview: %+v", preview)
+	}
+	metadata := preview.Data[0].Metadata
+	if metadata["parent_identity"] != "workspace://parent" || metadata["attachment_id"] != "file" || metadata["calendar_invitation"] != true {
+		t.Fatalf("lost relationship metadata: %+v", metadata)
+	}
+	links, ok := metadata["related_resources"].([]any)
+	if !ok || len(links) != 1 || links[0].(map[string]any)["id"] != "file" {
+		t.Fatalf("lost Drive relationship: %+v", metadata)
+	}
+	encoded, err := json.Marshal(preview)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(encoded), `"parent_identity":"workspace://parent"`) || !strings.Contains(string(encoded), `"related_resources"`) {
+		t.Fatalf("JSON output lost metadata: %s", encoded)
+	}
+}
