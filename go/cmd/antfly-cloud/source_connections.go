@@ -170,7 +170,7 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 		var connection, resource, name, target string
 		var selected []string
 		var attachments, shared bool
-		var every time.Duration
+		var every, permissionTTL time.Duration
 		use, short := "add", "Create a private source from selected content"
 		if previewOnly {
 			use = "preview"
@@ -201,7 +201,10 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			if chosen == nil || !chosen.Enabled || chosen.Status != "active" {
 				return fmt.Errorf("source connection is not active")
 			}
-			config := map[string]any{"attachments": attachments}
+			if permissionTTL < time.Minute || permissionTTL > 24*time.Hour || permissionTTL%time.Second != 0 {
+				return fmt.Errorf("--permission-ttl must be a whole number of seconds between 1m and 24h")
+			}
+			config := map[string]any{"attachments": attachments, "permission_ttl_seconds": int(permissionTTL / time.Second)}
 			switch chosen.Provider {
 			case "google_workspace":
 				config["resource"] = resource
@@ -268,7 +271,8 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 		action.Flags().BoolVar(&attachments, "attachments", false, "extract attachment contents")
 		action.Flags().StringVar(&name, "name", "", "source name")
 		action.Flags().StringVar(&target, "table", "", "destination table")
-		action.Flags().DurationVar(&every, "every", 15*time.Minute, "sync interval")
+		action.Flags().DurationVar(&every, "every", 15*time.Minute, "content sync interval")
+		action.Flags().DurationVar(&permissionTTL, "permission-ttl", 15*time.Minute, "maximum age of source access checks, independent of --every (1m..24h)")
 		action.Flags().BoolVar(&shared, "shared", false, "share with all readers authorized for the destination table (default: only you)")
 		command.AddCommand(action)
 	}

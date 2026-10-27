@@ -3971,6 +3971,11 @@ export interface components {
                 public: boolean;
                 readers: string[];
             };
+            /**
+             * @description Maximum age of successful provider access checks. Refreshed independently of the content sync schedule; expired leases stop search.
+             * @default 900
+             */
+            permission_ttl_seconds: number;
         };
         SourceConnection: {
             /** Format: uuid */

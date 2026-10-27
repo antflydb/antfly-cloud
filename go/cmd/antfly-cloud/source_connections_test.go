@@ -147,15 +147,18 @@ func TestSourceSetupFlow(t *testing.T) {
 				t.Fatal(err)
 			}
 			source := newSourcesCommand(factory)
-			source.SetArgs([]string{"add", "--connection", connection, "--resource", "gmail", "--select", "selected", "--attachments", "--name", "Test", "--table", "qualification", "--every", "15m"})
+			source.SetArgs([]string{"add", "--connection", connection, "--resource", "gmail", "--select", "selected", "--attachments", "--name", "Test", "--table", "qualification", "--every", "24h", "--permission-ttl", "5m"})
 			if err := source.Execute(); err != nil {
 				t.Fatal(err)
 			}
 			if strings.Join(stages, ",") != "authorize,connected,select,preview,create,sync" {
 				t.Fatalf("unexpected flow: %v", stages)
 			}
-			if created["mode"] != "source" || created["schedule_interval_seconds"] != float64(900) {
+			if created["mode"] != "source" || created["schedule_interval_seconds"] != float64(86400) {
 				t.Fatalf("wrong source settings: %v", created)
+			}
+			if created["source_config"].(map[string]any)["permission_ttl_seconds"] != float64(300) {
+				t.Fatalf("wrong permission lifetime: %v", created)
 			}
 			permissions := created["source_config"].(map[string]any)["permissions"].(map[string]any)
 			readers := permissions["readers"].([]any)

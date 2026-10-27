@@ -8274,6 +8274,12 @@ components:
           required:
             - public
             - readers
+        permission_ttl_seconds:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          default: 900
+          description: Maximum age of successful provider access checks. Refreshed independently of the content sync schedule; expired leases stop search.
     SourceConnection:
       type: object
       properties:
