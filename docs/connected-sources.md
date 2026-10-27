@@ -65,3 +65,11 @@ versions and unavailable installations return explicit errors.
 
 Organization owners/admins can select source connections. A destination table write
 grant alone does not authorize importing another user’s private provider content.
+
+
+Content sync and permission checks have separate schedules. For example,
+`--every 24h --permission-ttl 1m` refreshes content daily and requires successful
+access checks less than a minute old. Hosted workers schedule recurring checks
+at their due times; search pauses if checks cannot complete before the lease
+expires. The default validity is 15 minutes. Adding another service to the same
+Workspace connection preserves access checks for its existing sources.
