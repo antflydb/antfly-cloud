@@ -8,6 +8,14 @@ export type LiteUploadProgress = {
 };
 const chunkBytes = 8 * 1024 * 1024;
 
+function uploadStatus(response: Response): number {
+	const override = response.headers.get("X-HTTP-Status-Code-Override");
+	if (override === null) return response.status;
+	if (response.status !== 200 || override !== "308")
+		throw new Error("Upload session returned an invalid status override.");
+	return 308;
+}
+
 /** Hash a prepared snapshot without buffering the database in memory. */
 export async function hashLiteSnapshot(
 	file: Blob,
@@ -68,7 +76,9 @@ export async function uploadLiteSnapshot(
 		try {
 			return await transport(url, {
 				method: "PUT",
-				headers,
+				// Fetch rejects HTTP 308 with redirect:error, even without Location.
+				// GCS exposes its resumable status in this header instead.
+				headers: { ...headers, "X-GUploader-No-308": "yes" },
 				body,
 				signal,
 				credentials: "omit",
@@ -84,10 +94,11 @@ export async function uploadLiteSnapshot(
 	}
 	async function committed(): Promise<number> {
 		const response = await request({ "Content-Range": `bytes */${file.size}` });
-		if (response.status === 200 || response.status === 201) return file.size;
-		if (response.status !== 308)
+		const status = uploadStatus(response);
+		if (status === 200 || status === 201) return file.size;
+		if (status !== 308)
 			throw new Error(
-				`Upload session is unavailable (${response.status}). Resume or cancel this transfer.`,
+				`Upload session is unavailable (${status}). Resume or cancel this transfer.`,
 			);
 		const range = response.headers.get("Range");
 		if (range === null) return 0;
@@ -109,7 +120,7 @@ export async function uploadLiteSnapshot(
 				},
 				file.slice(offset, end),
 			);
-			if (![200, 201, 308].includes(response.status))
+			if (![200, 201, 308].includes(uploadStatus(response)))
 				throw new Error("Upload chunk was not accepted.");
 		} catch {
 			signal?.throwIfAborted(); /* Query authoritative offset after an ambiguous response. */
