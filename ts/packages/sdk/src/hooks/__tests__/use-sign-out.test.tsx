@@ -84,6 +84,7 @@ describe("useSignOut", () => {
 
     // Override the global mock with our tracked functions
     mockUseRouter.mockReturnValue({
+      bfcacheId: "test",
       push: mockPush,
       replace: mockReplace,
       back: vi.fn(),
