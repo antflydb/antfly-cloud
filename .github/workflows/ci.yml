@@ -1,0 +1,60 @@
+name: SDK PR CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - run: go test ./...
+        working-directory: go
+        env:
+          GOWORK: 'off'
+
+  typescript:
+    name: TypeScript tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - run: corepack enable && corepack prepare pnpm@11.10.0 --activate
+      - run: pnpm install --frozen-lockfile
+        working-directory: ts
+      - run: pnpm check-types && pnpm test && pnpm build
+        working-directory: ts
+
+  gate:
+    name: SDK CI
+    if: always()
+    needs: [go, typescript]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require both suites to succeed
+        env:
+          GO_RESULT: ${{ needs.go.result }}
+          TS_RESULT: ${{ needs.typescript.result }}
+        run: test "$GO_RESULT" = success && test "$TS_RESULT" = success
