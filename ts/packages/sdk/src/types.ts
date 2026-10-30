@@ -1064,7 +1064,7 @@ export interface paths {
         get?: never;
         /**
          * Sync SCIM cloud groups
-         * @description Upsert SCIM-managed groups and replace their SCIM membership assignments for an organization. Independent manual and SSO assignments remain effective.
+         * @description Upsert SCIM-managed groups and replace each supplied group's SCIM memberships and complete per-member attribute maps. Omitted or empty attributes clear that group's previous contribution; omitted groups are unchanged. Independent manual and SSO assignments remain effective. Conflicting SCIM attribute values are omitted from effective attributes until reconciled.
          */
         put: operations["syncCloudSCIMGroups"];
         post?: never;
@@ -3937,7 +3937,7 @@ export interface components {
         };
         CloudSCIMGroupMemberInput: {
             user_id: components["schemas"]["UUID"];
-            /** @description SSO/SCIM principal attributes persisted for row-filter templates. */
+            /** @description Complete SCIM principal attribute snapshot contributed by this group for row-filter templates. Missing keys are removed; omitted or empty maps clear this group's previous map. Equal values from other groups remain effective; conflicting SCIM values fail closed. Manual overrides remain independent. */
             attributes?: {
                 [key: string]: unknown;
             };
@@ -3945,6 +3945,7 @@ export interface components {
         CloudSCIMGroupSyncResult: {
             groups_synced: number;
             memberships_synced: number;
+            /** @description Number of per-member attribute snapshots applied, including empty snapshots that clear previous values. */
             attributes_synced: number;
         };
         CloudGrant: {
