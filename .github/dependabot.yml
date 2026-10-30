@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /ts
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # tsup still requires the JavaScript compiler API removed in TypeScript 7.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: gomod
+    directories:
+      - /go
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      kubernetes:
+        patterns: ["k8s.io/*", "sigs.k8s.io/controller-runtime"]
+        update-types: [minor, patch]
+      go-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
