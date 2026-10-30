@@ -206,8 +206,9 @@ paths:
                           $ref: '#/components/schemas/UUID'
                         token:
                           type: string
-                          minLength: 64
-                          maxLength: 64
+                          minLength: 36
+                          maxLength: 36
+                          description: Non-secret invitation UUID reference; requires authenticated invitee or manager access. The token field is retained as a compatibility alias for invitation_id.
                         email:
                           type: string
                           format: email
@@ -640,7 +641,14 @@ paths:
         description: Production
     post:
       summary: Transfer organization ownership
-      description: Transfer organization ownership to another admin (requires owner role + password confirmation or OAuth re-authentication)
+      description: |
+        Transfer organization ownership to another admin (requires owner role plus password confirmation or MFA completed within five minutes on the current validated session or grant).
+
+        For a passwordless account, omit `password` and set `reauth_verified` to `true`
+        after a fresh personal sign-in and MFA. The server checks the MFA timestamp on the
+        current credential; the boolean and any `reauth_verified` cookie provide no proof.
+        MFA in a different session does not update this credential. The destination must
+        still be an active admin with an active, verified account and no pending recovery.
       operationId: transferOrganizationOwnership
       tags:
         - Organizations
@@ -663,10 +671,10 @@ paths:
                 password:
                   type: string
                   format: password
-                  description: Current owner's password for confirmation (required if not using reauth_verified)
+                  description: Current owner's password for confirmation; alternatively use reauth_verified with recent MFA on the current session or grant
                 reauth_verified:
                   type: boolean
-                  description: Set to true after OAuth re-authentication (alternative to password)
+                  description: Confirm using MFA completed within the last five minutes on the current validated session or grant (alternative to password). No reauth_verified cookie is used.
       responses:
         '200':
           description: Ownership transferred successfully
@@ -696,6 +704,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: The proposed new owner is no longer an active administrator after transaction-lock waits. No ownership changes were committed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /organizations/{org_id}/mfa-policy:
@@ -762,7 +776,7 @@ paths:
         description: Production
     get:
       summary: Get invitation details
-      description: Retrieve invitation details by token (public endpoint)
+      description: Retrieve invitation details by bearer token (public) or UUID reference (authenticated invitee or manager only)
       operationId: getInvitation
       tags:
         - Organizations
@@ -773,9 +787,9 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 64
+            minLength: 36
             maxLength: 64
-          description: Invitation token
+          description: Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access
       responses:
         '200':
           description: Invitation details
@@ -789,7 +803,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       summary: Revoke invitation
-      description: Revoke an invitation token (requires authentication - only inviter or org admin/owner can revoke)
+      description: Revoke an invitation token (requires authentication - requires current organization admin/owner access, including for the original inviter)
       operationId: revokeInvitation
       tags:
         - Organizations
@@ -801,9 +815,9 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 64
+            minLength: 36
             maxLength: 64
-          description: Invitation token
+          description: Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access
       responses:
         '204':
           description: Invitation revoked successfully
@@ -821,7 +835,7 @@ paths:
         description: Production
     post:
       summary: Accept invitation
-      description: Accept an invitation token and create membership (requires authenticated user)
+      description: Accept an invitation and create membership for the authenticated, verified invitee. Returns 409 without consuming the invitation when membership already exists or conflicts with a later removal or managed provisioning. A new invitation may restore a removed local member.
       operationId: acceptInvitation
       tags:
         - Organizations
@@ -833,9 +847,9 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 64
+            minLength: 36
             maxLength: 64
-          description: Invitation token
+          description: Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access
       responses:
         '200':
           description: Invitation accepted successfully
@@ -851,6 +865,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /invitations/{token}/resend:
@@ -859,7 +875,7 @@ paths:
         description: Production
     post:
       summary: Resend invitation
-      description: Resend invitation email with a new token (requires authentication - only inviter or org admin/owner can resend)
+      description: Rotate the secret bearer and send an invitation email with current owner/admin authorization. Later successful resends are limited to one per invitation per 60 seconds across replicas; 429 returns Retry-After. Resend preserves original issuance time and cannot restore a removed local member; create a fresh invitation for a new admission decision.
       operationId: resendInvitation
       tags:
         - Organizations
@@ -871,9 +887,9 @@ paths:
           required: true
           schema:
             type: string
-            minLength: 64
+            minLength: 36
             maxLength: 64
-          description: Original invitation token
+          description: Original bearer token or authenticated invitation UUID reference
       responses:
         '200':
           description: Invitation resent successfully
@@ -887,8 +903,31 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          description: Resend cooldown; Retry-After gives seconds until retry. The bearer and expiry are unchanged.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalServerError'
+        '502':
+          description: Email delivery failed after bearer rotation and audit committed. Earlier links are invalid; retry with invitation_id after the cooldown.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Invitation email delivery is not configured. The bearer, expiry and cooldown are unchanged.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /organizations/{org_id}/audit-logs:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -2540,7 +2579,7 @@ paths:
         description: Production
     put:
       summary: Sync SCIM cloud groups
-      description: Upsert SCIM-managed groups and replace their membership snapshots for an organization.
+      description: Upsert SCIM-managed groups and replace each supplied group's SCIM memberships and complete per-member attribute maps. Omitted or empty attributes clear that group's previous contribution; omitted groups are unchanged. Independent manual and SSO assignments remain effective. Conflicting SCIM attribute values are omitted from effective attributes until reconciled.
       operationId: syncCloudSCIMGroups
       tags:
         - CloudRBAC
@@ -2567,6 +2606,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          description: An external ID belongs to a group managed outside SCIM. The entire sync is rolled back.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /organizations/{org_id}/cloud/groups/{group_id}/members:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -2639,6 +2684,7 @@ paths:
         description: Production
     delete:
       summary: Remove cloud group member
+      description: Remove a manual assignment. Returns 409 without changing membership while any SCIM or SSO assignment remains; revoke that assignment at its authority first.
       operationId: removeCloudGroupMember
       tags:
         - CloudRBAC
@@ -2661,6 +2707,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: Membership remains managed by SCIM or SSO. No assignment is removed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /organizations/{org_id}/cloud/instances/{instance_id}/grants:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -3473,7 +3525,7 @@ paths:
         description: Production
     post:
       summary: Rotate cloud API key
-      description: Revoke the existing key and create a new one with the same name and permissions
+      description: Atomically consume the active key and create one replacement with the same expiry and permissions, preserving explicit grant mode even when no grants remain. Authorization and required audit commit with the rotation.
       operationId: rotateCloudAPIKey
       tags:
         - CloudAPIKeys
@@ -3496,13 +3548,19 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: The target key expired while rotation was completing. No replacement is issued.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /organizations/{org_id}/cloud/api-keys/{key_id}/rotate:
     servers:
       - url: https://platform.antfly.io/api/v1
         description: Production
     post:
       summary: Rotate Antfly Cloud management API key
-      description: Atomically revoke an antfly_cloud_* key and create a replacement with the same scopes
+      description: Atomically consume an active antfly_cloud_* key and create one replacement with the same expiry and scopes. Current caller and target scopes are checked under locks and required audit commits with the rotation.
       operationId: rotateCloudManagementAPIKey
       tags:
         - CloudAPIKeys
@@ -3524,6 +3582,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: The target key expired while rotation was completing. No replacement is issued.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /organizations/{org_id}/cloud/instances/{instance_id}/backups/{backup_record_id}/download:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -5460,6 +5524,9 @@ components:
         - scim_user
         - scim_group
         - identity_group_mapping
+        - scim_membership
+        - oauth_client
+        - provider_auth
       description: Type of entity being audited
     AuditAction:
       type: string
@@ -5476,6 +5543,7 @@ components:
         - revoke
         - login
         - deprovision
+        - adopt
       description: Type of action performed
     AuditLog:
       type: object
@@ -5590,7 +5658,10 @@ components:
           description: Invitation status
         token:
           type: string
-          description: Invitation token for accepting the invitation
+          description: Secret 64-character bearer returned only when this invitation is created. Use it to construct the acceptance link; protect it as a credential. Invitation lists instead return a non-secret UUID reference in their separate token fields.
+          minLength: 64
+          maxLength: 64
+          pattern: ^[a-f0-9]{64}$
     GetInvitationResponse-2:
       type: object
       required:
@@ -5644,7 +5715,7 @@ components:
           type: string
           minLength: 64
           maxLength: 64
-          description: New invitation token
+          description: Newly rotated 64-character secret bearer, returned only after this manager-authorized resend. Never present in list responses; earlier bearer links are invalidated. Resend does not reset original issuance time or grant fresh reinvitation authority.
         expires_at:
           $ref: '#/components/schemas/Timestamp'
     SubscriptionStatus:
@@ -6616,10 +6687,62 @@ components:
         - standard
         - lite
       description: Immutable runtime profile, independent of commercial tier. Lite uses one single-writer database file. Omitted preserves the standard profile.
+    InitialAntflyRuntime:
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - image
+        - image_digest
+      properties:
+        version:
+          type: string
+        image:
+          type: string
+          description: Immutable published image reference.
+        image_digest:
+          type: string
+          pattern: ^sha256:[a-f0-9]{64}$
+    CloudStorage:
+      type: object
+      additionalProperties: false
+      description: Creation-only engine storage placement. Changing a destination after creation requires an explicit migration.
+      properties:
+        artifacts:
+          $ref: '#/components/schemas/ArtifactStorage'
+          x-go-type-skip-optional-pointer: false
+    ArtifactStorage:
+      type: object
+      additionalProperties: false
+      required:
+        - protocol
+        - bucket
+        - prefix
+      description: Durable storage for engine-owned indexes, publication metadata and recovery state, using the instance's isolated Workload Identity. The server appends the instance UUID to the supplied relative prefix. Bucket IAM and source data are managed separately. Immutable after creation; moving this location requires an explicit migration.
+      properties:
+        protocol:
+          type: string
+          enum:
+            - gcs
+        bucket:
+          type: string
+        prefix:
+          type: string
+          minLength: 1
+          maxLength: 256
     NodeConfig:
       type: object
       description: Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node.
       properties:
+        initial_runtime:
+          $ref: '#/components/schemas/InitialAntflyRuntime'
+          readOnly: true
+          x-go-type-skip-optional-pointer: false
+        engine_storage:
+          $ref: '#/components/schemas/CloudStorage'
+          description: Recorded engine placement from the creation request's storage object. Separate from the legacy per-node storage capacity field; immutable after creation.
+          readOnly: true
+          x-go-type-skip-optional-pointer: false
         deployment_profile:
           $ref: '#/components/schemas/CloudDeploymentProfile'
           readOnly: true
@@ -6738,6 +6861,11 @@ components:
           default: true
         node_config:
           $ref: '#/components/schemas/NodeConfig'
+        storage:
+          $ref: '#/components/schemas/CloudStorage'
+          readOnly: true
+          x-go-type-skip-optional-pointer: false
+          description: Recorded creation-time engine storage placement. Immutable; relocating storage.artifacts requires an explicit migration.
         provisioning_started_at:
           $ref: '#/components/schemas/Timestamp'
         provisioning_completed_at:
@@ -6794,6 +6922,14 @@ components:
         - name
         - slug
       properties:
+        initial_runtime:
+          $ref: '#/components/schemas/InitialAntflyRuntime'
+          x-go-type-skip-optional-pointer: false
+          description: Explicit first-boot runtime. Requires pinned version policy; no automatic catalog promotion is implied.
+        storage:
+          $ref: '#/components/schemas/CloudStorage'
+          x-go-type-skip-optional-pointer: false
+          description: Engine storage placement. storage.artifacts requires an initial native runtime at least v0.3.0-rc.5 and single mode. Immutable after creation; never moves an existing publication.
         claim_lite_intro:
           type: boolean
           description: Claim the limited one-database free year for this organization. Fails if unavailable; never silently charges the paid plan instead. The 12 calendar months start at committed creation, and deletion does not restore eligibility.
@@ -6988,7 +7124,7 @@ components:
         antfly_inference_proxy_url:
           type: string
           format: uri
-          description: Colony proxy URL for accessing the attached Antfly Inference service for this instance
+          description: Colony proxy URL for accessing shared Antfly Inference with this instance's credentials
           example: https://platform.antfly.io/cloud/v1/abc123-def456/ai/v1
         status:
           $ref: '#/components/schemas/CloudInstanceStatus'
@@ -8127,7 +8263,7 @@ components:
         attributes:
           type: object
           additionalProperties: true
-          description: SSO/SCIM principal attributes persisted for row-filter templates.
+          description: Complete SCIM principal attribute snapshot contributed by this group for row-filter templates. Missing keys are removed; omitted or empty maps clear this group's previous map. Equal values from other groups remain effective; conflicting SCIM values fail closed. Manual overrides remain independent.
     CloudSCIMGroupSyncResult:
       type: object
       required:
@@ -8140,6 +8276,7 @@ components:
         memberships_synced:
           type: integer
         attributes_synced:
+          description: Number of per-member attribute snapshots applied, including empty snapshots that clear previous values.
           type: integer
     CloudGrant:
       type: object
