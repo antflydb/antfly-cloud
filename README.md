@@ -22,6 +22,11 @@ docs/                Public client documentation
 - Go SDK import path: `github.com/antflydb/antfly-cloud/go/pkg/sdk`
 - CLI command: `antfly-cloud`
 
+## Install the CLI
+
+Prebuilt macOS and Linux binaries, checksum verification, and release discovery
+are documented in [CLI releases](docs/cli-releases.md). Homebrew is optional.
+
 ## Development
 
 Use Node.js 26.13.0 LTS (`.node-version`), npm 12.2.1, pnpm 12.16.1
