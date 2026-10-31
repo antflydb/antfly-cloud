@@ -3,7 +3,7 @@ name: Antfly Cloud CLI Release
 on:
   push:
     tags:
-      - "client-v*"
+      - "v*"
 
 permissions:
   contents: read
@@ -34,18 +34,15 @@ jobs:
         working-directory: go
         run: go test ./...
 
-      - name: Derive release version
-        id: version
+      - name: Validate release tag
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME}"
-          version="${tag#client-v}"
+          version="${tag#v}"
           if [[ "$version" == "$tag" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid Antfly Cloud CLI tag '$tag'. Expected client-vX.Y.Z or client-vX.Y.Z-rc.N" >&2
+            echo "Invalid Antfly Cloud CLI tag '$tag'. Expected vX.Y.Z or vX.Y.Z-rc.N" >&2
             exit 1
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "goreleaser_tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: Create Homebrew publishing token
         id: homebrew-token
@@ -65,7 +62,6 @@ jobs:
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.homebrew-token.outputs.token }}
-          GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.goreleaser_tag }}
           ANTFLY_CLOUD_RELEASE_BUCKET: ${{ env.ANTFLY_CLOUD_RELEASE_BUCKET }}
         with:
           distribution: goreleaser

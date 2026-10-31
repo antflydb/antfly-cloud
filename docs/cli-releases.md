@@ -14,12 +14,12 @@ Windows, 32-bit systems, and ARMv7 are not currently built.
 
 ## Discover and install without Homebrew
 
-Find `client-v*` tags in the [public repository tags](https://github.com/antflydb/antfly-cloud/tags),
+Find `v*` tags in the [public repository tags](https://github.com/antflydb/antfly-cloud/tags),
 or query them with GitHub CLI:
 
 ```sh
 gh api --paginate repos/antflydb/antfly-cloud/tags \
-  --jq '.[] | select(.name | startswith("client-v")) | .name'
+  --jq '.[] | select(.name | startswith("v")) | .name'
 ```
 
 A tag identifies a release attempt, not a successful upload. Check its
@@ -28,7 +28,7 @@ and fetch its checksums before installing. GitHub Releases/assets and a mutable
 `latest` alias are not published by this workflow.
 
 Choose a published version explicitly, including `-rc.N` for a release candidate.
-Tag `client-v1.2.3` maps to directory `v1.2.3` and archive version `1.2.3`.
+Tag `v1.2.3` maps to directory `v1.2.3` and archive version `1.2.3`.
 The example URLs below become available only after that version is published.
 
 ```sh
@@ -73,23 +73,28 @@ Each version directory also contains GoReleaser `metadata.json` and `artifacts.j
 ## Maintainer publishing
 
 Merge client changes and release configuration before tagging the intended commit.
-Pushing `client-vX.Y.Z` or `client-vX.Y.Z-rc.N` triggers the CLI release workflow;
+Pushing `vX.Y.Z` or `vX.Y.Z-rc.N` triggers the CLI release workflow;
 merging a PR or creating a GitHub release alone does not trigger it. The workflow
 tests the CLI, builds all four targets, and publishes to existing R2 bucket
 `antfly-releases` under `antfly-cloud/vX.Y.Z/`, including any prerelease suffix.
 
-The `antfly-cloud-cli-release` environment supplies `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY`, and `AWS_ENDPOINT_URL`. Use the R2 account endpoint,
+Configure the repository Actions secrets `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, and `AWS_ENDPOINT_URL`. The job uses the
+`antfly-cloud-cli-release` environment, which can override these secrets. Use the
+R2 account endpoint,
 `https://<account-id>.r2.cloudflarestorage.com`, without a bucket suffix. R2 uses
 region `auto` and path-style addressing. Existing public routing for
 `releases.antfly.io` must serve this bucket/prefix; credentials alone do not
 configure public access. Google publishing credentials are no longer needed.
 
-Homebrew uses `HOMEBREW_TAP_GITHUB_TOKEN` to update `antflydb/homebrew-taps` for
-stable releases. **While organization approval is pending, use a release
-candidate**, such as `client-vX.Y.Z-rc.1`. GoReleaser's `skip_upload: auto` skips
-the prerelease tap update while publishing binaries and checksums normally.
-Use its prerelease version with the direct installation instructions above.
+Homebrew uses a short-lived installation token from the organization-owned
+Homebrew publisher GitHub App to update `antflydb/homebrew-taps` for stable
+releases. Configure the shared App credentials as described in the
+[repository README](../README.md#homebrew-publishing-credentials). The workflow
+passes the generated token to GoReleaser as `HOMEBREW_TAP_GITHUB_TOKEN`.
+GoReleaser's `skip_upload: auto` skips the tap update for release candidates such
+as `vX.Y.Z-rc.1` while publishing binaries and checksums normally. Use the
+prerelease version with the direct installation instructions above.
 
 For stable tags, GoReleaser uploads blobs before updating Homebrew. A denied tap
 update fails the job visibly and does not roll back uploaded objects. Verify
