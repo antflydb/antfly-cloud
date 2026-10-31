@@ -22,6 +22,11 @@ docs/                Public client documentation
 - Go SDK import path: `github.com/antflydb/antfly-cloud/go/pkg/sdk`
 - CLI command: `antfly-cloud`
 
+## Install the CLI
+
+Prebuilt macOS and Linux binaries, checksum verification, and release discovery
+are documented in [CLI releases](docs/cli-releases.md). Homebrew is optional.
+
 ## Development
 
 Use Node.js 26.13.0 LTS (`.node-version`), npm 12.2.1, pnpm 12.16.1
@@ -63,3 +68,16 @@ in Settings > Identity, verify the provider, and enable it again. This delegates
 MFA policy to your identity provider. The CLI cannot override that decision.
 
 See [connected sources](docs/connected-sources.md) for browser authorization, resource selection, attachment previews and private sync.
+
+## Homebrew publishing credentials
+
+The CLI release workflow uses the organization-owned Homebrew publisher GitHub
+App to update `antflydb/homebrew-taps`. Install the App only on `homebrew-taps`
+with repository Contents read/write access. Configure the organization Actions
+variable `HOMEBREW_APP_CLIENT_ID` and secret `HOMEBREW_APP_PRIVATE_KEY` (the full
+PEM), granting access only to `antfly` and `antfly-cloud`. The workflow generates
+a short-lived token restricted to the tap; it is revoked when the job ends.
+
+Rotate the App key by generating a replacement, updating the organization secret,
+and verifying publishing access before deleting the old App key. Remove legacy
+PAT secrets after both repositories have migrated and publishing is verified.

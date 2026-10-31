@@ -3,18 +3,17 @@ name: Antfly Cloud CLI Release
 on:
   push:
     tags:
-      - "client-v*"
+      - "v*"
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  ANTFLY_CLOUD_RELEASE_BUCKET: ${{ vars.ANTFLY_CLOUD_RELEASE_BUCKET }}
+  ANTFLY_CLOUD_RELEASE_BUCKET: antfly-releases
 
 jobs:
   release:
@@ -35,31 +34,34 @@ jobs:
         working-directory: go
         run: go test ./...
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Derive release version
-        id: version
+      - name: Validate release tag
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME}"
-          version="${tag#client-v}"
+          version="${tag#v}"
           if [[ "$version" == "$tag" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid Antfly Cloud CLI tag '$tag'. Expected client-vX.Y.Z or client-vX.Y.Z-rc.N" >&2
+            echo "Invalid Antfly Cloud CLI tag '$tag'. Expected vX.Y.Z or vX.Y.Z-rc.N" >&2
             exit 1
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "goreleaser_tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create Homebrew publishing token
+        id: homebrew-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.HOMEBREW_APP_CLIENT_ID }}
+          private-key: ${{ secrets.HOMEBREW_APP_PRIVATE_KEY }}
+          owner: antflydb
+          repositories: homebrew-taps
+          permission-contents: write
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.goreleaser_tag }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.homebrew-token.outputs.token }}
           ANTFLY_CLOUD_RELEASE_BUCKET: ${{ env.ANTFLY_CLOUD_RELEASE_BUCKET }}
         with:
           distribution: goreleaser

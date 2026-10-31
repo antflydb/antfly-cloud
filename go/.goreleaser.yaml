@@ -84,7 +84,10 @@ brews:
       system "#{bin}/antfly-cloud", "version"
 
 blobs:
-  - provider: gs
+  - provider: s3
+    endpoint: '{{ .Env.AWS_ENDPOINT_URL }}'
+    region: auto
+    s3_force_path_style: true
     bucket: '{{ .Env.ANTFLY_CLOUD_RELEASE_BUCKET }}'
     directory: 'antfly-cloud/{{ .Tag }}'
     ids:
