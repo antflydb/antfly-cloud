@@ -83,6 +83,28 @@ eval "$(antfly-cloud env)"
 Antfly Cloud management API keys (`antfly_cloud_*`) cannot be used as Antfly data-plane
 tokens; use device login for that flow.
 
+### Lists, connection URLs, and JSON output
+
+Organization, instance, provisioning-event, and organization-member lists fetch
+every API page. Instance selection by slug or ID also searches the complete list.
+If a later page fails, the command returns an error rather than a partial result.
+
+Both `connection <instance>` and `instance connection <instance>` include the
+data-plane proxy, hosted dashboard, and shared-inference URLs.
+
+`--json` preserves instance storage placement, initial runtime, accelerator,
+shared-inference, Lite import, and hot-standby state returned by the API.
+The generated Go and TypeScript clients also expose connected-source endpoints
+and the creation-time `initial_runtime` and `storage` request fields.
+
+Usage output distinguishes provisioned disk from actual disk usage and reports
+object-store and accelerator usage without assigning it to an inferred provider.
+The Go SDK uses `DiskUsageGiBHours`, `ObjectstoreGiBHours`, and
+`AcceleratorCoreHours`; their JSON keys are `disk_usage_gib_hours`,
+`objectstore_gib_hours`, and `accelerator_core_hours`. These replace
+`StorageGiBHours`, `S3ColdGiBHours`, and `GCSColdGiBHours` and their old JSON keys.
+Update consumers to the current names; there are no compatibility aliases.
+
 ## Local Colony stacks
 
 For local Colony stacks, run `make antfly-cloud-local-setup` once from the Colony

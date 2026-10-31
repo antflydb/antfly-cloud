@@ -141,7 +141,7 @@ func (m tuiModel) View() string {
 		fmt.Fprintf(&b, "Error: %v\n", m.snap.Err)
 	}
 	if m.snap.Usage != nil {
-		fmt.Fprintf(&b, "Usage: queries=%d cpu=%.2fh memory=%.2fGiBh storage=%.2fGiBh\n", m.snap.Usage.Totals.Queries, m.snap.Usage.Totals.CPUCoreHours, m.snap.Usage.Totals.MemoryGiBHours, m.snap.Usage.Totals.StorageGiBHours)
+		fmt.Fprintf(&b, "Usage: queries=%d cpu=%.2fh memory=%.2fGiBh disk_provisioned=%.2fGiBh disk_used=%.2fGiBh objectstore=%.2fGiBh accelerator=%.2fcore-h\n", m.snap.Usage.Totals.Queries, m.snap.Usage.Totals.CPUCoreHours, m.snap.Usage.Totals.MemoryGiBHours, m.snap.Usage.Totals.DiskGiBHours, m.snap.Usage.Totals.DiskUsageGiBHours, m.snap.Usage.Totals.ObjectstoreGiBHours, m.snap.Usage.Totals.AcceleratorCoreHours)
 	}
 	b.WriteString("\nInstances\n")
 	if len(m.snap.Instances) == 0 {
