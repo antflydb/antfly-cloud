@@ -76,13 +76,22 @@ Each version directory also contains GoReleaser `metadata.json`. The local
 Merge client changes and release configuration before tagging the intended commit.
 Pushing `vX.Y.Z` or `vX.Y.Z-rc.N` triggers the CLI release workflow;
 merging a PR or creating a GitHub release alone does not trigger it. The workflow
-tests the CLI, builds all four targets, and publishes to existing R2 bucket
-`antfly-releases` under `antfly-cloud/vX.Y.Z/`, including any prerelease suffix.
+requires the tagged commit to belong to `main`, tests the CLI, and builds all
+four targets without publishing credentials. Review the tag, commit, payload
+manifest SHA256, and downloadable release artifact in the run summary. One of
+the five release reviewers must approve publication through the protected
+`antfly-cloud-cli-release` environment; the triggering user cannot self-approve.
+Emergency administrator bypass is available. This applies to RC and stable tags.
 
-Configure the repository Actions secrets `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY`, and `AWS_ENDPOINT_URL`. The job uses the
-`antfly-cloud-cli-release` environment, which can override these secrets. Use the
-R2 account endpoint,
+After approval, the publisher rechecks the source and all payload checksums, then
+uploads those exact files to R2 bucket `antfly-releases` under
+`antfly-cloud/vX.Y.Z/`, including any prerelease suffix. It does not rebuild the
+approved files. The environment permits only `v*` tags.
+
+Configure `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL`, and
+`HOMEBREW_APP_PRIVATE_KEY` only in the protected `antfly-cloud-cli-release`
+environment. Cloud must not retain repository copies or access to the org App
+private-key secret. Use the R2 account endpoint,
 `https://<account-id>.r2.cloudflarestorage.com`, without a bucket suffix. R2 uses
 region `auto` and path-style addressing. Existing public routing for
 `releases.antfly.io` must serve this bucket/prefix; credentials alone do not
@@ -90,18 +99,21 @@ configure public access. Google publishing credentials are no longer needed.
 
 Homebrew uses a short-lived installation token from the organization-owned
 Homebrew publisher GitHub App to update `antflydb/homebrew-taps` for stable
-releases. Configure the shared App credentials as described in the
-[repository README](../README.md#homebrew-publishing-credentials). The workflow
-passes the generated token to GoReleaser as `HOMEBREW_TAP_GITHUB_TOKEN`.
-GoReleaser's `skip_upload: auto` skips the tap update for release candidates such
-as `vX.Y.Z-rc.1` while publishing binaries and checksums normally. Use the
-prerelease version with the direct installation instructions above.
+releases. Configure the App credentials as described in the
+[repository README](../README.md#release-approval-and-publishing-credentials).
+The workflow mints the token only for stable releases after approval and passes
+it to the publisher as `HOMEBREW_TAP_GITHUB_TOKEN`. Release candidates such as
+`vX.Y.Z-rc.1` publish binaries and checksums while skipping the stable tap update.
+Use the prerelease version with the direct installation instructions above.
 
-For stable tags, GoReleaser uploads blobs before updating Homebrew. A denied tap
+For stable tags, the publisher uploads blobs before updating Homebrew. A denied tap
 update fails the job visibly and does not roll back uploaded objects. Verify
 CDN checksums and all four archives before treating a failed stable run as usable.
 A failed job does not mean nothing was published; inspect the failed step before
-retrying. A green RC run also requires public download verification: private
+retrying. Matching existing immutable objects are safe to retry; different
+content at an existing version is rejected and requires a new version. Rerun
+all jobs while the prepared artifact is retained if rebuilding is necessary.
+A green RC run also requires public download verification: private
 upload success does not prove public CDN availability.
 
 Before announcing a release, download `checksums.txt` and all four archives from
