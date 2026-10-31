@@ -54,11 +54,21 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "goreleaser_tag=v$version" >> "$GITHUB_OUTPUT"
 
+      - name: Create Homebrew publishing token
+        id: homebrew-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.HOMEBREW_APP_CLIENT_ID }}
+          private-key: ${{ secrets.HOMEBREW_APP_PRIVATE_KEY }}
+          owner: antflydb
+          repositories: homebrew-taps
+          permission-contents: write
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.homebrew-token.outputs.token }}
           GORELEASER_CURRENT_TAG: ${{ steps.version.outputs.goreleaser_tag }}
           ANTFLY_CLOUD_RELEASE_BUCKET: ${{ env.ANTFLY_CLOUD_RELEASE_BUCKET }}
         with:
