@@ -69,15 +69,27 @@ MFA policy to your identity provider. The CLI cannot override that decision.
 
 See [connected sources](docs/connected-sources.md) for browser authorization, resource selection, attachment previews and private sync.
 
-## Homebrew publishing credentials
+## Release approval and publishing credentials
 
-The CLI release workflow uses the organization-owned Homebrew publisher GitHub
-App to update `antflydb/homebrew-taps`. Install the App only on `homebrew-taps`
-with repository Contents read/write access. Configure the organization Actions
-variable `HOMEBREW_APP_CLIENT_ID` and secret `HOMEBREW_APP_PRIVATE_KEY` (the full
-PEM), granting access only to `antfly` and `antfly-cloud`. The workflow generates
-a short-lived token restricted to the tap; it is revoked when the job ends.
+The CLI release workflow tests and packages `v*` tags whose commits belong to
+`main`, then records the exact payload and its SHA256 manifest for review.
+Both release candidates and stable releases require approval through the
+`antfly-cloud-cli-release` environment. One of the same five Antfly release
+reviewers must approve; the person who triggered the run cannot self-approve.
+Emergency administrator bypass remains enabled, matching Antfly.
 
-Rotate the App key by generating a replacement, updating the organization secret,
-and verifying publishing access before deleting the old App key. Remove legacy
-PAT secrets after both repositories have migrated and publishing is verified.
+Store `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL`, and
+`HOMEBREW_APP_PRIVATE_KEY` as secrets in that protected environment. Remove
+Cloud's repository copies and access to the organization private-key secret so
+other jobs cannot retrieve the publishing credentials without approval. The
+App client ID remains the shared organization variable `HOMEBREW_APP_CLIENT_ID`.
+The App is installed only on `antflydb/homebrew-taps` with Contents read/write
+access. Stable releases mint a short-lived tap-only token after approval;
+release candidates skip the stable formula update and do not mint that token.
+
+The publisher verifies the original build artifact ID, manifest digest, tag,
+commit, and every file before uploading the prepared files. It does not rebuild
+after approval, and refuses to overwrite a different versioned R2 object.
+Rotate the App key by updating its organization secret for Antfly and its
+protected environment secret for Cloud before deleting the old App key.
+See [CLI releases](docs/cli-releases.md) for release and recovery steps.
