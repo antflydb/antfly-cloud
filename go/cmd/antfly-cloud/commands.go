@@ -293,7 +293,7 @@ func newStatusCommand(stateFor stateFactory) *cobra.Command {
 			} else {
 				table(st.out.W, []string{"NAME", "SLUG", "ID", "STATUS", "REGION", "MODE", "POLICY", "ANTFLY", "UPGRADE", "UPDATED"}, rows)
 			}
-			fmt.Fprintf(st.out.W, "\nUsage this cycle: queries=%d cpu=%.2fh memory=%.2fGiBh disk=%.2fGiBh storage=%.2fGiBh\n", usage.Totals.Queries, usage.Totals.CPUCoreHours, usage.Totals.MemoryGiBHours, usage.Totals.DiskGiBHours, usage.Totals.StorageGiBHours)
+			fmt.Fprintf(st.out.W, "\nUsage this cycle: queries=%d cpu=%.2fh memory=%.2fGiBh disk_provisioned=%.2fGiBh disk_used=%.2fGiBh objectstore=%.2fGiBh accelerator=%.2fcore-h\n", usage.Totals.Queries, usage.Totals.CPUCoreHours, usage.Totals.MemoryGiBHours, usage.Totals.DiskGiBHours, usage.Totals.DiskUsageGiBHours, usage.Totals.ObjectstoreGiBHours, usage.Totals.AcceleratorCoreHours)
 			return nil
 		})
 	}}
@@ -480,7 +480,7 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 			return err
 		}
 		return st.out.Print(conn, func() error {
-			fmt.Fprintf(st.out.W, "Status: %s\nProxy URL: %s\nAntfly Inference URL: %s\n", conn.Status, conn.ProxyURL, conn.AntflyInferenceProxyURL)
+			printConnection(st.out.W, *conn)
 			return nil
 		})
 	}})
@@ -498,7 +498,7 @@ func newConnectionCommand(stateFor stateFactory) *cobra.Command {
 			return err
 		}
 		return st.out.Print(conn, func() error {
-			fmt.Fprintf(st.out.W, "Status: %s\nProxy URL: %s\nAntfly Inference URL: %s\n", conn.Status, conn.ProxyURL, conn.AntflyInferenceProxyURL)
+			printConnection(st.out.W, *conn)
 			return nil
 		})
 	}}
@@ -545,12 +545,16 @@ func printMetrics(w io.Writer, m InstanceMetrics) {
 	fmt.Fprintf(w, "Status: %s\nStorage used: %s\nDocuments: %d\nTables: %d\nQueries this month: %d\nNodes: %d\n", m.Status, bytesHuman(m.StorageUsedBytes), m.DocumentCount, m.TableCount, m.QueriesThisMonth, m.NodeCount)
 }
 
+func printConnection(w io.Writer, conn ConnectionDetails) {
+	fmt.Fprintf(w, "Status: %s\nProxy URL: %s\nDashboard URL: %s\nAntfly Inference URL: %s\n", conn.Status, conn.ProxyURL, conn.DashboardURL, conn.AntflyInferenceProxyURL)
+}
+
 func printUsage(w io.Writer, u *CloudUsageSummary) {
 	fmt.Fprintf(w, "Billing cycle: %s — %s\n", fmtTime(u.BillingCycleStart), fmtTime(u.BillingCycleEnd))
 	rows := [][]string{}
 	for _, i := range u.Instances {
-		rows = append(rows, []string{i.Name, shortID(i.InstanceID), fmt.Sprint(i.Queries), fmt.Sprintf("%.2f", i.CPUCoreHours), fmt.Sprintf("%.2f", i.MemoryGiBHours), fmt.Sprintf("%.2f", i.DiskGiBHours), fmt.Sprintf("%.2f", i.StorageGiBHours)})
+		rows = append(rows, []string{i.Name, shortID(i.InstanceID), fmt.Sprint(i.Queries), fmt.Sprintf("%.2f", i.CPUCoreHours), fmt.Sprintf("%.2f", i.MemoryGiBHours), fmt.Sprintf("%.2f", i.DiskGiBHours), fmt.Sprintf("%.2f", i.DiskUsageGiBHours), fmt.Sprintf("%.2f", i.ObjectstoreGiBHours), fmt.Sprintf("%.2f", i.AcceleratorCoreHours)})
 	}
-	table(w, []string{"INSTANCE", "ID", "QUERIES", "CPU_H", "MEM_GIB_H", "DISK_GIB_H", "STOR_GIB_H"}, rows)
-	fmt.Fprintf(w, "\nTotals: queries=%d cpu=%.2fh memory=%.2fGiBh disk=%.2fGiBh storage=%.2fGiBh s3_cold=%.2fGiBh gcs_cold=%.2fGiBh\n", u.Totals.Queries, u.Totals.CPUCoreHours, u.Totals.MemoryGiBHours, u.Totals.DiskGiBHours, u.Totals.StorageGiBHours, u.Totals.S3ColdGiBHours, u.Totals.GCSColdGiBHours)
+	table(w, []string{"INSTANCE", "ID", "QUERIES", "CPU_H", "MEM_GIB_H", "DISK_PROV_GIB_H", "DISK_USED_GIB_H", "OBJECTSTORE_GIB_H", "ACCEL_CORE_H"}, rows)
+	fmt.Fprintf(w, "\nTotals: queries=%d cpu=%.2fh memory=%.2fGiBh disk_provisioned=%.2fGiBh disk_used=%.2fGiBh objectstore=%.2fGiBh accelerator=%.2fcore-h\n", u.Totals.Queries, u.Totals.CPUCoreHours, u.Totals.MemoryGiBHours, u.Totals.DiskGiBHours, u.Totals.DiskUsageGiBHours, u.Totals.ObjectstoreGiBHours, u.Totals.AcceleratorCoreHours)
 }
