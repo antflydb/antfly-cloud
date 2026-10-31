@@ -68,7 +68,8 @@ rm -rf "$tmp"
 
 Ensure `$HOME/.local/bin` is on `PATH`, then run `antfly-cloud version`.
 Checksums detect corrupt downloads; they are not an independent signature.
-Each version directory also contains GoReleaser `metadata.json` and `artifacts.json`.
+Each version directory also contains GoReleaser `metadata.json`. The local
+`artifacts.json` manifest is generated after publication and is not uploaded.
 
 ## Maintainer publishing
 

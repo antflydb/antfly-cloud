@@ -95,4 +95,3 @@ blobs:
       - checksums
     extra_files:
       - glob: ./dist/metadata.json
-      - glob: ./dist/artifacts.json
