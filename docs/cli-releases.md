@@ -32,23 +32,23 @@ Tag `client-v1.2.3` maps to directory `v1.2.3` and archive version `1.2.3`.
 The example URLs below become available only after that version is published.
 
 ```sh
-set -eu
 version=1.2.3 # replace with a published version
-case "$(uname -s)" in
-  Darwin) os=Darwin ;;
-  Linux) os=Linux ;;
-  *) echo 'Unsupported operating system' >&2; exit 1 ;;
-esac
-case "$(uname -m)" in
-  x86_64|amd64) arch=x86_64 ;;
-  arm64|aarch64) arch=arm64 ;;
-  *) echo 'Unsupported architecture' >&2; exit 1 ;;
-esac
-archive="antfly-cloud_${version}_${os}_${arch}.tar.gz"
-base="https://releases.antfly.io/antfly-cloud/v${version}"
-tmp=$(mktemp -d)
 (
   set -eu
+  case "$(uname -s)" in
+    Darwin) os=Darwin ;;
+    Linux) os=Linux ;;
+    *) echo 'Unsupported operating system' >&2; exit 1 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64|amd64) arch=x86_64 ;;
+    arm64|aarch64) arch=arm64 ;;
+    *) echo 'Unsupported architecture' >&2; exit 1 ;;
+  esac
+  archive="antfly-cloud_${version}_${os}_${arch}.tar.gz"
+  base="https://releases.antfly.io/antfly-cloud/v${version}"
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
   cd "$tmp"
   curl -fLO "$base/$archive"
   curl -fLO "$base/checksums.txt"
@@ -63,7 +63,6 @@ tmp=$(mktemp -d)
   mkdir -p "$HOME/.local/bin"
   install -m 755 antfly-cloud "$HOME/.local/bin/antfly-cloud"
 )
-rm -rf "$tmp"
 ```
 
 Ensure `$HOME/.local/bin` is on `PATH`, then run `antfly-cloud version`.
