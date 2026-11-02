@@ -111,7 +111,7 @@ consistent snapshot across retries; later Cloud writes are excluded.
 
 ```sh
 antfly-cloud --org ORG lite export my-lite --idempotency-key return-copy-001
-antfly-cloud --org ORG lite download EXPORT_OPERATION_ID --out returned.aflite
+antfly-cloud --org ORG lite download EXPORT_OPERATION_ID returned.aflite
 antfly restore --preflight --input returned.aflite \
   --destination-capabilities laptop-capabilities.json
 antfly standalone --storage-engine lite --storage-path returned.aflite \

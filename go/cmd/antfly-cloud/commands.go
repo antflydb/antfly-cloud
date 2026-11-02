@@ -93,7 +93,7 @@ func newLoginCommand(stdout io.Writer, stateFor stateFactory, configFile *string
 				fmt.Fprintf(stdout, "Default org: %s\n", st.cfg.Org)
 			}
 			if len(orgs) > 1 && st.cfg.Org == "" {
-				fmt.Fprintln(stdout, "Multiple orgs found; run `antfly-cloud org use <org>`.")
+				fmt.Fprintln(stdout, "Multiple orgs found; run `antfly-cloud orgs use <org-id-or-slug>`.")
 			}
 			return nil
 		},
@@ -136,7 +136,7 @@ func loginWithToken(ctx context.Context, stdout io.Writer, st *appState, configF
 		fmt.Fprintf(stdout, "Default org: %s\n", st.cfg.Org)
 	}
 	if len(orgs) > 1 && st.cfg.Org == "" {
-		fmt.Fprintln(stdout, "Multiple orgs found; run `antfly-cloud org use <org>`.")
+		fmt.Fprintln(stdout, "Multiple orgs found; run `antfly-cloud orgs use <org-id-or-slug>`.")
 	}
 	return nil
 }
