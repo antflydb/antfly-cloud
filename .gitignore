@@ -6,3 +6,6 @@ node_modules/
 .turbo/
 .pnpm-store/
 
+
+# Python release tooling
+__pycache__/
