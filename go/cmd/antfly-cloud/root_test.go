@@ -11,6 +11,82 @@ import (
 	"testing"
 )
 
+func TestOrganizationGuidanceSelectsDefault(t *testing.T) {
+	const orgID = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v1/organizations":
+			_, _ = w.Write([]byte(`{"data":[{"id":"` + orgID + `","name":"Acme","slug":"acme","status":"active"},{"id":"222471ca-4458-410d-a0ce-ea841b1385c4","name":"Other","slug":"other","status":"active"}]}`))
+		case "/api/v1/users/me":
+			_, _ = w.Write([]byte(`{"email":"dev@antfly.io"}`))
+		case "/device_authorization":
+			_, _ = w.Write([]byte(`{"device_code":"device","user_code":"ABCD","verification_uri":"https://auth.example/device","interval":1,"expires_in":60}`))
+		case "/token":
+			_, _ = w.Write([]byte(`{"id_token":"id-token","expires_in":3600}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	for _, mode := range []string{"status", "token-login", "device-login"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Setenv("ANTFLY_CLOUD_ORG", "")
+			t.Setenv("ANTFLY_CLOUD_TOKEN", "")
+			configPath := filepath.Join(t.TempDir(), "config.yaml")
+			if err := saveConfig(configPath, Config{APIURL: srv.URL + "/api/v1", Token: "token"}); err != nil {
+				t.Fatal(err)
+			}
+			var out, errOut bytes.Buffer
+			cmd := newRootCommand(&out, &errOut)
+			args := []string{"--config", configPath}
+			switch mode {
+			case "status":
+				args = append(args, "status")
+			case "token-login":
+				args = append(args, "login", "--token", "antfly_cloud_abcd1234_secret")
+			case "device-login":
+				args = append(args, "login", "--oidc-issuer", srv.URL, "--no-browser")
+			}
+			cmd.SetArgs(args)
+			err := cmd.Execute()
+			guidance := out.String()
+			if mode == "status" {
+				if err == nil {
+					t.Fatal("expected organization selection error")
+				}
+				guidance = err.Error()
+			} else if err != nil {
+				t.Fatal(err)
+			}
+
+			// Follow the emitted command, not a separately hardcoded command path.
+			parts := strings.Split(guidance, "`")
+			if len(parts) < 3 {
+				t.Fatalf("missing recovery command: %s", guidance)
+			}
+			suggestion := strings.Fields(parts[1])
+			if len(suggestion) < 2 {
+				t.Fatalf("invalid recovery command: %s", parts[1])
+			}
+			suggestion[len(suggestion)-1] = "acme"
+			follow := newRootCommand(&out, &errOut)
+			follow.SetArgs(append([]string{"--config", configPath}, suggestion[1:]...))
+			if err := follow.Execute(); err != nil {
+				t.Fatalf("following %q: %v", parts[1], err)
+			}
+			cfg, err := loadConfig(configPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Org != orgID {
+				t.Fatalf("default organization = %q, want %q", cfg.Org, orgID)
+			}
+		})
+	}
+}
+
 func TestStatusCommandRendersCompleteUsageFromReadOnlyEndpoints(t *testing.T) {
 	var seen []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

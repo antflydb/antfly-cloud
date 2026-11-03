@@ -46,15 +46,29 @@ jobs:
       - run: pnpm check-types && pnpm test && pnpm build
         working-directory: ts
 
+  release-controls:
+    name: Release approval controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts/release -p 'test_*.py'
+
   gate:
     name: SDK CI
     if: always()
-    needs: [go, typescript]
+    needs: [go, typescript, release-controls]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require both suites to succeed
+      - name: Require all suites to succeed
         env:
           GO_RESULT: ${{ needs.go.result }}
           TS_RESULT: ${{ needs.typescript.result }}
-        run: test "$GO_RESULT" = success && test "$TS_RESULT" = success
+          RELEASE_RESULT: ${{ needs.release-controls.result }}
+        run: test "$GO_RESULT" = success && test "$TS_RESULT" = success && test "$RELEASE_RESULT" = success

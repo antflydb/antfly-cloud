@@ -71,6 +71,8 @@ manual token/dev flows, `antfly-cloud login --token ...` remains available.
 ## Common commands
 
 ```sh
+antfly-cloud orgs
+antfly-cloud orgs use acme
 antfly-cloud status
 antfly-cloud instances
 antfly-cloud usage
@@ -78,6 +80,10 @@ antfly-cloud instance use prod
 antfly-cloud context --json
 eval "$(antfly-cloud env)"
 ```
+
+If your account belongs to multiple organizations, list them with `antfly-cloud orgs`
+and select a default with `antfly-cloud orgs use <org-id-or-slug>`. To override the
+default for one command, pass `--org <org-id-or-slug>`.
 
 `antfly-cloud env` exports data-plane connection settings for the Antfly CLI.
 Antfly Cloud management API keys (`antfly_cloud_*`) cannot be used as Antfly data-plane

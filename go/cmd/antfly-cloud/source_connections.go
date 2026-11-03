@@ -136,7 +136,7 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 	command := &cobra.Command{Use: "sources", Short: "Select, preview, and sync connected source content"}
-	command.AddCommand(&cobra.Command{Use: "list", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+	command.AddCommand(&cobra.Command{Use: "list", Short: "List sources for the selected instance", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
 		if err != nil {
 			return err
