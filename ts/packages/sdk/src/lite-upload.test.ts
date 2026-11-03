@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
 	hashLiteSnapshot,
@@ -7,6 +9,44 @@ import {
 } from "./lite-upload";
 
 describe("Lite snapshot transfer", () => {
+	it("uploads through real Fetch without treating resumable 308 as a redirect", async () => {
+		let stored = 0;
+		let writes = 0;
+		const file = new Blob(["prepared snapshot bytes"]);
+		const server = createServer(async (request, response) => {
+			for await (const part of request) stored += part.length;
+			if (!request.headers["content-range"]?.startsWith("bytes */")) writes++;
+			if (stored < file.size) {
+				if (request.headers["x-guploader-no-308"] === "yes") {
+					response.setHeader("X-HTTP-Status-Code-Override", "308");
+				} else {
+					response.statusCode = 308;
+				}
+				if (stored) response.setHeader("Range", `bytes=0-${stored - 1}`);
+			}
+			response.end();
+		});
+		await new Promise<void>((resolve) =>
+			server.listen(0, "127.0.0.1", resolve),
+		);
+		try {
+			const address = server.address() as AddressInfo;
+			await uploadLiteSnapshot(
+				file,
+				"https://storage.googleapis.com/upload?secret=hidden",
+				undefined,
+				undefined,
+				async (_url, options) =>
+					fetch(`http://127.0.0.1:${address.port}`, options),
+			);
+			expect(stored).toBe(file.size);
+			expect(writes).toBe(1);
+		} finally {
+			await new Promise<void>((resolve, reject) =>
+				server.close((error) => (error ? reject(error) : resolve())),
+			);
+		}
+	});
 	it("hashes in bounded slices", async () => {
 		const data = new Blob([new Uint8Array(3 * 1024 * 1024)]);
 		const original = data.slice.bind(data);
@@ -31,13 +71,17 @@ describe("Lite snapshot transfer", () => {
 			expect(options?.redirect).toBe("error");
 			const headers = new Headers(options?.headers);
 			expect(headers.has("Authorization")).toBe(false);
+			expect(headers.get("X-GUploader-No-308")).toBe("yes");
 			const range = headers.get("Content-Range")!;
 			if (range.startsWith("bytes */"))
 				return stored === size
 					? new Response("{}", { status: 200 })
 					: new Response(null, {
-							status: 308,
-							headers: stored ? { Range: `bytes=0-${stored - 1}` } : {},
+							status: 200,
+							headers: {
+								"X-HTTP-Status-Code-Override": "308",
+								...(stored ? { Range: `bytes=0-${stored - 1}` } : {}),
+							},
 						});
 			const match = /^bytes (\d+)-(\d+)\//.exec(range)!;
 			expect(Number(match[1])).toBe(stored);
@@ -48,7 +92,10 @@ describe("Lite snapshot transfer", () => {
 				throw new Error("secret-upload-url");
 			}
 			stored = Number(match[2]) + 1;
-			return new Response(null, { status: 308 });
+			return new Response(null, {
+				status: 200,
+				headers: { "X-HTTP-Status-Code-Override": "308" },
+			});
 		};
 		await uploadLiteSnapshot(
 			new Blob([new Uint8Array(size)]),
@@ -59,6 +106,27 @@ describe("Lite snapshot transfer", () => {
 		);
 		expect(stored).toBe(size);
 		expect(writes).toBe(3);
+	});
+	it("rejects unexpected status overrides instead of marking the file complete", async () => {
+		for (const [status, override] of [
+			[200, "201"],
+			[201, "308"],
+			[200, "308junk"],
+		] as const) {
+			await expect(
+				uploadLiteSnapshot(
+					new Blob(["snapshot"]),
+					"https://storage.googleapis.com/upload",
+					undefined,
+					undefined,
+					async () =>
+						new Response(null, {
+							status,
+							headers: { "X-HTTP-Status-Code-Override": override },
+						}),
+				),
+			).rejects.toThrow("invalid status override");
+		}
 	});
 	it("rejects foreign URLs, malformed offsets, and redacts transport failures", async () => {
 		expect(() =>
