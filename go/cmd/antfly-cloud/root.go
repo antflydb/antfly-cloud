@@ -36,7 +36,7 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file or directory (default is $ANTFLY_CLOUD_CONFIG, ./.antfly/cloud/config.yaml, or ~/.antfly/cloud/config.yaml)")
+	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file or directory (default: $ANTFLY_CLOUD_CONFIG, then config.yaml or config.json in ./.antfly/cloud/ or ~/.antfly/cloud/)")
 	cmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "Antfly Cloud management API URL")
 	cmd.PersistentFlags().StringVar(&org, "org", "", "organization ID or slug")
 	cmd.PersistentFlags().StringVar(&instance, "instance", "", "cloud instance ID or slug")
@@ -134,7 +134,7 @@ func resolveOrg(ctx context.Context, st *appState) (Organization, error) {
 	if len(orgs) == 0 {
 		return Organization{}, errors.New("no organizations found for this token")
 	}
-	return Organization{}, errors.New("multiple organizations found; run `antfly-cloud org use <org-id-or-slug>` or pass --org")
+	return Organization{}, errors.New("multiple organizations found; run `antfly-cloud orgs use <org-id-or-slug>` or pass --org")
 }
 
 func resolveInstance(ctx context.Context, st *appState, orgID, ref string) (CloudInstance, error) {

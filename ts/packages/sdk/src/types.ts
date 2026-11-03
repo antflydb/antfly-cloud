@@ -219,7 +219,13 @@ export interface paths {
         put?: never;
         /**
          * Transfer organization ownership
-         * @description Transfer organization ownership to another admin (requires owner role + password confirmation or OAuth re-authentication)
+         * @description Transfer organization ownership to another admin (requires owner role plus password confirmation or MFA completed within five minutes on the current validated session or grant).
+         *
+         *     For a passwordless account, omit `password` and set `reauth_verified` to `true`
+         *     after a fresh personal sign-in and MFA. The server checks the MFA timestamp on the
+         *     current credential; the boolean and any `reauth_verified` cookie provide no proof.
+         *     MFA in a different session does not update this credential. The destination must
+         *     still be an active admin with an active, verified account and no pending recovery.
          */
         post: operations["transferOrganizationOwnership"];
         delete?: never;
@@ -261,14 +267,14 @@ export interface paths {
         };
         /**
          * Get invitation details
-         * @description Retrieve invitation details by token (public endpoint)
+         * @description Retrieve invitation details by bearer token (public) or UUID reference (authenticated invitee or manager only)
          */
         get: operations["getInvitation"];
         put?: never;
         post?: never;
         /**
          * Revoke invitation
-         * @description Revoke an invitation token (requires authentication - only inviter or org admin/owner can revoke)
+         * @description Revoke an invitation token (requires authentication - requires current organization admin/owner access, including for the original inviter)
          */
         delete: operations["revokeInvitation"];
         options?: never;
@@ -287,7 +293,7 @@ export interface paths {
         put?: never;
         /**
          * Accept invitation
-         * @description Accept an invitation token and create membership (requires authenticated user)
+         * @description Accept an invitation and create membership for the authenticated, verified invitee. Returns 409 without consuming the invitation when membership already exists or conflicts with a later removal or managed provisioning. A new invitation may restore a removed local member.
          */
         post: operations["acceptInvitation"];
         delete?: never;
@@ -307,7 +313,7 @@ export interface paths {
         put?: never;
         /**
          * Resend invitation
-         * @description Resend invitation email with a new token (requires authentication - only inviter or org admin/owner can resend)
+         * @description Rotate the secret bearer and send an invitation email with current owner/admin authorization. Later successful resends are limited to one per invitation per 60 seconds across replicas; 429 returns Retry-After. Resend preserves original issuance time and cannot restore a removed local member; create a fresh invitation for a new admission decision.
          */
         post: operations["resendInvitation"];
         delete?: never;
@@ -1058,7 +1064,7 @@ export interface paths {
         get?: never;
         /**
          * Sync SCIM cloud groups
-         * @description Upsert SCIM-managed groups and replace their membership snapshots for an organization.
+         * @description Upsert SCIM-managed groups and replace each supplied group's SCIM memberships and complete per-member attribute maps. Omitted or empty attributes clear that group's previous contribution; omitted groups are unchanged. Independent manual and SSO assignments remain effective. Conflicting SCIM attribute values are omitted from effective attributes until reconciled.
          */
         put: operations["syncCloudSCIMGroups"];
         post?: never;
@@ -1096,7 +1102,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Remove cloud group member */
+        /**
+         * Remove cloud group member
+         * @description Remove a manual assignment. Returns 409 without changing membership while any SCIM or SSO assignment remains; revoke that assignment at its authority first.
+         */
         delete: operations["removeCloudGroupMember"];
         options?: never;
         head?: never;
@@ -1493,7 +1502,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate cloud API key
-         * @description Revoke the existing key and create a new one with the same name and permissions
+         * @description Atomically consume the active key and create one replacement with the same expiry and permissions, preserving explicit grant mode even when no grants remain. Authorization and required audit commit with the rotation.
          */
         post: operations["rotateCloudAPIKey"];
         delete?: never;
@@ -1513,7 +1522,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate Antfly Cloud management API key
-         * @description Atomically revoke an antfly_cloud_* key and create a replacement with the same scopes
+         * @description Atomically consume an active antfly_cloud_* key and create one replacement with the same expiry and scopes. Current caller and target scopes are checked under locks and required audit commits with the rotation.
          */
         post: operations["rotateCloudManagementAPIKey"];
         delete?: never;
@@ -2438,12 +2447,12 @@ export interface components {
          * @description Type of entity being audited
          * @enum {string}
          */
-        EntityType: "user" | "organization" | "organization_member" | "organization_invitation" | "subscription" | "cloud_instance" | "cloud_api_key" | "cloud_backup" | "cloud_restore" | "cloud_backup_schedule" | "cloud_group" | "cloud_grant" | "cloud_authorization" | "identity_provider" | "identity_domain" | "scim_token" | "scim_user" | "scim_group" | "identity_group_mapping";
+        EntityType: "user" | "organization" | "organization_member" | "organization_invitation" | "subscription" | "cloud_instance" | "cloud_api_key" | "cloud_backup" | "cloud_restore" | "cloud_backup_schedule" | "cloud_group" | "cloud_grant" | "cloud_authorization" | "identity_provider" | "identity_domain" | "scim_token" | "scim_user" | "scim_group" | "identity_group_mapping" | "scim_membership" | "oauth_client" | "provider_auth";
         /**
          * @description Type of action performed
          * @enum {string}
          */
-        AuditAction: "create" | "read" | "update" | "delete" | "accept" | "verify" | "enable" | "disable" | "recover" | "revoke" | "login" | "deprovision";
+        AuditAction: "create" | "read" | "update" | "delete" | "accept" | "verify" | "enable" | "disable" | "recover" | "revoke" | "login" | "deprovision" | "adopt";
         AuditLog: {
             id: components["schemas"]["UUID"];
             organization_id: components["schemas"]["UUID"];
@@ -2520,7 +2529,7 @@ export interface components {
              * @enum {string}
              */
             status: "invited";
-            /** @description Invitation token for accepting the invitation */
+            /** @description Secret 64-character bearer returned only when this invitation is created. Use it to construct the acceptance link; protect it as a credential. Invitation lists instead return a non-secret UUID reference in their separate token fields. */
             token: string;
         };
         "GetInvitationResponse-2": {
@@ -2541,7 +2550,7 @@ export interface components {
         "ResendInvitationResponse-2": {
             /** @example Invitation email resent successfully */
             message: string;
-            /** @description New invitation token */
+            /** @description Newly rotated 64-character secret bearer, returned only after this manager-authorized resend. Never present in list responses; earlier bearer links are invalidated. Resend does not reset original issuance time or grant fresh reinvitation authority. */
             new_token: string;
             expires_at: components["schemas"]["Timestamp"];
         };
@@ -3019,8 +3028,28 @@ export interface components {
          * @enum {string}
          */
         CloudDeploymentProfile: "standard" | "lite";
+        InitialAntflyRuntime: {
+            version: string;
+            /** @description Immutable published image reference. */
+            image: string;
+            image_digest: string;
+        };
+        /** @description Creation-only engine storage placement. Changing a destination after creation requires an explicit migration. */
+        CloudStorage: {
+            artifacts?: components["schemas"]["ArtifactStorage"];
+        };
+        /** @description Durable storage for engine-owned indexes, publication metadata and recovery state, using the instance's isolated Workload Identity. The server appends the instance UUID to the supplied relative prefix. Bucket IAM and source data are managed separately. Immutable after creation; moving this location requires an explicit migration. */
+        ArtifactStorage: {
+            /** @enum {string} */
+            protocol: "gcs";
+            bucket: string;
+            prefix: string;
+        };
         /** @description Cluster node configuration. Split metadata/data node counts apply only to replicated mode; single mode is normalized to one Antfly node. */
         NodeConfig: {
+            readonly initial_runtime?: components["schemas"]["InitialAntflyRuntime"];
+            /** @description Recorded engine placement from the creation request's storage object. Separate from the legacy per-node storage capacity field; immutable after creation. */
+            readonly engine_storage?: components["schemas"]["CloudStorage"];
             readonly deployment_profile?: components["schemas"]["CloudDeploymentProfile"];
             /** @description Server-bound import operation that must finish before the database starts serving. */
             readonly lite_import_operation_id?: string;
@@ -3114,6 +3143,8 @@ export interface components {
              */
             shared_inference_enabled: boolean;
             node_config?: components["schemas"]["NodeConfig"];
+            /** @description Recorded creation-time engine storage placement. Immutable; relocating storage.artifacts requires an explicit migration. */
+            readonly storage?: components["schemas"]["CloudStorage"];
             provisioning_started_at?: components["schemas"]["Timestamp"];
             provisioning_completed_at?: components["schemas"]["Timestamp"];
             /** @description Error message if provisioning failed */
@@ -3146,6 +3177,10 @@ export interface components {
             updated_at: components["schemas"]["Timestamp"];
         };
         CreateCloudInstanceRequest: {
+            /** @description Explicit first-boot runtime. Requires pinned version policy; no automatic catalog promotion is implied. */
+            initial_runtime?: components["schemas"]["InitialAntflyRuntime"];
+            /** @description Engine storage placement. storage.artifacts requires an initial native runtime at least v0.3.0-rc.5 and single mode. Immutable after creation; never moves an existing publication. */
+            storage?: components["schemas"]["CloudStorage"];
             /** @description Claim the limited one-database free year for this organization. Fails if unavailable; never silently charges the paid plan instead. The 12 calendar months start at committed creation, and deletion does not restore eligibility. */
             claim_lite_intro?: boolean;
             /** @description Explicit consent to the Lite price of USD 20 per month after any free year, including while sleeping with retained storage. Required for Lite creation. */
@@ -3274,7 +3309,7 @@ export interface components {
             dashboard_url: string;
             /**
              * Format: uri
-             * @description Colony proxy URL for accessing the attached Antfly Inference service for this instance
+             * @description Colony proxy URL for accessing shared Antfly Inference with this instance's credentials
              * @example https://platform.antfly.io/cloud/v1/abc123-def456/ai/v1
              */
             antfly_inference_proxy_url: string;
@@ -3902,7 +3937,7 @@ export interface components {
         };
         CloudSCIMGroupMemberInput: {
             user_id: components["schemas"]["UUID"];
-            /** @description SSO/SCIM principal attributes persisted for row-filter templates. */
+            /** @description Complete SCIM principal attribute snapshot contributed by this group for row-filter templates. Missing keys are removed; omitted or empty maps clear this group's previous map. Equal values from other groups remain effective; conflicting SCIM values fail closed. Manual overrides remain independent. */
             attributes?: {
                 [key: string]: unknown;
             };
@@ -3910,6 +3945,7 @@ export interface components {
         CloudSCIMGroupSyncResult: {
             groups_synced: number;
             memberships_synced: number;
+            /** @description Number of per-member attribute snapshots applied, including empty snapshots that clear previous values. */
             attributes_synced: number;
         };
         CloudGrant: {
@@ -4455,6 +4491,7 @@ export interface operations {
                     "application/json": {
                         data: {
                             invitation_id: components["schemas"]["UUID"];
+                            /** @description Non-secret invitation UUID reference; requires authenticated invitee or manager access. The token field is retained as a compatibility alias for invitation_id. */
                             token: string;
                             /** Format: email */
                             email: string;
@@ -4845,10 +4882,10 @@ export interface operations {
                     new_owner_id: components["schemas"]["UUID"];
                     /**
                      * Format: password
-                     * @description Current owner's password for confirmation (required if not using reauth_verified)
+                     * @description Current owner's password for confirmation; alternatively use reauth_verified with recent MFA on the current session or grant
                      */
                     password?: string;
-                    /** @description Set to true after OAuth re-authentication (alternative to password) */
+                    /** @description Confirm using MFA completed within the last five minutes on the current validated session or grant (alternative to password). No reauth_verified cookie is used. */
                     reauth_verified?: boolean;
                 };
             };
@@ -4872,6 +4909,15 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description The proposed new owner is no longer an active administrator after transaction-lock waits. No ownership changes were committed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -4937,7 +4983,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Invitation token */
+                /** @description Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access */
                 token: string;
             };
             cookie?: never;
@@ -4962,7 +5008,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Invitation token */
+                /** @description Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access */
                 token: string;
             };
             cookie?: never;
@@ -4987,7 +5033,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Invitation token */
+                /** @description Bearer invitation token, or non-secret UUID reference requiring authenticated invitee or manager access */
                 token: string;
             };
             cookie?: never;
@@ -5007,6 +5053,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -5015,7 +5062,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Original invitation token */
+                /** @description Original bearer token or authenticated invitation UUID reference */
                 token: string;
             };
             cookie?: never;
@@ -5034,7 +5081,35 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description Resend cooldown; Retry-After gives seconds until retry. The bearer and expiry are unchanged. */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
             500: components["responses"]["InternalServerError"];
+            /** @description Email delivery failed after bearer rotation and audit committed. Earlier links are invalid; retry with invitation_id after the cooldown. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Invitation email delivery is not configured. The bearer, expiry and cooldown are unchanged. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listAuditLogs: {
@@ -6572,6 +6647,15 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            /** @description An external ID belongs to a group managed outside SCIM. The entire sync is rolled back. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listCloudGroupMembers: {
@@ -6665,6 +6749,15 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description Membership remains managed by SCIM or SSO. No assignment is removed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     listCloudGrants: {
@@ -7464,6 +7557,15 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description The target key expired while rotation was completing. No replacement is issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     rotateCloudManagementAPIKey: {
@@ -7492,6 +7594,15 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description The target key expired while rotation was completing. No replacement is issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     downloadCloudBackup: {

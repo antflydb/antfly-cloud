@@ -136,7 +136,8 @@ func (c *Client) ConfirmLiteImport(ctx context.Context, org string, operation st
 	if response.JSON200 == nil {
 		return nil, apiError(response.StatusCode(), response.Body)
 	}
-	return mapCloudInstance(*response.JSON200), nil
+	mapped := mapCloudInstance(*response.JSON200)
+	return &mapped, nil
 }
 
 func (c *Client) LiteDownload(ctx context.Context, org string, operation string) (*LiteDownload, error) {
@@ -170,7 +171,8 @@ func (c *Client) CreateInstance(ctx context.Context, org string, request CreateI
 	if response.JSON201 == nil {
 		return nil, apiError(response.StatusCode(), response.Body)
 	}
-	return mapCloudInstance(*response.JSON201), nil
+	mapped := mapCloudInstance(*response.JSON201)
+	return &mapped, nil
 }
 
 func (c *Client) StartLiteExport(ctx context.Context, org, instance, key string) (*LiteOperation, error) {
@@ -206,5 +208,6 @@ func (c *Client) ResumeLite(ctx context.Context, org, instance string) (*CloudIn
 	if response.JSON202 == nil {
 		return nil, apiError(response.StatusCode(), response.Body)
 	}
-	return mapCloudInstance(*response.JSON202), nil
+	mapped := mapCloudInstance(*response.JSON202)
+	return &mapped, nil
 }

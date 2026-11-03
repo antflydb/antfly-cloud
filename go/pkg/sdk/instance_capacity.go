@@ -41,5 +41,6 @@ func (c *Client) UpdateInstance(ctx context.Context, org, instance string, reque
 	if response.JSON200 == nil {
 		return nil, apiError(response.StatusCode(), response.Body)
 	}
-	return mapCloudInstance(*response.JSON200), nil
+	mapped := mapCloudInstance(*response.JSON200)
+	return &mapped, nil
 }
