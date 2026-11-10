@@ -3,7 +3,7 @@ module github.com/antflydb/antfly-cloud/go
 go 1.27.3
 
 require (
-	github.com/antflydb/antfly/go/pkg/sources v0.0.0-00010101000000-000000000000
+	github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261110201927-83310a6fd751
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/getkin/kin-openapi v0.152.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
@@ -62,5 +62,3 @@ require (
 )
 
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
-
-replace github.com/antflydb/antfly/go/pkg/sources => ../../antfly/go/pkg/sources
