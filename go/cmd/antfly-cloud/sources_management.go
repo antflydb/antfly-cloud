@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/antflydb/antfly/go/pkg/sources/management"
 	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
@@ -63,6 +67,11 @@ func addSourceManagementCommands(command *cobra.Command, stateFor stateFactory) 
 			_, err := commands.Status(cmd.Context(), env, args[0])
 			return err
 		})})
+
+	command.AddCommand(newSourceRunCommand("run", stateFor))
+	sync := newSourceRunCommand("sync", stateFor)
+	sync.Deprecated = "use `antfly-cloud sources run`"
+	command.AddCommand(sync, newSourceRunsCommand(stateFor))
 }
 
 // withSourceManagement resolves the management environment before running a command.
@@ -74,4 +83,123 @@ func withSourceManagement(stateFor stateFactory, run func(cmd *cobra.Command, en
 		}
 		return run(cmd, env, args)
 	}
+}
+
+func newSourceRunCommand(name string, stateFor stateFactory) *cobra.Command {
+	var opts commands.RunOptions
+	var wait bool
+	var waitTimeout time.Duration
+	command := &cobra.Command{
+		Use:   name + " <source>",
+		Short: "Start a source acquisition run",
+		Args:  cobra.ExactArgs(1),
+		Long:  "Start a source acquisition run. With --wait, watch acquisition progress without cancelling the hosted run on timeout or interruption. With --wait --json, print one receipt containing the final or last-observed run and its idempotency key, even if watching fails.",
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			if err := validateWaitTimeout(waitTimeout); err != nil {
+				return err
+			}
+			startEnv := env
+			if wait && env.JSON {
+				startEnv.Out = io.Discard
+			}
+			receipt, err := commands.StartRun(cmd.Context(), startEnv, args[0], opts)
+			if err != nil || !wait {
+				return err
+			}
+			run, err := waitSourceRun(cmd, env, receipt.Run.SourceId, receipt.Run.Id, waitTimeout)
+			if run.Id != "" {
+				receipt.Run = run
+			}
+			return printWaitResult(env, receipt, err)
+		}),
+	}
+	command.Flags().BoolVar(&wait, "wait", false, "watch the run until acquisition finishes")
+	addWaitTimeoutFlag(command, &waitTimeout)
+	command.Flags().BoolVar(&opts.Restart, "restart", false, "restart source acquisition")
+	command.Flags().StringVar(&opts.IdempotencyKey, "idempotency-key", "", "key to safely retry the same submission")
+	return command
+}
+
+func newSourceRunsCommand(stateFor stateFactory) *cobra.Command {
+	command := &cobra.Command{Use: "runs", Short: "List, inspect, watch, or cancel source acquisition runs"}
+	var opts commands.ListOptions
+	list := &cobra.Command{Use: "list <source>", Short: "List source acquisition runs", Args: cobra.ExactArgs(1),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.ListRuns(cmd.Context(), env, args[0], opts)
+			return err
+		})}
+	list.Flags().IntVar(&opts.Limit, "limit", 20, "maximum runs per page")
+	list.Flags().StringVar(&opts.Cursor, "cursor", "", "next run page cursor")
+	list.Flags().BoolVar(&opts.All, "all", false, "list all run pages")
+	command.AddCommand(list)
+
+	command.AddCommand(&cobra.Command{Use: "inspect <source> <run-id>", Short: "Show acquisition run details", Args: cobra.ExactArgs(2),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.InspectRun(cmd.Context(), env, args[0], args[1])
+			return err
+		})})
+
+	var waitTimeout time.Duration
+	wait := &cobra.Command{Use: "wait <source> <run-id>", Short: "Watch an existing acquisition run", Args: cobra.ExactArgs(2),
+		Long: "Watch an existing acquisition run. Timeout or interruption stops watching without cancelling the hosted run. JSON output is a single bare run object.",
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			if err := validateWaitTimeout(waitTimeout); err != nil {
+				return err
+			}
+			silent := env
+			silent.Out = io.Discard
+			source, err := commands.ResolveSource(cmd.Context(), silent, args[0])
+			if err != nil {
+				return err
+			}
+			run, err := waitSourceRun(cmd, env, source.Id, args[1], waitTimeout)
+			return printWaitResult(env, run, err)
+		})}
+	addWaitTimeoutFlag(wait, &waitTimeout)
+	command.AddCommand(wait)
+
+	command.AddCommand(&cobra.Command{Use: "cancel <source> <run-id>", Short: "Request cancellation of an acquisition run", Args: cobra.ExactArgs(2),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.CancelRun(cmd.Context(), env, args[0], args[1])
+			return err
+		})})
+	return command
+}
+
+func addWaitTimeoutFlag(command *cobra.Command, timeout *time.Duration) {
+	command.Flags().DurationVar(timeout, "wait-timeout", 30*time.Minute, "maximum time to watch the run")
+}
+
+func validateWaitTimeout(timeout time.Duration) error {
+	if timeout <= 0 {
+		return &commands.Error{Code: commands.CodeInvalid, Message: "--wait-timeout must be greater than 0"}
+	}
+	return nil
+}
+
+// printWaitResult renders the final JSON result of a watch even when watching
+// failed; a write failure is reported only if watching itself succeeded.
+func printWaitResult(env commands.Env, result any, waitErr error) error {
+	if !env.JSON {
+		return waitErr
+	}
+	writeErr := (Output{W: env.Out}).PrintJSON(result)
+	if waitErr != nil {
+		return waitErr
+	}
+	return commands.Classify(writeErr)
+}
+
+// waitSourceRun leaves final JSON rendering to the caller so receipts stay atomic.
+func waitSourceRun(cmd *cobra.Command, env commands.Env, sourceID, runID string, timeout time.Duration) (management.Run, error) {
+	waitEnv := env
+	if env.JSON {
+		waitEnv.Out = io.Discard
+	}
+	run, err := commands.Wait(cmd.Context(), waitEnv, sourceID, runID, commands.WaitOptions{Timeout: timeout})
+	var failure *commands.Error
+	if !env.JSON && errors.As(err, &failure) && (failure.Code == commands.CodeTimeout || failure.Code == commands.CodeInterrupted) {
+		fmt.Fprintf(env.Out, "Resume watching with: antfly-cloud sources runs wait %s %s\n", sourceID, runID)
+	}
+	return run, err
 }

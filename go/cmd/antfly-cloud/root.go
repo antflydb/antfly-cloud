@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
@@ -109,8 +111,10 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 }
 
 func execute() int {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cmd := newRootCommand(os.Stdout, os.Stderr)
-	if err := cmd.Execute(); err != nil {
+	if err := cmd.ExecuteContext(ctx); err != nil {
 		jsonOut, _ := cmd.PersistentFlags().GetBool("json")
 		writeError(os.Stderr, jsonOut, err)
 		return errorExitCode(err)
