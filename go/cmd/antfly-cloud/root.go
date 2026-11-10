@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/spf13/cobra"
 )
 
@@ -109,10 +111,71 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 func execute() int {
 	cmd := newRootCommand(os.Stdout, os.Stderr)
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		return 1
+		jsonOut, _ := cmd.PersistentFlags().GetBool("json")
+		writeError(os.Stderr, jsonOut, err)
+		return errorExitCode(err)
 	}
 	return 0
+}
+
+// errorExitCode maps shared management and Cloud SDK errors to scriptable exits.
+func errorExitCode(err error) int {
+	var commandErr *commands.Error
+	if errors.As(err, &commandErr) {
+		return commandErr.ExitCode()
+	}
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		_, exit := apiErrorCategory(apiErr.StatusCode)
+		return exit
+	}
+	return 1
+}
+
+// apiErrorCategory maps a Cloud SDK HTTP status to its stable error code and exit code.
+func apiErrorCategory(status int) (code string, exit int) {
+	switch status {
+	case http.StatusUnauthorized:
+		return "unauthorized", 3
+	case http.StatusForbidden:
+		return "forbidden", 3
+	case http.StatusNotFound:
+		return "not_found", 4
+	case http.StatusConflict, http.StatusPreconditionFailed:
+		return "conflict", 5
+	case http.StatusBadRequest, http.StatusUnprocessableEntity:
+		return "invalid", 2
+	default:
+		return "request_failed", 1
+	}
+}
+
+// writeError preserves human errors or emits a single-line JSON error envelope.
+func writeError(w io.Writer, jsonOut bool, err error) {
+	if !jsonOut {
+		fmt.Fprintln(w, "Error:", err)
+		return
+	}
+	detail := struct {
+		Code       string `json:"code,omitempty"`
+		Status     int    `json:"status,omitempty"`
+		ServerCode string `json:"server_code,omitempty"`
+		Message    string `json:"message,omitempty"`
+	}{Code: "error", Message: err.Error()}
+	var commandErr *commands.Error
+	var apiErr *APIError
+	switch {
+	case errors.As(err, &commandErr):
+		detail.Code = commandErr.Code
+		detail.Status = commandErr.HTTPStatus
+		detail.ServerCode = commandErr.ServerCode
+	case errors.As(err, &apiErr):
+		detail.Code, _ = apiErrorCategory(apiErr.StatusCode)
+		detail.Status = apiErr.StatusCode
+	}
+	_ = json.NewEncoder(w).Encode(struct {
+		Error any `json:"error"`
+	}{Error: detail})
 }
 
 func resolveOrg(ctx context.Context, st *appState) (Organization, error) {

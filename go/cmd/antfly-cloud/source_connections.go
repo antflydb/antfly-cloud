@@ -135,25 +135,8 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 }
 
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
-	command := &cobra.Command{Use: "sources", Short: "Select, preview, and sync connected source content"}
-	command.AddCommand(&cobra.Command{Use: "list", Short: "List sources for the selected instance", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
-		if err != nil {
-			return err
-		}
-		jobs, err := st.client.SourceJobs(cmd.Context(), org.ID, instance.ID)
-		if err != nil {
-			return err
-		}
-		return st.out.Print(jobs, func() error {
-			rows := [][]string{}
-			for _, job := range jobs {
-				rows = append(rows, []string{job.ID, job.Name, job.Status})
-			}
-			table(st.out.W, []string{"ID", "SOURCE", "STATUS"}, rows)
-			return nil
-		})
-	}})
+	command := &cobra.Command{Use: "sources", Short: "Manage connected sources, runs, and processing readiness"}
+	addSourceManagementCommands(command, stateFor)
 	command.AddCommand(&cobra.Command{Use: "sync <source-id>", Args: cobra.ExactArgs(1), Short: "Queue a source sync", RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
 		if err != nil {
