@@ -227,6 +227,16 @@ func (c *Client) SyncSource(ctx context.Context, org, instance, id string) error
 	return c.sourceDo(ctx, "POST", base+"/import-jobs/"+id+"/run", nil, nil)
 }
 
+// PauseSource pauses the hosted schedule of a connected source.
+func (c *Client) PauseSource(ctx context.Context, orgID, instanceID, sourceID string) (map[string]any, error) {
+	return nil, nil
+}
+
+// ResumeSource resumes the hosted schedule of a connected source.
+func (c *Client) ResumeSource(ctx context.Context, orgID, instanceID, sourceID string) (map[string]any, error) {
+	return nil, nil
+}
+
 // ValidateSourceInstallationURL allows only the Antfly management API bootstrap.
 // Provider consent URLs are issued after browser sign-in, never opened directly by the CLI.
 func (c *Client) ValidateSourceInstallationURL(raw, provider, flow string) error {

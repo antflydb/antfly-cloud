@@ -3,9 +3,12 @@ package sdk
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -106,5 +109,112 @@ func TestSourcePreviewPreservesRelationshipMetadata(t *testing.T) {
 	}
 	if !strings.Contains(string(encoded), `"parent_identity":"workspace://parent"`) || !strings.Contains(string(encoded), `"related_resources"`) {
 		t.Fatalf("JSON output lost metadata: %s", encoded)
+	}
+}
+
+func TestSourceHostedScheduleActions(t *testing.T) {
+	const (
+		org      = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+		instance = "3bf7206e-c22c-47df-8126-366d4f53752d"
+		source   = "11111111-1111-4111-8111-111111111111"
+		base     = "/api/v1/organizations/" + org + "/cloud/instances/" + instance + "/import-jobs/" + source
+	)
+	for _, action := range []struct {
+		name string
+		call func(*Client, context.Context, string, string, string) (map[string]any, error)
+	}{
+		{"pause", (*Client).PauseSource},
+		{"resume", (*Client).ResumeSource},
+	} {
+		t.Run(action.name, func(t *testing.T) {
+			t.Run("post_and_decode", func(t *testing.T) {
+				var requests atomic.Int64
+				want := map[string]any{
+					"id": source, "name": "engineering-docs",
+					"paused":   action.name == "pause",
+					"schedule": map[string]any{"interval_seconds": float64(300)},
+				}
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requests.Add(1)
+					if r.Method != http.MethodPost || r.URL.RequestURI() != base+"/"+action.name {
+						t.Errorf("request = %s %s, want POST %s/%s", r.Method, r.URL.RequestURI(), base, action.name)
+					}
+					if got := r.Header.Get("Authorization"); got != "Bearer management-token" {
+						t.Errorf("Authorization = %q, want Bearer management-token", got)
+					}
+					w.Header().Set("Content-Type", "application/json")
+					if err := json.NewEncoder(w).Encode(want); err != nil {
+						t.Error(err)
+					}
+				}))
+				defer server.Close()
+				client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := action.call(client, context.Background(), org, instance, source)
+				if err != nil {
+					t.Fatalf("%s: %v", action.name, err)
+				}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("job = %#v, want %#v", got, want)
+				}
+				if got := requests.Load(); got != 1 {
+					t.Errorf("requests = %d, want 1", got)
+				}
+			})
+
+			t.Run("invalid_ids_without_request", func(t *testing.T) {
+				var requests atomic.Int64
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requests.Add(1)
+					http.Error(w, "unexpected request", http.StatusBadRequest)
+				}))
+				defer server.Close()
+				client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, ids := range []struct {
+					org, instance, source string
+				}{
+					{org, instance, "engineering-docs"},
+					{org, instance, "../other?token=secret"},
+					{org, instance, ""},
+					{"not-an-org-uuid", instance, source},
+					{org, "not-an-instance-uuid", source},
+				} {
+					if _, err := action.call(client, context.Background(), ids.org, ids.instance, ids.source); err == nil {
+						t.Errorf("accepted invalid IDs: %+v", ids)
+					}
+				}
+				if got := requests.Load(); got != 0 {
+					t.Errorf("invalid IDs made %d requests, want 0", got)
+				}
+			})
+
+			t.Run("not_found_api_error", func(t *testing.T) {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusNotFound)
+					if err := json.NewEncoder(w).Encode(map[string]any{"error": "source not found"}); err != nil {
+						t.Error(err)
+					}
+				}))
+				defer server.Close()
+				client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = action.call(client, context.Background(), org, instance, source)
+				var apiErr *APIError
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("error = %v (%T), want *APIError", err, err)
+				}
+				if apiErr.StatusCode != http.StatusNotFound {
+					t.Errorf("StatusCode = %d, want 404", apiErr.StatusCode)
+				}
+			})
+		})
 	}
 }
