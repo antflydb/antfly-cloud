@@ -22,12 +22,17 @@ func sourceManagementEndpoint(apiURL, orgID, instanceID string) string {
 }
 
 // sourceManagement resolves the selected scope and refreshes credentials per request.
-func sourceManagement(cmd *cobra.Command, stateFor stateFactory) (commands.Env, *appState, error) {
+func sourceManagement(cmd *cobra.Command, stateFor stateFactory) (commands.Env, error) {
 	st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
 	if err != nil {
-		return commands.Env{}, st, err
+		return commands.Env{}, err
 	}
-	client, err := management.NewClientWithOptions(sourceManagementEndpoint(st.cfg.APIURL, org.ID, instance.ID), management.Options{
+	return sourceManagementForInstance(stateFor, st, org.ID, instance.ID)
+}
+
+// sourceManagementForInstance builds the management environment for an already resolved scope.
+func sourceManagementForInstance(stateFor stateFactory, st *appState, orgID, instanceID string) (commands.Env, error) {
+	client, err := management.NewClientWithOptions(sourceManagementEndpoint(st.cfg.APIURL, orgID, instanceID), management.Options{
 		HTTPClient: &http.Client{Timeout: st.timeout},
 		Token: func(context.Context) (string, error) {
 			current, err := stateFor(true)
@@ -38,9 +43,9 @@ func sourceManagement(cmd *cobra.Command, stateFor stateFactory) (commands.Env, 
 		},
 	})
 	if err != nil {
-		return commands.Env{}, st, err
+		return commands.Env{}, err
 	}
-	return commands.Env{API: client, Out: st.out.W, JSON: st.out.JSON}, st, nil
+	return commands.Env{API: client, Out: st.out.W, JSON: st.out.JSON}, nil
 }
 
 // addSourceManagementCommands wires the shared source management commands into the sources group.
@@ -72,16 +77,70 @@ func addSourceManagementCommands(command *cobra.Command, stateFor stateFactory) 
 	sync := newSourceRunCommand("sync", stateFor)
 	sync.Deprecated = "use `antfly-cloud sources run`"
 	command.AddCommand(sync, newSourceRunsCommand(stateFor))
+
+	processing := &cobra.Command{Use: "processing", Short: "Inspect source processing readiness"}
+	processing.AddCommand(&cobra.Command{Use: "status <source>", Short: "Show processing readiness separately from acquisition runs", Args: cobra.ExactArgs(1),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.ProcessingStatus(cmd.Context(), env, args[0])
+			return err
+		})})
+	artifacts := &cobra.Command{Use: "artifacts", Short: "Inspect source artifacts"}
+	artifacts.AddCommand(&cobra.Command{Use: "list <source>", Short: "List source artifacts and their readiness", Args: cobra.ExactArgs(1),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.ListArtifacts(cmd.Context(), env, args[0])
+			return err
+		})})
+	command.AddCommand(processing, artifacts, newSourceScheduleCommand("pause", stateFor), newSourceScheduleCommand("resume", stateFor))
 }
 
 // withSourceManagement resolves the management environment before running a command.
 func withSourceManagement(stateFor stateFactory, run func(cmd *cobra.Command, env commands.Env, args []string) error) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		env, _, err := sourceManagement(cmd, stateFor)
+		env, err := sourceManagement(cmd, stateFor)
 		if err != nil {
 			return err
 		}
 		return run(cmd, env, args)
+	}
+}
+
+func newSourceScheduleCommand(action string, stateFor stateFactory) *cobra.Command {
+	verb, receipt := "Pause", "Paused"
+	if action == "resume" {
+		verb, receipt = "Resume", "Resumed"
+	}
+	return &cobra.Command{
+		Use:   action + " <source>",
+		Short: verb + " the hosted schedule, not a running acquisition",
+		Long:  verb + " the hosted schedule of a connected source. This Cloud-only action does not change a running acquisition.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
+			if err != nil {
+				return err
+			}
+			env, err := sourceManagementForInstance(stateFor, st, org.ID, instance.ID)
+			if err != nil {
+				return err
+			}
+			env.Out = io.Discard
+			source, err := commands.ResolveSource(cmd.Context(), env, args[0])
+			if err != nil {
+				return err
+			}
+			schedule := st.client.PauseSource
+			if action == "resume" {
+				schedule = st.client.ResumeSource
+			}
+			job, err := schedule(cmd.Context(), org.ID, instance.ID, source.Id)
+			if err != nil {
+				return err
+			}
+			return st.out.Print(job, func() error {
+				_, err := fmt.Fprintf(st.out.W, "%s source %s (%s).\n", receipt, source.Name, source.Id)
+				return err
+			})
+		},
 	}
 }
 

@@ -228,13 +228,27 @@ func (c *Client) SyncSource(ctx context.Context, org, instance, id string) error
 }
 
 // PauseSource pauses the hosted schedule of a connected source.
-func (c *Client) PauseSource(ctx context.Context, orgID, instanceID, sourceID string) (map[string]any, error) {
-	return nil, nil
+func (c *Client) PauseSource(ctx context.Context, orgID, instanceID, id string) (map[string]any, error) {
+	return c.sourceJobAction(ctx, orgID, instanceID, id, "pause")
 }
 
 // ResumeSource resumes the hosted schedule of a connected source.
-func (c *Client) ResumeSource(ctx context.Context, orgID, instanceID, sourceID string) (map[string]any, error) {
-	return nil, nil
+func (c *Client) ResumeSource(ctx context.Context, orgID, instanceID, id string) (map[string]any, error) {
+	return c.sourceJobAction(ctx, orgID, instanceID, id, "resume")
+}
+
+// sourceJobAction posts an action to a connected source's import job.
+func (c *Client) sourceJobAction(ctx context.Context, orgID, instanceID, id, action string) (map[string]any, error) {
+	base, err := sourceInstancePath(orgID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if err := sourceID(id); err != nil {
+		return nil, err
+	}
+	var result map[string]any
+	err = c.sourceDo(ctx, "POST", base+"/import-jobs/"+url.PathEscape(id)+"/"+action, nil, &result)
+	return result, err
 }
 
 // ValidateSourceInstallationURL allows only the Antfly management API bootstrap.
