@@ -128,7 +128,11 @@ func (c *Client) SourceConnections(ctx context.Context, org, instance, provider 
 	var result struct {
 		Data []SourceConnection `json:"data"`
 	}
-	err = c.sourceDo(ctx, "GET", base+"/provider-auths?provider="+url.QueryEscape(provider), nil, &result)
+	path := base + "/provider-auths"
+	if provider != "" {
+		path += "?provider=" + url.QueryEscape(provider)
+	}
+	err = c.sourceDo(ctx, "GET", path, nil, &result)
 	return result.Data, err
 }
 func (c *Client) StartSourceInstallation(ctx context.Context, org, instance, provider, reconnect string, services []string) (SourceInstallation, error) {

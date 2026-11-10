@@ -137,6 +137,7 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 	command := &cobra.Command{Use: "sources", Short: "Manage connected sources, runs, and processing readiness"}
 	addSourceManagementCommands(command, stateFor)
+	command.AddCommand(newSourceManifestCommand("plan", stateFor), newSourceManifestCommand("apply", stateFor))
 	for _, previewOnly := range []bool{true, false} {
 		previewOnly := previewOnly
 		var connection, resource, name, target string

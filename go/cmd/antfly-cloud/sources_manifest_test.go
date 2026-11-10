@@ -242,10 +242,13 @@ func TestSourcesManifestLifecycle(t *testing.T) {
 					t.Fatalf("apply %d: %v; output: %s", i+1, err, output)
 				}
 				manifestTestAssertWrites(t, f, 1)
-				var results []commands.ApplyResult
-				if err := json.Unmarshal([]byte(output), &results); err != nil {
+				var envelope struct {
+					Results []commands.ApplyResult `json:"results"`
+				}
+				if err := json.Unmarshal([]byte(output), &envelope); err != nil {
 					t.Fatalf("decode apply output: %v; output: %s", err, output)
 				}
+				results := envelope.Results
 				if len(results) != 1 || results[0].Key != manifestTestKey || results[0].SourceID != id || results[0].Action != wantAction {
 					t.Fatalf("apply %d = %+v, want %s for %s (%s)", i+1, results, wantAction, manifestTestKey, id)
 				}
