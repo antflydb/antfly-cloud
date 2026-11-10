@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -253,6 +254,14 @@ func (c *Client) sourceJobAction(ctx context.Context, orgID, instanceID, id, act
 	var result map[string]any
 	err = c.sourceDo(ctx, "POST", base+"/import-jobs/"+url.PathEscape(id)+"/"+action, nil, &result)
 	return result, err
+}
+
+func (c *Client) ValidateSourceConnection(ctx context.Context, orgID, instanceID, authID string) (SourceConnection, error) {
+	return SourceConnection{}, errors.New("not implemented")
+}
+
+func (c *Client) RenameSourceConnection(ctx context.Context, orgID, instanceID, authID, displayName string) (SourceConnection, error) {
+	return SourceConnection{}, errors.New("not implemented")
 }
 
 // ValidateSourceInstallationURL allows only the Antfly management API bootstrap.

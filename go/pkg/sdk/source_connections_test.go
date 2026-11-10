@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -216,5 +217,142 @@ func TestSourceHostedScheduleActions(t *testing.T) {
 				}
 			})
 		})
+	}
+}
+
+func TestSourceConnectionValidateAndRenameContract(t *testing.T) {
+	const (
+		org      = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+		instance = "3bf7206e-c22c-47df-8126-366d4f53752d"
+		auth     = "631cd87b-035c-4e05-ae2e-421eae4c0f96"
+		base     = "/api/v1/organizations/" + org + "/cloud/instances/" + instance + "/provider-auths/" + auth
+	)
+	for _, tc := range []struct {
+		name, method, path, input, displayName string
+	}{
+		{"validate", http.MethodPost, base + "/validate", "", "company-google"},
+		{"rename_trimmed", http.MethodPatch, base, "  eng-google  ", "eng-google"},
+		{"rename_200_characters", http.MethodPatch, base, strings.Repeat("界", 200), strings.Repeat("界", 200)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var requests atomic.Int64
+			want := SourceConnection{ID: auth, Provider: "google_workspace", DisplayName: tc.displayName, Status: "needs_reauthorization", Enabled: true}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests.Add(1)
+				if r.Method != tc.method || r.URL.RequestURI() != tc.path {
+					t.Errorf("request = %s %s, want %s %s", r.Method, r.URL.RequestURI(), tc.method, tc.path)
+				}
+				if got := r.Header.Get("Authorization"); got != "Bearer management-token" {
+					t.Errorf("Authorization = %q", got)
+				}
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					t.Error(err)
+				}
+				if tc.method == http.MethodPost {
+					if len(body) != 0 {
+						t.Errorf("validate body = %q, want no body", body)
+					}
+				} else {
+					var got map[string]any
+					if err := json.Unmarshal(body, &got); err != nil {
+						t.Errorf("rename body: %v", err)
+					} else if !reflect.DeepEqual(got, map[string]any{"display_name": tc.displayName}) {
+						t.Errorf("rename body = %#v", got)
+					}
+					if got := r.Header.Get("Content-Type"); got != "application/json" {
+						t.Errorf("Content-Type = %q", got)
+					}
+				}
+				w.Header().Set("Content-Type", "application/json")
+				if err := json.NewEncoder(w).Encode(want); err != nil {
+					t.Error(err)
+				}
+			}))
+			defer server.Close()
+			client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got SourceConnection
+			if tc.method == http.MethodPost {
+				got, err = client.ValidateSourceConnection(context.Background(), org, instance, auth)
+			} else {
+				got, err = client.RenameSourceConnection(context.Background(), org, instance, auth, tc.input)
+			}
+			if err != nil {
+				t.Errorf("connection action: %v", err)
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("summary = %+v, want %+v", got, want)
+			}
+			if got := requests.Load(); got != 1 {
+				t.Errorf("requests = %d, want 1", got)
+			}
+		})
+	}
+}
+
+func TestSourceConnectionActionsRejectNonUUIDWithoutRequest(t *testing.T) {
+	const org = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+	const instance = "3bf7206e-c22c-47df-8126-366d4f53752d"
+	var requests atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "unexpected request", http.StatusBadRequest)
+	}))
+	defer server.Close()
+	client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"", "company-google", "../other?token=secret", "not-a-uuid"} {
+		t.Run(id, func(t *testing.T) {
+			if _, err := client.ValidateSourceConnection(context.Background(), org, instance, id); err == nil {
+				t.Error("validate accepted non-UUID connection ID")
+			}
+			if _, err := client.RenameSourceConnection(context.Background(), org, instance, id, "eng-google"); err == nil {
+				t.Error("rename accepted non-UUID connection ID")
+			}
+		})
+	}
+	if got := requests.Load(); got != 0 {
+		t.Errorf("invalid IDs made %d requests, want 0", got)
+	}
+}
+
+func TestRenameSourceConnectionRejectsBadNamesWithoutRequest(t *testing.T) {
+	var requests atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "unexpected request", http.StatusBadRequest)
+	}))
+	defer server.Close()
+	client, err := NewClient(server.URL+"/api/v1", "management-token", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ name, value string }{
+		{"empty", ""},
+		{"whitespace", " \t\n "},
+		{"201_ascii", strings.Repeat("a", 201)},
+		{"201_unicode", strings.Repeat("界", 201)},
+		{"nul", "eng\x00google"},
+		{"newline", "eng\ngoogle"},
+		{"tab", "eng\tgoogle"},
+		{"delete", "eng\x7fgoogle"},
+		{"unicode_control", "eng\u0085google"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := client.RenameSourceConnection(context.Background(),
+				"9a17e518-6274-4f79-8dff-80eb53e6d86c", "3bf7206e-c22c-47df-8126-366d4f53752d",
+				"631cd87b-035c-4e05-ae2e-421eae4c0f96", tc.value)
+			if err == nil {
+				t.Errorf("accepted bad display name %q", tc.value)
+			}
+		})
+	}
+	if got := requests.Load(); got != 0 {
+		t.Errorf("bad names made %d requests, want 0", got)
 	}
 }
