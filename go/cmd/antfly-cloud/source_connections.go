@@ -400,21 +400,19 @@ func newConnectionRenameCommand(stateFor stateFactory) *cobra.Command {
 }
 
 // sourceConnectionCommand resolves the selected instance and a connection given
-// by ID or unique display name.
+// by ID (used as-is, without listing) or unique display name.
 func sourceConnectionCommand(ctx context.Context, stateFor stateFactory, ref string) (*appState, Organization, CloudInstance, string, error) {
 	st, org, instance, err := sourceCommandInstance(ctx, stateFor)
 	if err != nil {
 		return nil, Organization{}, CloudInstance{}, "", err
 	}
-	connections, err := st.client.SourceConnections(ctx, org.ID, instance.ID, "")
+	if isUUID(ref) {
+		return st, org, instance, ref, nil
+	}
+	connections, err := listSourceConnectionsByName(ctx, st, org.ID, instance.ID)
 	if err != nil {
 		return nil, Organization{}, CloudInstance{}, "", err
 	}
-	for _, connection := range connections {
-		if connection.ID == ref {
-			return st, org, instance, ref, nil
-		}
-	}
-	id, err := resolveSourceConnection(connections, ref)
+	id, err := matchSourceConnectionName(connections, ref)
 	return st, org, instance, id, err
 }

@@ -490,8 +490,8 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 // Help for the `instance connection` and top-level `connection` commands, which
 // show endpoint URLs rather than provider connections.
 const (
-	instanceConnectionShort = "Show Antfly instance endpoint URLs (not provider connections)"
-	instanceConnectionLong  = "Show an Antfly instance's endpoint URLs (proxy, dashboard, inference). These are not provider connections; for Google Workspace, Slack, or Discord connections use `antfly-cloud connections`."
+	instanceConnectionShort = "Show Antfly instance endpoint URLs (not source connections)"
+	instanceConnectionLong  = "Show an Antfly instance's endpoint URLs (proxy, dashboard, inference). These are not source connections; for Google Workspace, Slack, Discord, or GCS source connections use `antfly-cloud connections`."
 )
 
 func newConnectionCommand(stateFor stateFactory) *cobra.Command {

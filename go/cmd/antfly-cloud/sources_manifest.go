@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,18 +82,18 @@ func sourceManifestOptions(st *appState, orgID, instanceID string) commands.Plan
 			return sourceManifestID(instanceID, key)
 		},
 		ResolveConnection: func(ctx context.Context, ref string) (string, error) {
-			if _, err := uuid.Parse(ref); err == nil {
+			if isUUID(ref) {
 				return ref, nil
 			}
 			if !loaded {
 				var err error
-				connections, err = st.client.SourceConnections(ctx, orgID, instanceID, "")
+				connections, err = listSourceConnectionsByName(ctx, st, orgID, instanceID)
 				if err != nil {
 					return "", err
 				}
 				loaded = true
 			}
-			return resolveSourceConnection(connections, ref)
+			return matchSourceConnectionName(connections, ref)
 		},
 		DefaultPermissions: func(ctx context.Context) (management.Permissions, error) {
 			user, err := st.client.CurrentUser(ctx)
@@ -104,9 +105,9 @@ func sourceManifestOptions(st *appState, orgID, instanceID string) commands.Plan
 	}
 }
 
-// resolveSourceConnection returns the ID of the single enabled connection whose
+// matchSourceConnectionName returns the ID of the single enabled connection whose
 // display name is exactly ref.
-func resolveSourceConnection(connections []sdk.SourceConnection, ref string) (string, error) {
+func matchSourceConnectionName(connections []sdk.SourceConnection, ref string) (string, error) {
 	var matches []string
 	for _, connection := range connections {
 		if connection.Enabled && connection.DisplayName == ref {
@@ -209,4 +210,16 @@ func sourceManifestJSONValue(value any) (any, error) {
 		}
 	}
 	return value, nil
+}
+
+// listSourceConnectionsByName lists connections so a display name can be
+// matched. Listing needs instance-wide connection read access; callers limited
+// to a destination table can still reference a connection by its ID.
+func listSourceConnectionsByName(ctx context.Context, st *appState, orgID, instanceID string) ([]sdk.SourceConnection, error) {
+	connections, err := st.client.SourceConnections(ctx, orgID, instanceID, "")
+	var apiErr *sdk.APIError
+	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden {
+		return nil, fmt.Errorf("looking up a source connection by name requires permission to list connections; reference it by ID instead: %w", err)
+	}
+	return connections, err
 }

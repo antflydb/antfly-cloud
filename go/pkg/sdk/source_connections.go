@@ -16,6 +16,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserAgent identifies requests made by the Antfly Cloud SDK and CLI.
+const UserAgent = "antfly-cloud"
+
 type SourceConnection struct {
 	ID          string         `json:"id"`
 	Provider    string         `json:"provider"`
@@ -98,7 +101,7 @@ func (c *Client) sourceDo(ctx context.Context, method, path string, body, out an
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.sourceToken)
-	req.Header.Set("User-Agent", "antfly-cloud")
+	req.Header.Set("User-Agent", UserAgent)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

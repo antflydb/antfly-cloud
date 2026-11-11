@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	sdk "github.com/antflydb/antfly-cloud/go/pkg/sdk"
 	"github.com/antflydb/antfly/go/pkg/sources/management"
 	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ func sourceManagement(cmd *cobra.Command, stateFor stateFactory) (commands.Env, 
 // sourceManagementForInstance builds the management environment for an already resolved scope.
 func sourceManagementForInstance(stateFor stateFactory, st *appState, orgID, instanceID string) (commands.Env, error) {
 	client, err := management.NewClientWithOptions(sourceManagementEndpoint(st.cfg.APIURL, orgID, instanceID), management.Options{
-		HTTPClient: &http.Client{Timeout: st.timeout},
+		HTTPClient: &http.Client{Timeout: st.timeout, Transport: userAgentTransport{http.DefaultTransport}},
 		Token: func(context.Context) (string, error) {
 			current, err := stateFor(true)
 			if err != nil {
@@ -322,4 +323,14 @@ func waitSourceRun(cmd *cobra.Command, env commands.Env, sourceID, runID string,
 		fmt.Fprintf(env.Out, "Resume watching with: antfly-cloud sources runs wait %s %s\n", sourceID, runID)
 	}
 	return run, err
+}
+
+// userAgentTransport identifies shared-management requests as the Cloud CLI,
+// matching the Cloud SDK's source requests.
+type userAgentTransport struct{ base http.RoundTripper }
+
+func (t userAgentTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.Header.Set("User-Agent", sdk.UserAgent)
+	return t.base.RoundTrip(r)
 }
