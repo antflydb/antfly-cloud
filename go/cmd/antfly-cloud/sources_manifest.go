@@ -77,6 +77,7 @@ Sources absent from the manifest are left untouched.`,
 func sourceManifestOptions(st *appState, orgID, instanceID string) commands.PlanOptions {
 	var connections []sdk.SourceConnection
 	var loaded bool
+	var me string
 	return commands.PlanOptions{
 		Identity: func(key string) (string, error) {
 			return sourceManifestID(instanceID, key)
@@ -96,11 +97,14 @@ func sourceManifestOptions(st *appState, orgID, instanceID string) commands.Plan
 			return matchSourceConnectionName(connections, ref)
 		},
 		DefaultPermissions: func(ctx context.Context) (management.Permissions, error) {
-			user, err := st.client.CurrentUser(ctx)
-			if err != nil {
-				return management.Permissions{}, err
+			if me == "" { // one lookup per plan or apply
+				user, err := st.client.CurrentUser(ctx)
+				if err != nil {
+					return management.Permissions{}, err
+				}
+				me = user.ID
 			}
-			return management.Permissions{Public: false, Readers: []string{"user:" + user.ID}}, nil
+			return management.Permissions{Public: false, Readers: []string{"user:" + me}}, nil
 		},
 	}
 }

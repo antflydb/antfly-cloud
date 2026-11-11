@@ -21,6 +21,10 @@ type appState struct {
 	client  *Client
 	out     Output
 	timeout time.Duration
+	// token returns a current bearer token, refreshing the login with the
+	// caller's context so cancellation and deadlines apply. Tests that build
+	// appState directly may leave it nil.
+	token func(context.Context) (string, error)
 }
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
@@ -47,7 +51,19 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 	cmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "write JSON output")
 	cmd.PersistentFlags().DurationVar(&timeout, "timeout", 15*time.Second, "API request timeout")
 
-	stateFor := func(requireToken bool) (*appState, error) {
+	// runCtx is the executing command's context (Ctrl-C and deadlines), so the
+	// login refresh performed while loading state can be cancelled.
+	runCtx := context.Background()
+	cmd.PersistentPreRun = func(c *cobra.Command, _ []string) { runCtx = c.Context() }
+	var loadState func(ctx context.Context, requireToken bool) (*appState, error)
+	tokenFor := func(ctx context.Context) (string, error) {
+		current, err := loadState(ctx, true)
+		if err != nil {
+			return "", err
+		}
+		return current.cfg.bearerToken(), nil
+	}
+	loadState = func(ctx context.Context, requireToken bool) (*appState, error) {
 		cfg, err := loadConfig(configFile)
 		if err != nil {
 			return nil, err
@@ -65,7 +81,7 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		httpClient := &http.Client{Timeout: timeout}
 		if requireToken {
 			var refreshed bool
-			cfg, refreshed, err = refreshConfigIfNeeded(context.Background(), cfg, httpClient)
+			cfg, refreshed, err = refreshConfigIfNeeded(ctx, cfg, httpClient)
 			if err != nil {
 				return nil, err
 			}
@@ -83,8 +99,9 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		if err != nil {
 			return nil, err
 		}
-		return &appState{cfg: cfg, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout}, nil
+		return &appState{cfg: cfg, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout, token: tokenFor}, nil
 	}
+	stateFor := func(requireToken bool) (*appState, error) { return loadState(runCtx, requireToken) }
 
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)

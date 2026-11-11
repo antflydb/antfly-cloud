@@ -33,15 +33,19 @@ func sourceManagement(cmd *cobra.Command, stateFor stateFactory) (commands.Env, 
 
 // sourceManagementForInstance builds the management environment for an already resolved scope.
 func sourceManagementForInstance(stateFor stateFactory, st *appState, orgID, instanceID string) (commands.Env, error) {
-	client, err := management.NewClientWithOptions(sourceManagementEndpoint(st.cfg.APIURL, orgID, instanceID), management.Options{
-		HTTPClient: &http.Client{Timeout: st.timeout, Transport: userAgentTransport{http.DefaultTransport}},
-		Token: func(context.Context) (string, error) {
+	token := st.token
+	if token == nil {
+		token = func(context.Context) (string, error) {
 			current, err := stateFor(true)
 			if err != nil {
 				return "", err
 			}
 			return current.cfg.bearerToken(), nil
-		},
+		}
+	}
+	client, err := management.NewClientWithOptions(sourceManagementEndpoint(st.cfg.APIURL, orgID, instanceID), management.Options{
+		HTTPClient: &http.Client{Timeout: st.timeout, Transport: userAgentTransport{http.DefaultTransport}},
+		Token:      token,
 	})
 	if err != nil {
 		return commands.Env{}, err
