@@ -194,6 +194,15 @@ func newSourcePurgeCommand(stateFor stateFactory) *cobra.Command {
 			"Requires --yes. With --wait, watch the purge run without cancelling it on timeout or interruption. " +
 			"With --wait --json, print one receipt containing the mutation, final or last-observed run, and idempotency key, even if watching fails.",
 		Args: cobra.ExactArgs(1),
+		// Refuse before resolving credentials or scope, so an unconfirmed purge
+		// never depends on login state. Purge itself rejects without API calls.
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.Confirm {
+				return nil
+			}
+			_, err := commands.Purge(cmd.Context(), commands.Env{}, args[0], opts)
+			return err
+		},
 		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
 			if err := validateWaitTimeout(waitTimeout); err != nil {
 				return err

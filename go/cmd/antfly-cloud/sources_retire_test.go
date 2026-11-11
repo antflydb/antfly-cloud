@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -168,5 +169,20 @@ func TestSourcesPurgeSubmissionAndWait(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestSourcesPurgeConfirmationPrecedesLogin(t *testing.T) {
+	factory := func(bool) (*appState, error) {
+		t.Fatal("purge without --yes must not resolve credentials or scope")
+		return nil, nil
+	}
+	command := newSourcesCommand(factory)
+	command.SetOut(io.Discard)
+	command.SetErr(io.Discard)
+	command.SetArgs([]string{"purge", "engineering-docs"})
+	err := command.Execute()
+	if got := errorExitCode(err); got != 2 {
+		t.Fatalf("exit = %d, want 2; err = %v", got, err)
 	}
 }
