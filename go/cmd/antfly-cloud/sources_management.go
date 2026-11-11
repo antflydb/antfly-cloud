@@ -78,6 +78,18 @@ func addSourceManagementCommands(command *cobra.Command, stateFor stateFactory) 
 	sync.Deprecated = "use `antfly-cloud sources run`"
 	command.AddCommand(sync, newSourceRunsCommand(stateFor))
 
+	command.AddCommand(&cobra.Command{
+		Use:   "archive <source>",
+		Short: "Archive a source while retaining indexed content",
+		Long:  "Archive a source. Archive retains indexed content; purge deletes only source-owned records. Removing an entry from a manifest does neither.",
+		Args:  cobra.ExactArgs(1),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			_, err := commands.Archive(cmd.Context(), env, args[0])
+			return err
+		}),
+	})
+	command.AddCommand(newSourcePurgeCommand(stateFor))
+
 	processing := &cobra.Command{Use: "processing", Short: "Inspect source processing readiness"}
 	processing.AddCommand(&cobra.Command{Use: "status <source>", Short: "Show processing readiness separately from acquisition runs", Args: cobra.ExactArgs(1),
 		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
@@ -157,25 +169,46 @@ func newSourceRunCommand(name string, stateFor stateFactory) *cobra.Command {
 			if err := validateWaitTimeout(waitTimeout); err != nil {
 				return err
 			}
-			startEnv := env
-			if wait && env.JSON {
-				startEnv.Out = io.Discard
-			}
-			receipt, err := commands.StartRun(cmd.Context(), startEnv, args[0], opts)
+			receipt, err := commands.StartRun(cmd.Context(), runStartEnv(env, wait), args[0], opts)
 			if err != nil || !wait {
 				return err
 			}
-			run, err := waitSourceRun(cmd, env, receipt.Run.SourceId, receipt.Run.Id, waitTimeout)
-			if run.Id != "" {
-				receipt.Run = run
-			}
-			return printWaitResult(env, receipt, err)
+			return waitAndPrintReceipt(cmd, env, &receipt, &receipt.Run, waitTimeout)
 		}),
 	}
 	command.Flags().BoolVar(&wait, "wait", false, "watch the run until acquisition finishes")
 	addWaitTimeoutFlag(command, &waitTimeout)
 	command.Flags().BoolVar(&opts.Restart, "restart", false, "restart source acquisition")
 	command.Flags().StringVar(&opts.IdempotencyKey, "idempotency-key", "", "key to safely retry the same submission")
+	return command
+}
+
+func newSourcePurgeCommand(stateFor stateFactory) *cobra.Command {
+	var opts commands.PurgeOptions
+	var wait bool
+	var waitTimeout time.Duration
+	command := &cobra.Command{
+		Use:   "purge <source>",
+		Short: "Purge source-owned indexed records with explicit confirmation",
+		Long: "Purge deletes only source-owned records. Archive retains indexed content. Removing an entry from a manifest does neither. " +
+			"Requires --yes. With --wait, watch the purge run without cancelling it on timeout or interruption. " +
+			"With --wait --json, print one receipt containing the mutation, final or last-observed run, and idempotency key, even if watching fails.",
+		Args: cobra.ExactArgs(1),
+		RunE: withSourceManagement(stateFor, func(cmd *cobra.Command, env commands.Env, args []string) error {
+			if err := validateWaitTimeout(waitTimeout); err != nil {
+				return err
+			}
+			receipt, err := commands.Purge(cmd.Context(), runStartEnv(env, wait), args[0], opts)
+			if err != nil || !wait {
+				return err
+			}
+			return waitAndPrintReceipt(cmd, env, &receipt, &receipt.Run, waitTimeout)
+		}),
+	}
+	command.Flags().BoolVar(&opts.Confirm, "yes", false, "confirm deletion of source-owned indexed records")
+	command.Flags().StringVar(&opts.IdempotencyKey, "idempotency-key", "", "key to safely retry the same submission")
+	command.Flags().BoolVar(&wait, "wait", false, "watch the purge run until it finishes")
+	addWaitTimeoutFlag(command, &waitTimeout)
 	return command
 }
 
@@ -234,6 +267,25 @@ func validateWaitTimeout(timeout time.Duration) error {
 		return &commands.Error{Code: commands.CodeInvalid, Message: "--wait-timeout must be greater than 0"}
 	}
 	return nil
+}
+
+// runStartEnv silences the start command's output under --wait --json so the
+// final receipt is the only JSON printed.
+func runStartEnv(env commands.Env, wait bool) commands.Env {
+	if wait && env.JSON {
+		env.Out = io.Discard
+	}
+	return env
+}
+
+// waitAndPrintReceipt watches a started run, records the final or last-observed
+// run in the receipt, and prints the receipt. run must point into receipt.
+func waitAndPrintReceipt(cmd *cobra.Command, env commands.Env, receipt any, run *management.Run, timeout time.Duration) error {
+	observed, err := waitSourceRun(cmd, env, run.SourceId, run.Id, timeout)
+	if observed.Id != "" {
+		*run = observed
+	}
+	return printWaitResult(env, receipt, err)
 }
 
 // printWaitResult renders the final JSON result of a watch even when watching

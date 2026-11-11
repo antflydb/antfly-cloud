@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -256,12 +257,41 @@ func (c *Client) sourceJobAction(ctx context.Context, orgID, instanceID, id, act
 	return result, err
 }
 
+// sourceConnectionPath validates the instance and connection IDs and returns
+// the connection's provider-auth path.
+func sourceConnectionPath(orgID, instanceID, authID string) (string, error) {
+	base, err := sourceInstancePath(orgID, instanceID)
+	if err != nil {
+		return "", err
+	}
+	if err := sourceID(authID); err != nil {
+		return "", err
+	}
+	return base + "/provider-auths/" + url.PathEscape(authID), nil
+}
+
 func (c *Client) ValidateSourceConnection(ctx context.Context, orgID, instanceID, authID string) (SourceConnection, error) {
-	return SourceConnection{}, errors.New("not implemented")
+	path, err := sourceConnectionPath(orgID, instanceID, authID)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, http.MethodPost, path+"/validate", nil, &result)
+	return result, err
 }
 
 func (c *Client) RenameSourceConnection(ctx context.Context, orgID, instanceID, authID, displayName string) (SourceConnection, error) {
-	return SourceConnection{}, errors.New("not implemented")
+	path, err := sourceConnectionPath(orgID, instanceID, authID)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" || utf8.RuneCountInString(displayName) > 200 || strings.ContainsFunc(displayName, unicode.IsControl) {
+		return SourceConnection{}, fmt.Errorf("display name must contain 1 to 200 characters and no control characters")
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, http.MethodPatch, path, map[string]string{"display_name": displayName}, &result)
+	return result, err
 }
 
 // ValidateSourceInstallationURL allows only the Antfly management API bootstrap.
