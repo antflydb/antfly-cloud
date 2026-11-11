@@ -69,6 +69,20 @@ antfly-cloud sources apply --file sources.yaml
   publication and access private to you unless `permissions` is declared.
 - Unknown fields are rejected. Streams, artifacts, processing and knowledge use the
   shared declaration schemas.
+- Provider settings go in `config`; publication is a top-level field. For example,
+  a GCS source with projected PDF page text (the manifest form of
+  `sources add --page-provenance`):
+
+  ```yaml
+  - key: pages
+    connection: CONNECTION_ID
+    table: docs
+    publication: text
+    config: {bucket: my-bucket, prefix: documents/, page_provenance: true, suffixes: [".txt"]}
+  ```
+
+  `plan` does not sample content the way `sources preview` does; access and
+  citation checks happen on the first run. Preview a new connection first.
 - `apply` sends each update with the revision it planned against. If someone else
   edited the source in between, that source reports a conflict (exit 5) and is
   not overwritten; review with `plan` and apply again.
@@ -89,16 +103,25 @@ kept and the same command can be retried.
 
 ## Connections
 
-`antfly-cloud connections` manages external provider connections (Google
-Workspace, Slack, Discord). The singular `antfly-cloud connection` shows an
-instance's endpoint URLs and is unrelated.
+`antfly-cloud connections` manages source connections: the hosted credentials
+sources use to read Google Workspace, Slack, Discord, or GCS content. The
+singular `antfly-cloud connection` shows an instance's endpoint URLs and is
+unrelated.
 
 ```sh
-antfly-cloud connections connect google-workspace --name company-google
+antfly-cloud connections connect google-workspace --name company-google   # browser authorization
+antfly-cloud connections add gcs --name "Private docs" --bucket my-bucket --prefix documents  # keyless GCS
 antfly-cloud connections list
 antfly-cloud connections validate company-google
 antfly-cloud connections rename company-google eng-google
 ```
+
+See the README's "Private GCS sources" section for the GCS operator steps.
+
+Commands and manifests accept a connection ID or a unique display name. Looking
+up a name lists the instance's connections, which needs instance-wide connection
+read access. If you only have write access to a destination table, use the
+connection ID you were given.
 
 ## Scripting
 
