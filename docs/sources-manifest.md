@@ -83,9 +83,12 @@ antfly-cloud sources apply --file sources.yaml
 
   `plan` does not sample content the way `sources preview` does; access and
   citation checks happen on the first run. Preview a new connection first.
-- `apply` sends each update with the revision it planned against. If someone else
-  edited the source in between, that source reports a conflict (exit 5) and is
-  not overwritten; review with `plan` and apply again.
+- `apply` writes only with server-side preconditions: new sources are created only
+  if they still do not exist (`If-None-Match: *`), and updates only if the source
+  is still at the revision `plan` read (`If-Match`). If someone else created or
+  edited the source in between, that source reports a conflict (exit 5) and is not
+  overwritten; review with `plan` and apply again. Servers that cannot honor these
+  preconditions reject `apply` as unsupported (exit 6); `plan` still works.
 - Results are reported per source. If some fail, rerunning `apply` is safe.
 
 ## Retire sources
@@ -127,6 +130,9 @@ connection ID you were given.
 
 With `--json`, output is machine-readable and errors are a single JSON line on
 stderr: `{"error":{"code":"...","status":404,"server_code":"...","message":"..."}}`.
+If submitting a run or purge fails after the CLI sent it (for example, the
+response was lost), the error also carries `idempotency_key`; retry with
+`--idempotency-key KEY` so the server does not start a duplicate run.
 
 | Exit | Meaning |
 |------|---------|
