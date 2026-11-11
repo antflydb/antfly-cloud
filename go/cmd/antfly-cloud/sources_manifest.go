@@ -83,8 +83,8 @@ func sourceManifestOptions(st *appState, orgID, instanceID string) commands.Plan
 			return sourceManifestID(instanceID, key)
 		},
 		ResolveConnection: func(ctx context.Context, ref string) (string, error) {
-			if isUUID(ref) {
-				return ref, nil
+			if id, err := uuid.Parse(ref); err == nil {
+				return id.String(), nil
 			}
 			if !loaded {
 				var err error

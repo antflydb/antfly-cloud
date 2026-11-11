@@ -165,3 +165,9 @@ Recovery also runs durably on the server without starting provider acquisition.
 New runs return `source_reconciliation_pending` until configuration is ready.
 The CLI refreshes credentials for each request, including connection lookup and
 private permission defaults during a long plan or apply.
+
+Connection UUID references are canonicalized before planning, including accepted
+uppercase or compact spellings. Public policies with omitted or empty `readers`
+lists compare equivalently, so repeating the manifest does not rewrite them.
+If a purge response is lost, repeating `purge --yes --idempotency-key KEY` recovers
+the existing run even while it is pending or running.

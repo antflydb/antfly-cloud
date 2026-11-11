@@ -474,3 +474,16 @@ func TestSourcesManifestHelp(t *testing.T) {
 		}
 	}
 }
+
+func TestManifestCanonicalizesConnectionUUIDWithoutLookup(t *testing.T) {
+	opts := sourceManifestOptions(nil, "", "")
+	for _, ref := range []string{strings.ToUpper(manifestTestConnection), strings.ReplaceAll(manifestTestConnection, "-", "")} {
+		got, err := opts.ResolveConnection(t.Context(), ref)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != manifestTestConnection {
+			t.Fatalf("connection=%q, want canonical UUID", got)
+		}
+	}
+}
