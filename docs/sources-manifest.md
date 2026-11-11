@@ -70,6 +70,8 @@ antfly-cloud sources apply --file sources.yaml
 - Omitting `name` preserves an existing display name; new sources default to their
   manifest key. Explicit `streams: []` or `artifacts: []` clears that collection
   and subsequent applies leave it unchanged.
+- An omitted or empty identity namespace preserves the server-assigned namespace.
+  `identity: {}` and `identity: {namespace: ""}` both converge without extra writes.
 - Unknown fields are rejected. Streams, artifacts, processing and knowledge use the
   shared declaration schemas.
 - The complete effective search, processing and knowledge declarations are

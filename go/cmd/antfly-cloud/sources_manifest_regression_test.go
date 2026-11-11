@@ -89,3 +89,41 @@ func TestManifestApplyErrorsRetainScriptCategories(t *testing.T) {
 		})
 	}
 }
+
+func TestManifestEmptyIdentityConverges(t *testing.T) {
+	for _, identity := range []string{"    identity: {}\n", "    identity: {namespace: \"\"}\n"} {
+		t.Run(identity, func(t *testing.T) {
+			f := newManifestTestFixture(t)
+			input := manifestTestYAML + identity
+			if output, err := f.execute(true, input, "apply", "--file", "-"); err != nil {
+				t.Fatalf("create: %v: %s", err, output)
+			}
+			manifestTestAssertWrites(t, f, 1)
+			output, err := f.execute(true, input, "plan", "--file", "-")
+			if err != nil {
+				t.Fatalf("plan: %v: %s", err, output)
+			}
+			var plan commands.Plan
+			if err := json.Unmarshal([]byte(output), &plan); err != nil {
+				t.Fatal(err)
+			}
+			if len(plan.Items) != 1 || plan.Items[0].Action != commands.PlanUnchanged {
+				t.Fatalf("plan after assignment: %s", output)
+			}
+			output, err = f.execute(true, input, "apply", "--file", "-")
+			if err != nil {
+				t.Fatalf("reapply: %v: %s", err, output)
+			}
+			var results struct {
+				Results []commands.ApplyResult `json:"results"`
+			}
+			if err := json.Unmarshal([]byte(output), &results); err != nil {
+				t.Fatal(err)
+			}
+			if len(results.Results) != 1 || results.Results[0].Outcome != "unchanged" {
+				t.Fatalf("reapply: %s", output)
+			}
+			manifestTestAssertWrites(t, f, 1)
+		})
+	}
+}

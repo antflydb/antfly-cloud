@@ -146,6 +146,14 @@ func newManifestTestFixture(t *testing.T) *manifestTestFixture {
 				t.Errorf("manifest writes must carry a precondition: %s %s", r.Method, r.URL)
 			}
 			f.writes = append(f.writes, manifestTestWrite{path: r.URL.Path, source: source, precondition: precondition})
+			// Model runtime assignment on creation and preservation on update.
+			if source.Identity.Namespace == "" {
+				if exists {
+					source.Identity = f.sources[id].Identity
+				} else {
+					source.Identity.Namespace = id + "/"
+				}
+			}
 			f.sources[id] = source
 			managementTestJSON(t, w, source)
 		default:
