@@ -262,7 +262,7 @@ func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
 		return &appState{cfg: Config{APIURL: server.URL + "/api/v1", Org: org, Instance: instance}, client: client, out: Output{W: &output}, timeout: time.Second}, nil
 	}
 	register := newSourceConnectionsCommand(factory)
-	register.SetArgs([]string{"connect-gcs", "--name", "Pages", "--bucket", "private-pages", "--prefix", "repaired/"})
+	register.SetArgs([]string{"add", "gcs", "--name", "Pages", "--bucket", "private-pages", "--prefix", "repaired/"})
 	if err := register.Execute(); err != nil {
 		t.Fatal(err)
 	}

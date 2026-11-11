@@ -12,7 +12,7 @@ import (
 )
 
 func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
-	command := &cobra.Command{Use: "connections", Short: "Connect Google Workspace, Slack, and Discord sources"}
+	command := &cobra.Command{Use: "connections", Short: "Manage source connections"}
 	var provider string
 	list := &cobra.Command{Use: "list", Short: "List stored source connections", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
@@ -78,7 +78,7 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	connect.Flags().BoolVar(&noWait, "no-wait", false, "return the URL and flow ID without waiting")
 	command.AddCommand(connect)
 	var gcsBucket, gcsPrefix, gcsName string
-	gcs := &cobra.Command{Use: "connect-gcs", Short: "Register a scoped keyless GCS connection", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+	gcs := &cobra.Command{Use: "gcs", Short: "Register a scoped keyless GCS connection", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
 		if err != nil {
 			return err
@@ -98,7 +98,9 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	_ = gcs.MarkFlagRequired("bucket")
 	_ = gcs.MarkFlagRequired("prefix")
 	_ = gcs.MarkFlagRequired("name")
-	command.AddCommand(gcs)
+	add := &cobra.Command{Use: "add", Short: "Register a source connection"}
+	add.AddCommand(gcs)
+	command.AddCommand(add)
 
 	var resource, parent, cursor string
 	resources := &cobra.Command{Use: "resources <connection-id>", Short: "List selectable folders, Gmail labels, calendars, or channels", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {

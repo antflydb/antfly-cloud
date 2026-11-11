@@ -100,7 +100,7 @@ Select the instance and register the bucket and its allowed prefix.
 
 ```sh
 antfly-cloud instance use my-instance
-antfly-cloud connections connect-gcs --name "Private docs" --bucket my-bucket --prefix documents
+antfly-cloud connections add gcs --name "Private docs" --bucket my-bucket --prefix documents
 ```
 
 Give the returned connection ID to your Cloud operator so they can bind its
