@@ -200,7 +200,7 @@ func TestConnectionHelpDisambiguation(t *testing.T) {
 	}{
 		{name: "connection", args: []string{"connection", "--help"}, want: []string{"not provider connections", "antfly-cloud connections"}},
 		{name: "instance_connection", args: []string{"instance", "connection", "--help"}, want: []string{"not provider connections", "antfly-cloud connections"}},
-		{name: "connections", args: []string{"connections", "--help"}, want: []string{"provider", "antfly-cloud connection"}},
+		{name: "connections", args: []string{"connections", "--help"}, want: []string{"source connections", "GCS", "antfly-cloud connection"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var output, errorOutput bytes.Buffer
