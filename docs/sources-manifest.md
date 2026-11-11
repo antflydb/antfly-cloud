@@ -171,3 +171,10 @@ uppercase or compact spellings. Public policies with omitted or empty `readers`
 lists compare equivalently, so repeating the manifest does not rewrite them.
 If a purge response is lost, repeating `purge --yes --idempotency-key KEY` recovers
 the existing run even while it is pending or running.
+
+JSON is detected by content, including stdin, so its numeric values are preserved
+exactly. YAML numeric scalars are also converted without float64 rounding; YAML
+aliases and merge keys remain supported with bounded expansion. Equivalent
+numeric spellings compare unchanged after PostgreSQL normalization. Planning
+requests declaration-only source views, keeping native readiness inspection in
+status commands.

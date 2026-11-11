@@ -17,7 +17,6 @@ import (
 	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 func sourceManifestID(instanceID, key string) (string, error) {
@@ -149,71 +148,12 @@ func readSourceManifest(cmd *cobra.Command, file string) (commands.Manifest, err
 	if len(raw) > maxSize {
 		return invalid(errors.New("manifest exceeds 1 MiB"))
 	}
-	if file == "-" || filepath.Ext(file) != ".json" {
+	if !json.Valid(raw) && (file == "-" || filepath.Ext(file) != ".json") {
 		if raw, err = sourceManifestYAMLToJSON(raw); err != nil {
 			return invalid(err)
 		}
 	}
 	return commands.DecodeManifest(bytes.NewReader(raw))
-}
-
-// sourceManifestYAMLToJSON re-encodes a single YAML document as JSON so it can
-// go through the same strict manifest decoder as .json files.
-func sourceManifestYAMLToJSON(raw []byte) ([]byte, error) {
-	decoder := yaml.NewDecoder(bytes.NewReader(raw))
-	var value any
-	if err := decoder.Decode(&value); err != nil {
-		return nil, err
-	}
-	var extra any
-	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
-		if err == nil {
-			err = errors.New("expected exactly one YAML document")
-		}
-		return nil, err
-	}
-	value, err := sourceManifestJSONValue(value)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(value)
-}
-
-// sourceManifestJSONValue preserves every key while rejecting YAML-only map keys.
-func sourceManifestJSONValue(value any) (any, error) {
-	switch value := value.(type) {
-	case map[any]any:
-		result := make(map[string]any, len(value))
-		for key, child := range value {
-			name, ok := key.(string)
-			if !ok {
-				return nil, fmt.Errorf("non-string YAML map key %v", key)
-			}
-			converted, err := sourceManifestJSONValue(child)
-			if err != nil {
-				return nil, err
-			}
-			result[name] = converted
-		}
-		return result, nil
-	case map[string]any:
-		for key, child := range value {
-			converted, err := sourceManifestJSONValue(child)
-			if err != nil {
-				return nil, err
-			}
-			value[key] = converted
-		}
-	case []any:
-		for i, child := range value {
-			converted, err := sourceManifestJSONValue(child)
-			if err != nil {
-				return nil, err
-			}
-			value[i] = converted
-		}
-	}
-	return value, nil
 }
 
 // listSourceConnectionsByName lists connections so a display name can be
