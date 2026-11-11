@@ -1740,6 +1740,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * renameSourceConnection
+         * @description Rename a source connection. Source declarations reference connections by ID; the display name is a human label that CLI manifests may also resolve when it is unique.
+         */
+        patch: operations["renameSourceConnection"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * validateSourceConnection
+         * @description Check that a source connection's hosted credentials are still usable and return its current status. No provider secret is returned.
+         */
+        post: operations["validateSourceConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels": {
         parameters: {
             query?: never;
@@ -4083,6 +4123,9 @@ export interface components {
         SourceAuthorization: {
             /** Format: uri */
             authorization_url: string;
+        };
+        SourceConnectionUpdate: {
+            display_name: string;
         };
         MetricPanel: {
             id: string;
@@ -8252,6 +8295,114 @@ export interface operations {
                 content?: never;
             };
             /** @description Flow expired or belongs to another user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    renameSourceConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                auth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceConnectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceConnection"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    validateSourceConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                instance_id: string;
+                auth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceConnection"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Access denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
             404: {
                 headers: {
                     [name: string]: unknown;

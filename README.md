@@ -68,6 +68,7 @@ in Settings > Identity, verify the provider, and enable it again. This delegates
 MFA policy to your identity provider. The CLI cannot override that decision.
 
 See [connected sources](docs/connected-sources.md) for browser authorization, resource selection, attachment previews and private sync.
+See [manage sources from the CLI](docs/sources-manifest.md) for declarative `plan`/`apply`, runs, readiness, retirement and script exit codes.
 
 ## Release approval and publishing credentials
 

@@ -4327,6 +4327,102 @@ paths:
           description: Flow expired or belongs to another user
       security:
         - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    patch:
+      tags:
+        - CloudSources
+      operationId: renameSourceConnection
+      summary: renameSourceConnection
+      description: Rename a source connection. Source declarations reference connections by ID; the display name is a human label that CLI manifests may also resolve when it is unique.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SourceConnectionUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceConnection'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection not found
+      security:
+        - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/validate:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: validateSourceConnection
+      summary: validateSourceConnection
+      description: Check that a source connection's hosted credentials are still usable and return its current status. No provider secret is returned.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceConnection'
+        '400':
+          description: Invalid request
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection not found
+      security:
+        - BearerAuth: []
   /organizations/{org_id}/cloud/instances/{instance_id}/metrics/panels:
     servers:
       - url: https://platform.antfly.io/api/v1
@@ -8730,6 +8826,16 @@ components:
         authorization_url:
           type: string
           format: uri
+    SourceConnectionUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 200
     MetricPanel:
       type: object
       required:

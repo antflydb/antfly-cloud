@@ -10,11 +10,20 @@ import (
 	"time"
 
 	sdk "github.com/antflydb/antfly-cloud/go/pkg/sdk"
+	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/spf13/cobra"
 )
 
 func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
-	command := &cobra.Command{Use: "connections", Short: "Manage source connections"}
+	command := &cobra.Command{
+		Use:   "connections",
+		Short: "Manage source connections",
+		Long: `Manage source connections: the hosted credentials sources use to read Google
+Workspace, Slack, Discord, or GCS content. Credentials stay with the hosted
+service and are never downloaded by the CLI.
+
+For an Antfly instance's own endpoint URLs, use ` + "`antfly-cloud connection`" + ` instead.`,
+	}
 	var provider string
 	list := &cobra.Command{Use: "list", Short: "List stored source connections", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
@@ -39,7 +48,11 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	var services []string
 	var reconnect string
 	var noBrowser, noWait bool
+	var name string
 	connect := &cobra.Command{Use: "connect <google-workspace|slack|discord>", Short: "Authorize a source connection in your browser", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		if name != "" && noWait {
+			return &commands.Error{Code: commands.CodeInvalid, Message: "--name requires waiting for the connection; remove --no-wait"}
+		}
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
 		if err != nil {
 			return err
@@ -69,6 +82,16 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 		if err != nil {
 			return err
 		}
+		if name != "" {
+			connection, err := st.client.RenameSourceConnection(cmd.Context(), org.ID, instance.ID, status.ProviderAuthID, name)
+			if err != nil {
+				return fmt.Errorf("connected %s but could not name it: %w", status.ProviderAuthID, err)
+			}
+			return st.out.Print(connection, func() error {
+				fmt.Fprintf(st.out.W, "Connected: %s (%s)\nList content with: antfly-cloud connections resources %s --resource SERVICE\n", connection.DisplayName, connection.ID, connection.ID)
+				return nil
+			})
+		}
 		return st.out.Print(status, func() error {
 			fmt.Fprintf(st.out.W, "Connected: %s\nList content with: antfly-cloud connections resources %s --resource SERVICE\n", status.ProviderAuthID, status.ProviderAuthID)
 			return nil
@@ -78,7 +101,8 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	connect.Flags().StringVar(&reconnect, "reconnect", "", "existing connection ID to upgrade or reconnect")
 	connect.Flags().BoolVar(&noBrowser, "no-browser", false, "print the authorization URL instead of opening a browser")
 	connect.Flags().BoolVar(&noWait, "no-wait", false, "return the URL and flow ID without waiting")
-	command.AddCommand(connect)
+	connect.Flags().StringVar(&name, "name", "", "display name for the new connection (usable in source manifests)")
+	command.AddCommand(connect, newConnectionValidateCommand(stateFor), newConnectionRenameCommand(stateFor))
 	var gcsBucket, gcsPrefix, gcsName string
 	gcs := &cobra.Command{Use: "gcs", Short: "Register a scoped keyless GCS connection", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
@@ -162,36 +186,9 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 }
 
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
-	command := &cobra.Command{Use: "sources", Short: "Select, preview, and sync connected source content"}
-	command.AddCommand(&cobra.Command{Use: "list", Short: "List sources for the selected instance", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
-		if err != nil {
-			return err
-		}
-		jobs, err := st.client.SourceJobs(cmd.Context(), org.ID, instance.ID)
-		if err != nil {
-			return err
-		}
-		return st.out.Print(jobs, func() error {
-			rows := [][]string{}
-			for _, job := range jobs {
-				rows = append(rows, []string{job.ID, job.Name, job.Status})
-			}
-			table(st.out.W, []string{"ID", "SOURCE", "STATUS"}, rows)
-			return nil
-		})
-	}})
-	command.AddCommand(&cobra.Command{Use: "sync <source-id>", Args: cobra.ExactArgs(1), Short: "Queue a source sync", RunE: func(cmd *cobra.Command, args []string) error {
-		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
-		if err != nil {
-			return err
-		}
-		if err := st.client.SyncSource(cmd.Context(), org.ID, instance.ID, args[0]); err != nil {
-			return err
-		}
-		fmt.Fprintln(st.out.W, "Sync queued.")
-		return nil
-	}})
+	command := &cobra.Command{Use: "sources", Short: "Manage connected sources, runs, and processing readiness"}
+	addSourceManagementCommands(command, stateFor)
+	command.AddCommand(newSourceManifestCommand("plan", stateFor), newSourceManifestCommand("apply", stateFor))
 	for _, previewOnly := range []bool{true, false} {
 		previewOnly := previewOnly
 		var connection, resource, name, target string
@@ -366,4 +363,56 @@ func sourceCommandInstance(ctx context.Context, stateFor stateFactory) (*appStat
 	}
 	instance, err := resolveInstance(ctx, st, org.ID, st.cfg.Instance)
 	return st, org, instance, err
+}
+
+func newConnectionValidateCommand(stateFor stateFactory) *cobra.Command {
+	return &cobra.Command{Use: "validate <connection>", Short: "Check that a connection's hosted credentials still work", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		st, org, instance, id, err := sourceConnectionCommand(cmd.Context(), stateFor, args[0])
+		if err != nil {
+			return err
+		}
+		connection, err := st.client.ValidateSourceConnection(cmd.Context(), org.ID, instance.ID, id)
+		if err != nil {
+			return err
+		}
+		return st.out.Print(connection, func() error {
+			_, err := fmt.Fprintf(st.out.W, "Connection %s (%s): %s\n", connection.DisplayName, connection.ID, connection.Status)
+			return err
+		})
+	}}
+}
+
+func newConnectionRenameCommand(stateFor stateFactory) *cobra.Command {
+	return &cobra.Command{Use: "rename <connection> <new-name>", Short: "Change a connection's display name", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
+		st, org, instance, id, err := sourceConnectionCommand(cmd.Context(), stateFor, args[0])
+		if err != nil {
+			return err
+		}
+		connection, err := st.client.RenameSourceConnection(cmd.Context(), org.ID, instance.ID, id, args[1])
+		if err != nil {
+			return err
+		}
+		return st.out.Print(connection, func() error {
+			_, err := fmt.Fprintf(st.out.W, "Renamed connection %s to %s.\n", connection.ID, connection.DisplayName)
+			return err
+		})
+	}}
+}
+
+// sourceConnectionCommand resolves the selected instance and a connection given
+// by ID (used as-is, without listing) or unique display name.
+func sourceConnectionCommand(ctx context.Context, stateFor stateFactory, ref string) (*appState, Organization, CloudInstance, string, error) {
+	st, org, instance, err := sourceCommandInstance(ctx, stateFor)
+	if err != nil {
+		return nil, Organization{}, CloudInstance{}, "", err
+	}
+	if isUUID(ref) {
+		return st, org, instance, ref, nil
+	}
+	connections, err := listSourceConnectionsByName(ctx, st, org.ID, instance.ID)
+	if err != nil {
+		return nil, Organization{}, CloudInstance{}, "", err
+	}
+	id, err := matchSourceConnectionName(connections, ref)
+	return st, org, instance, id, err
 }

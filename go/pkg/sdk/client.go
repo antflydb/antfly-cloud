@@ -274,31 +274,46 @@ func (e *APIError) Error() string {
 
 // Client is a small ergonomic wrapper around the generated Antfly Cloud OpenAPI client.
 type Client struct {
-	client                  *oapi.ClientWithResponses
-	sourceBase, sourceToken string
-	sourceHTTP              *http.Client
+	client     *oapi.ClientWithResponses
+	sourceBase string
+	token      TokenSource
+	sourceHTTP *http.Client
 }
 
-// NewClient creates a Antfly Cloud API client. baseURL should include the /api/v1 prefix.
+// TokenSource returns current credentials using the request context.
+type TokenSource func(context.Context) (string, error)
+
+// NewClient creates an Antfly Cloud API client. baseURL includes the /api/v1 prefix.
 func NewClient(baseURL, bearerToken string, httpClient *http.Client) (*Client, error) {
-	opts := []oapi.ClientOption{}
-	if httpClient != nil {
-		opts = append(opts, oapi.WithHTTPClient(httpClient))
-	}
-	if bearerToken != "" {
-		opts = append(opts, oapi.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
-			req.Header.Set("Authorization", "Bearer "+bearerToken)
-			return nil
-		}))
-	}
-	client, err := oapi.NewClientWithResponses(strings.TrimRight(baseURL, "/"), opts...)
-	if err != nil {
-		return nil, err
+	return NewClientWithTokenSource(baseURL, func(context.Context) (string, error) { return bearerToken, nil }, httpClient)
+}
+
+// NewClientWithTokenSource shares refresh behavior across generated and source APIs.
+func NewClientWithTokenSource(baseURL string, token TokenSource, httpClient *http.Client) (*Client, error) {
+	if token == nil {
+		return nil, fmt.Errorf("token source is required")
 	}
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
-	return &Client{client: client, sourceBase: strings.TrimRight(baseURL, "/"), sourceToken: bearerToken, sourceHTTP: httpClient}, nil
+	opts := []oapi.ClientOption{oapi.WithHTTPClient(httpClient), oapi.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		value, err := token(ctx)
+		if err != nil {
+			return err
+		}
+		if strings.ContainsAny(value, "\r\n") {
+			return fmt.Errorf("invalid bearer token")
+		}
+		if value != "" {
+			req.Header.Set("Authorization", "Bearer "+value)
+		}
+		return nil
+	})}
+	client, err := oapi.NewClientWithResponses(strings.TrimRight(baseURL, "/"), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{client: client, sourceBase: strings.TrimRight(baseURL, "/"), token: token, sourceHTTP: httpClient}, nil
 }
 
 func (c *Client) CurrentUser(ctx context.Context) (*User, error) {

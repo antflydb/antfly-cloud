@@ -37,8 +37,11 @@ Create a source in a dedicated destination table you have provisioned:
 ```sh
 antfly-cloud sources add --connection CONNECTION_ID --resource gmail --select LABEL_ID --attachments --name customer-mail --table SOURCE_TABLE --every 15m
 antfly-cloud sources list
-antfly-cloud sources sync SOURCE_ID
+antfly-cloud sources run SOURCE_ID --wait
 ```
+
+To declare sources in a versioned file, inspect runs and readiness, or retire
+sources, see [Manage sources from the CLI](sources-manifest.md).
 
 The default sharing policy is private to the current user. `--shared` explicitly
 shares with all readers authorized for the destination table. Attachments are
@@ -49,7 +52,7 @@ server needs PDF/OCR extraction tools for those attachment formats.
 Source creation queues the first sync; queue acceptance does not mean the content
 is searchable. Check the source job/run and published catalog before searching.
 If queuing fails after creation, the error includes the saved source ID so you can
-retry `sources sync` without creating another source.
+retry `sources run` without creating another source.
 
 For Discord run `connections connect discord`, select the server in the provider
 browser, then list `connections resources CONNECTION_ID --resource discord` and

@@ -10,9 +10,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
+
+// UserAgent identifies requests made by the Antfly Cloud SDK and CLI.
+const UserAgent = "antfly-cloud"
 
 type SourceConnection struct {
 	ID          string         `json:"id"`
@@ -95,8 +100,15 @@ func (c *Client) sourceDo(ctx context.Context, method, path string, body, out an
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.sourceToken)
-	req.Header.Set("User-Agent", "antfly-cloud")
+	token, err := c.token(ctx)
+	if err != nil {
+		return err
+	}
+	if strings.ContainsAny(token, "\r\n") {
+		return fmt.Errorf("invalid bearer token")
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("User-Agent", UserAgent)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -130,7 +142,11 @@ func (c *Client) SourceConnections(ctx context.Context, org, instance, provider 
 	var result struct {
 		Data []SourceConnection `json:"data"`
 	}
-	err = c.sourceDo(ctx, "GET", base+"/provider-auths?provider="+url.QueryEscape(provider), nil, &result)
+	path := base + "/provider-auths"
+	if provider != "" {
+		path += "?provider=" + url.QueryEscape(provider)
+	}
+	err = c.sourceDo(ctx, "GET", path, nil, &result)
 	return result.Data, err
 }
 
@@ -272,6 +288,67 @@ func (c *Client) SyncSource(ctx context.Context, org, instance, id string) error
 		return err
 	}
 	return c.sourceDo(ctx, "POST", base+"/import-jobs/"+id+"/run", nil, nil)
+}
+
+// PauseSource pauses the hosted schedule of a connected source.
+func (c *Client) PauseSource(ctx context.Context, orgID, instanceID, id string) (map[string]any, error) {
+	return c.sourceJobAction(ctx, orgID, instanceID, id, "pause")
+}
+
+// ResumeSource resumes the hosted schedule of a connected source.
+func (c *Client) ResumeSource(ctx context.Context, orgID, instanceID, id string) (map[string]any, error) {
+	return c.sourceJobAction(ctx, orgID, instanceID, id, "resume")
+}
+
+// sourceJobAction posts an action to a connected source's import job.
+func (c *Client) sourceJobAction(ctx context.Context, orgID, instanceID, id, action string) (map[string]any, error) {
+	base, err := sourceInstancePath(orgID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if err := sourceID(id); err != nil {
+		return nil, err
+	}
+	var result map[string]any
+	err = c.sourceDo(ctx, "POST", base+"/import-jobs/"+url.PathEscape(id)+"/"+action, nil, &result)
+	return result, err
+}
+
+// sourceConnectionPath validates the instance and connection IDs and returns
+// the connection's provider-auth path.
+func sourceConnectionPath(orgID, instanceID, authID string) (string, error) {
+	base, err := sourceInstancePath(orgID, instanceID)
+	if err != nil {
+		return "", err
+	}
+	if err := sourceID(authID); err != nil {
+		return "", err
+	}
+	return base + "/provider-auths/" + url.PathEscape(authID), nil
+}
+
+func (c *Client) ValidateSourceConnection(ctx context.Context, orgID, instanceID, authID string) (SourceConnection, error) {
+	path, err := sourceConnectionPath(orgID, instanceID, authID)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, http.MethodPost, path+"/validate", nil, &result)
+	return result, err
+}
+
+func (c *Client) RenameSourceConnection(ctx context.Context, orgID, instanceID, authID, displayName string) (SourceConnection, error) {
+	path, err := sourceConnectionPath(orgID, instanceID, authID)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" || utf8.RuneCountInString(displayName) > 200 || strings.ContainsFunc(displayName, unicode.IsControl) {
+		return SourceConnection{}, fmt.Errorf("display name must contain 1 to 200 characters and no control characters")
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, http.MethodPatch, path, map[string]string{"display_name": displayName}, &result)
+	return result, err
 }
 
 // ValidateSourceInstallationURL allows only the Antfly management API bootstrap.

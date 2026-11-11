@@ -2,13 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	sdk "github.com/antflydb/antfly-cloud/go/pkg/sdk"
+	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +22,10 @@ type appState struct {
 	client  *Client
 	out     Output
 	timeout time.Duration
+	// token returns a current bearer token, refreshing the login with the
+	// caller's context so cancellation and deadlines apply. Tests that build
+	// appState directly may leave it nil.
+	token func(context.Context) (string, error)
 }
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
@@ -43,7 +52,19 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 	cmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "write JSON output")
 	cmd.PersistentFlags().DurationVar(&timeout, "timeout", 15*time.Second, "API request timeout")
 
-	stateFor := func(requireToken bool) (*appState, error) {
+	// runCtx is the executing command's context (Ctrl-C and deadlines), so the
+	// login refresh performed while loading state can be cancelled.
+	runCtx := context.Background()
+	cmd.PersistentPreRun = func(c *cobra.Command, _ []string) { runCtx = c.Context() }
+	var loadState func(ctx context.Context, requireToken bool) (*appState, error)
+	tokenFor := func(ctx context.Context) (string, error) {
+		current, err := loadState(ctx, true)
+		if err != nil {
+			return "", err
+		}
+		return current.cfg.bearerToken(), nil
+	}
+	loadState = func(ctx context.Context, requireToken bool) (*appState, error) {
 		cfg, err := loadConfig(configFile)
 		if err != nil {
 			return nil, err
@@ -61,7 +82,7 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		httpClient := &http.Client{Timeout: timeout}
 		if requireToken {
 			var refreshed bool
-			cfg, refreshed, err = refreshConfigIfNeeded(context.Background(), cfg, httpClient)
+			cfg, refreshed, err = refreshConfigIfNeeded(ctx, cfg, httpClient)
 			if err != nil {
 				return nil, err
 			}
@@ -75,12 +96,13 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		if requireToken && token == "" {
 			return nil, fmt.Errorf("not logged in: run `antfly-cloud login` or set ANTFLY_CLOUD_TOKEN")
 		}
-		client, err := NewClient(cfg.APIURL, token, httpClient)
+		client, err := sdk.NewClientWithTokenSource(cfg.APIURL, tokenFor, httpClient)
 		if err != nil {
 			return nil, err
 		}
-		return &appState{cfg: cfg, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout}, nil
+		return &appState{cfg: cfg, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout, token: tokenFor}, nil
 	}
+	stateFor := func(requireToken bool) (*appState, error) { return loadState(runCtx, requireToken) }
 
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
@@ -107,12 +129,78 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 }
 
 func execute() int {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cmd := newRootCommand(os.Stdout, os.Stderr)
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		return 1
+	if err := cmd.ExecuteContext(ctx); err != nil {
+		jsonOut, _ := cmd.PersistentFlags().GetBool("json")
+		writeError(os.Stderr, jsonOut, err)
+		return errorExitCode(err)
 	}
 	return 0
+}
+
+// errorExitCode maps shared management and Cloud SDK errors to scriptable exits.
+func errorExitCode(err error) int {
+	var commandErr *commands.Error
+	if errors.As(err, &commandErr) {
+		return commandErr.ExitCode()
+	}
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		_, exit := apiErrorCategory(apiErr.StatusCode)
+		return exit
+	}
+	return 1
+}
+
+// apiErrorCategory maps a Cloud SDK HTTP status to its stable error code and exit code.
+func apiErrorCategory(status int) (code string, exit int) {
+	switch status {
+	case http.StatusUnauthorized:
+		return "unauthorized", 3
+	case http.StatusForbidden:
+		return "forbidden", 3
+	case http.StatusNotFound:
+		return "not_found", 4
+	case http.StatusConflict, http.StatusPreconditionFailed:
+		return "conflict", 5
+	case http.StatusBadRequest, http.StatusUnprocessableEntity:
+		return "invalid", 2
+	default:
+		return "request_failed", 1
+	}
+}
+
+// writeError preserves human errors or emits a single-line JSON error envelope.
+func writeError(w io.Writer, jsonOut bool, err error) {
+	if !jsonOut {
+		fmt.Fprintln(w, "Error:", err)
+		return
+	}
+	detail := struct {
+		Code       string `json:"code,omitempty"`
+		Status     int    `json:"status,omitempty"`
+		ServerCode string `json:"server_code,omitempty"`
+		Message    string `json:"message,omitempty"`
+		// IdempotencyKey lets a script retry a submission whose outcome is unknown.
+		IdempotencyKey string `json:"idempotency_key,omitempty"`
+	}{Code: "error", Message: err.Error()}
+	var commandErr *commands.Error
+	var apiErr *APIError
+	switch {
+	case errors.As(err, &commandErr):
+		detail.Code = commandErr.Code
+		detail.Status = commandErr.HTTPStatus
+		detail.ServerCode = commandErr.ServerCode
+		detail.IdempotencyKey = commandErr.IdempotencyKey
+	case errors.As(err, &apiErr):
+		detail.Code, _ = apiErrorCategory(apiErr.StatusCode)
+		detail.Status = apiErr.StatusCode
+	}
+	_ = json.NewEncoder(w).Encode(struct {
+		Error any `json:"error"`
+	}{Error: detail})
 }
 
 func resolveOrg(ctx context.Context, st *appState) (Organization, error) {

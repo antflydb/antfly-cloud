@@ -470,7 +470,7 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 			return nil
 		})
 	}})
-	cmd.AddCommand(&cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: "Show connection URLs", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	cmd.AddCommand(&cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: instanceConnectionShort, Long: instanceConnectionLong, Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := resolveCommandInstance(cmd.Context(), stateFor, args[0])
 		if err != nil {
 			return err
@@ -487,8 +487,15 @@ func newInstanceCommand(stateFor stateFactory, configFile *string) *cobra.Comman
 	return cmd
 }
 
+// Help for the `instance connection` and top-level `connection` commands, which
+// show endpoint URLs rather than provider connections.
+const (
+	instanceConnectionShort = "Show Antfly instance endpoint URLs (not source connections)"
+	instanceConnectionLong  = "Show an Antfly instance's endpoint URLs (proxy, dashboard, inference). These are not source connections; for Google Workspace, Slack, Discord, or GCS source connections use `antfly-cloud connections`."
+)
+
 func newConnectionCommand(stateFor stateFactory) *cobra.Command {
-	return &cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: "Show connection URLs for a cloud instance", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	return &cobra.Command{Use: "connection <instance-id-or-slug>", Aliases: []string{"conn"}, Short: instanceConnectionShort, Long: instanceConnectionLong, Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, inst, err := resolveCommandInstance(cmd.Context(), stateFor, args[0])
 		if err != nil {
 			return err
