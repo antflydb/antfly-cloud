@@ -40,6 +40,8 @@ sources:
 type manifestTestWrite struct {
 	path   string
 	source management.Source
+	// precondition is "create" (If-None-Match: *) or "match" (If-Match).
+	precondition string
 }
 
 type manifestTestFixture struct {
@@ -73,7 +75,7 @@ func newManifestTestFixture(t *testing.T) *manifestTestFixture {
 			if r.Method != http.MethodGet {
 				t.Errorf("capabilities method = %s, want GET", r.Method)
 			}
-			managementTestJSON(t, w, map[string]any{"version": 1, "runtime": "colony", "per_source_runs": true, "cancel_runs": true, "configure_sources": true, "search_versions": []int{1, 2}})
+			managementTestJSON(t, w, map[string]any{"version": 1, "runtime": "colony", "per_source_runs": true, "cancel_runs": true, "configure_sources": true, "revision_preconditions": true, "search_versions": []int{1, 2}})
 			return
 		case strings.TrimSuffix(managementTestBase, "/sources/v1") + "/provider-auths":
 			if r.Method != http.MethodGet || r.URL.RawQuery != "" {
@@ -115,7 +117,28 @@ func newManifestTestFixture(t *testing.T) *manifestTestFixture {
 			if source.Id != id {
 				t.Errorf("source body id = %q, URL id = %q", source.Id, id)
 			}
-			f.writes = append(f.writes, manifestTestWrite{path: r.URL.Path, source: source})
+			// Honor preconditions like Colony: create-only and revision match.
+			_, exists := f.sources[id]
+			precondition := ""
+			switch {
+			case r.Header.Get("If-None-Match") == "*":
+				precondition = "create"
+				if exists {
+					w.WriteHeader(http.StatusPreconditionFailed)
+					managementTestJSON(t, w, map[string]any{"version": 1, "code": "source_already_exists"})
+					return
+				}
+			case r.Header.Get("If-Match") != "":
+				precondition = "match"
+				if !exists || r.Header.Get("If-Match") != `"`+management.SourceRevision(f.sources[id])+`"` {
+					w.WriteHeader(http.StatusPreconditionFailed)
+					managementTestJSON(t, w, map[string]any{"version": 1, "code": "source_revision_mismatch"})
+					return
+				}
+			default:
+				t.Errorf("manifest writes must carry a precondition: %s %s", r.Method, r.URL)
+			}
+			f.writes = append(f.writes, manifestTestWrite{path: r.URL.Path, source: source, precondition: precondition})
 			f.sources[id] = source
 			managementTestJSON(t, w, source)
 		default:
@@ -294,6 +317,9 @@ func TestSourcesManifestLifecycle(t *testing.T) {
 			manifestTestAssertWrites(t, f, 2)
 			f.mu.Lock()
 			defer f.mu.Unlock()
+			if f.writes[0].precondition != "create" || f.writes[1].precondition != "match" {
+				t.Fatalf("preconditions = %q, %q; want create then match", f.writes[0].precondition, f.writes[1].precondition)
+			}
 			if len(f.sources) != 1 || f.writes[1].path != managementTestBase+"/sources/"+id || f.sources[id].Name != "Engineering knowledge" {
 				t.Fatalf("rename created a different source: sources=%+v writes=%+v", f.sources, f.writes)
 			}

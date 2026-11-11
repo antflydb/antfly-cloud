@@ -101,3 +101,40 @@ func TestSourcesManifestLooksUpCurrentUserOnce(t *testing.T) {
 		t.Fatalf("current user looked up %d times, want 1", got)
 	}
 }
+
+// A lost submission response must not hide the key needed to retry safely.
+func TestSourcesRunSubmissionErrorReportsIdempotencyKey(t *testing.T) {
+	const sourceID = "11111111-1111-4111-8111-111111111111"
+	var sentKey atomic.Value
+	var output bytes.Buffer
+	factory := managementTestFactory(t, &output, true, time.Second, nil, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/sources/v1/capabilities"):
+			managementTestJSON(t, w, map[string]any{"version": 1, "runtime": "colony", "per_source_runs": true, "cancel_runs": true})
+		case strings.HasSuffix(r.URL.Path, "/sources/v1/sources/"+sourceID) && r.Method == http.MethodGet:
+			managementTestJSON(t, w, map[string]any{"id": sourceID, "name": "docs", "connection": "c", "table": "t", "publication": "native", "state": "configured", "config": map[string]any{}, "permissions": map[string]any{"public": false, "readers": []string{}}})
+		case strings.HasSuffix(r.URL.Path, "/sources/v1/sources/"+sourceID+"/runs") && r.Method == http.MethodPost:
+			sentKey.Store(r.Header.Get("Idempotency-Key"))
+			// The server accepted the run, but the response is lost.
+			conn, _, err := w.(http.Hijacker).Hijack()
+			if err == nil {
+				conn.Close()
+			}
+		default:
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL)
+			http.NotFound(w, r)
+		}
+	})
+	err := managementTestExecute(factory, &output, "run", sourceID)
+	key, _ := sentKey.Load().(string)
+	if err == nil || key == "" {
+		t.Fatalf("want a submission error after sending a key; err=%v key=%q", err, key)
+	}
+	if !strings.Contains(err.Error(), key) {
+		t.Fatalf("human error must include the idempotency key %q: %v", key, err)
+	}
+	fields := managementTestErrorJSON(t, err)
+	if fields["idempotency_key"] != key {
+		t.Fatalf("JSON error idempotency_key = %v, want %q", fields["idempotency_key"], key)
+	}
+}
