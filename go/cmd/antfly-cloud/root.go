@@ -182,6 +182,8 @@ func writeError(w io.Writer, jsonOut bool, err error) {
 		Status     int    `json:"status,omitempty"`
 		ServerCode string `json:"server_code,omitempty"`
 		Message    string `json:"message,omitempty"`
+		// IdempotencyKey lets a script retry a submission whose outcome is unknown.
+		IdempotencyKey string `json:"idempotency_key,omitempty"`
 	}{Code: "error", Message: err.Error()}
 	var commandErr *commands.Error
 	var apiErr *APIError
@@ -190,6 +192,7 @@ func writeError(w io.Writer, jsonOut bool, err error) {
 		detail.Code = commandErr.Code
 		detail.Status = commandErr.HTTPStatus
 		detail.ServerCode = commandErr.ServerCode
+		detail.IdempotencyKey = commandErr.IdempotencyKey
 	case errors.As(err, &apiErr):
 		detail.Code, _ = apiErrorCategory(apiErr.StatusCode)
 		detail.Status = apiErr.StatusCode
