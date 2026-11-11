@@ -3936,6 +3936,74 @@ paths:
           description: Provider installation is not configured
       security:
         - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/source-selection:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    get:
+      tags:
+        - CloudSources
+      operationId: resolveSourceConnection
+      summary: Resolve a connection for a writable destination table
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: target_table
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Source selection metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - provider
+                  - status
+                  - enabled
+                  - config
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  provider:
+                    type: string
+                  status:
+                    type: string
+                  enabled:
+                    type: boolean
+                  config:
+                    type: object
+                    description: Provider fields needed to select source content
+        '400':
+          description: Invalid destination or connection
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+      security:
+        - BearerAuth: []
   /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/preview-gcs-source:
     servers:
       - url: https://platform.antfly.io/api/v1

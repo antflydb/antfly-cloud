@@ -210,7 +210,10 @@ func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
 		case "/api/v1/organizations/" + org + "/cloud/instances":
 			value = map[string]any{"data": []any{map[string]any{"id": instance, "slug": "test"}}}
 		case base + "/provider-auths":
-			value = map[string]any{"data": []any{auth}}
+			if r.Method != http.MethodPost {
+				http.Error(w, "provider auth listing is forbidden", http.StatusForbidden)
+				return
+			}
 			if r.Method == "POST" {
 				calls = append(calls, "register")
 				var body map[string]any
@@ -219,6 +222,12 @@ func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
 				}
 				value = auth
 			}
+		case base + "/provider-auths/" + connection + "/source-selection":
+			calls = append(calls, "resolve")
+			if r.URL.Query().Get("target_table") != "pages" {
+				t.Error("connection lookup must use destination table authorization")
+			}
+			value = auth
 		case base + "/provider-auths/" + connection + "/preview-gcs-source":
 			calls = append(calls, "preview")
 			var body map[string]any
@@ -271,7 +280,7 @@ func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
 	if err := add.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(calls, ","); got != "register,preview,create,run" {
+	if got := strings.Join(calls, ","); got != "register,resolve,preview,create,run" {
 		t.Fatalf("GCS setup stages: %s", got)
 	}
 }

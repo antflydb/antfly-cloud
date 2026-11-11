@@ -134,6 +134,20 @@ func (c *Client) SourceConnections(ctx context.Context, org, instance, provider 
 	return result.Data, err
 }
 
+// ResolveSourceConnection loads the connection's source selection for a writable table.
+func (c *Client) ResolveSourceConnection(ctx context.Context, org, instance, id, table string) (SourceConnection, error) {
+	base, err := sourceInstancePath(org, instance)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	if err := sourceID(id); err != nil {
+		return SourceConnection{}, err
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, "GET", base+"/provider-auths/"+id+"/source-selection?target_table="+url.QueryEscape(table), nil, &result)
+	return result, err
+}
+
 // CreateGCSWorkloadConnection registers a scoped keyless connection.
 func (c *Client) CreateGCSWorkloadConnection(ctx context.Context, org, instance, name, bucket, prefix string) (SourceConnection, error) {
 	base, err := sourceInstancePath(org, instance)

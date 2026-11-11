@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -212,15 +214,29 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			connections, err := st.client.SourceConnections(cmd.Context(), org.ID, instance.ID, "")
-			if err != nil {
-				return err
-			}
 			var chosen *sdk.SourceConnection
-			for i := range connections {
-				if connections[i].ID == connection {
-					chosen = &connections[i]
-					break
+			if target != "" {
+				resolved, err := st.client.ResolveSourceConnection(cmd.Context(), org.ID, instance.ID, connection, target)
+				var apiErr *sdk.APIError
+				switch {
+				case err == nil:
+					chosen = &resolved
+				case errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound:
+					// Older Cloud releases only expose connection listing.
+				default:
+					return err
+				}
+			}
+			if chosen == nil {
+				connections, err := st.client.SourceConnections(cmd.Context(), org.ID, instance.ID, "")
+				if err != nil {
+					return err
+				}
+				for i := range connections {
+					if connections[i].ID == connection {
+						chosen = &connections[i]
+						break
+					}
 				}
 			}
 			if chosen == nil || !chosen.Enabled || chosen.Status != "active" {
