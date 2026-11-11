@@ -100,7 +100,14 @@ func (c *Client) sourceDo(ctx context.Context, method, path string, body, out an
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.sourceToken)
+	token, err := c.token(ctx)
+	if err != nil {
+		return err
+	}
+	if strings.ContainsAny(token, "\r\n") {
+		return fmt.Errorf("invalid bearer token")
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("User-Agent", UserAgent)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

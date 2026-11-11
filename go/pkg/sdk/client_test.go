@@ -540,3 +540,38 @@ func organizationFixture(index int) map[string]any {
 		"updated_at":    "2026-01-01T00:00:00Z",
 	}
 }
+
+func TestTokenSourceRefreshesGeneratedAndSourceRequests(t *testing.T) {
+	token := "old"
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "application/json")
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			t.Errorf("stale authorization for %s: %q", r.URL.Path, r.Header.Get("Authorization"))
+		}
+		if strings.Contains(r.URL.Path, "provider-auths") {
+			fmt.Fprint(w, `{"data":[]}`)
+		} else {
+			fmt.Fprint(w, `{"id":"11111111-1111-4111-8111-111111111111"}`)
+		}
+	}))
+	defer server.Close()
+	client, err := NewClientWithTokenSource(server.URL, func(context.Context) (string, error) { return token, nil }, server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = client.CurrentUser(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	token = "refreshed"
+	if _, err = client.CurrentUser(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = client.SourceConnections(t.Context(), testOrgID, testInstanceID, ""); err != nil {
+		t.Fatal(err)
+	}
+	if requests != 3 {
+		t.Fatalf("requests=%d", requests)
+	}
+}

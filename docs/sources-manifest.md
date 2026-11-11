@@ -157,3 +157,11 @@ the per-source results for each cause. Sources already applied are retained.
 | 7 | timed out (the hosted run continues) |
 | 8 | the watched run failed or was cancelled |
 | 130 | watching interrupted (the hosted run continues) |
+
+Colony reports configuration recovery separately in `reconciliation_status`.
+A matching declaration with `pending` or `failed` recovery plans as `reconcile`;
+apply retries it with the observed revision and reports `reconciled` when ready.
+Recovery also runs durably on the server without starting provider acquisition.
+New runs return `source_reconciliation_pending` until configuration is ready.
+The CLI refreshes credentials for each request, including connection lookup and
+private permission defaults during a long plan or apply.

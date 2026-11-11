@@ -138,3 +138,70 @@ func TestSourcesRunSubmissionErrorReportsIdempotencyKey(t *testing.T) {
 		t.Fatalf("JSON error idempotency_key = %v, want %q", fields["idempotency_key"], key)
 	}
 }
+
+func TestManifestHooksUseRefreshedLogin(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.yaml")
+	issuer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		managementTestJSON(t, w, map[string]any{"id_token": "fresh", "refresh_token": "refresh", "expires_in": 3600})
+	}))
+	defer issuer.Close()
+	users, connections := 0, 0
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/api/v1/organizations":
+			managementTestJSON(t, w, map[string]any{"data": []any{map[string]any{"id": managementTestOrg, "slug": "antfly"}}})
+		case r.URL.Path == "/api/v1/organizations/"+managementTestOrg+"/cloud/instances":
+			managementTestJSON(t, w, map[string]any{"data": []any{map[string]any{"id": managementTestInstance, "slug": "test"}}})
+		case strings.HasSuffix(r.URL.Path, "/capabilities"):
+			cfg, err := loadConfig(configPath)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			cfg.Auth.ExpiresAt = time.Now().Add(-time.Hour)
+			if err = saveConfig(configPath, cfg); err != nil {
+				t.Error(err)
+				return
+			}
+			managementTestJSON(t, w, map[string]any{"version": 1, "runtime": "colony", "configure_sources": true, "revision_preconditions": true})
+		case strings.HasSuffix(r.URL.Path, "/provider-auths"):
+			connections++
+			if r.Header.Get("Authorization") != "Bearer fresh" {
+				t.Errorf("connection hook retained old token: %q", r.Header.Get("Authorization"))
+			}
+			managementTestJSON(t, w, map[string]any{"data": []any{map[string]any{"id": connectionsTestID, "display_name": "docs", "provider": "google_workspace", "enabled": true, "status": "active"}}})
+		case r.URL.Path == "/api/v1/users/me":
+			users++
+			if r.Header.Get("Authorization") != "Bearer fresh" {
+				t.Errorf("permission hook retained old token: %q", r.Header.Get("Authorization"))
+			}
+			managementTestJSON(t, w, map[string]any{"id": "7b092f06-5621-4ea0-89dd-4e1674d12cf3"})
+		case strings.Contains(r.URL.Path, "/sources/v1/sources/"):
+			w.WriteHeader(http.StatusNotFound)
+			managementTestJSON(t, w, map[string]any{"version": 1, "code": "source_not_found"})
+		default:
+			t.Errorf("unexpected request %s", r.URL)
+			http.NotFound(w, r)
+		}
+	}))
+	defer api.Close()
+	config := fmt.Sprintf("api_url: %s/api/v1\norg: %s\ninstance: %s\nauth:\n  type: oidc\n  issuer: %s\n  client_id: cli\n  id_token: old\n  refresh_token: refresh\n  expires_at: %s\n", api.URL, managementTestOrg, managementTestInstance, issuer.URL, time.Now().Add(time.Hour).UTC().Format(time.RFC3339Nano))
+	if err := os.WriteFile(configPath, []byte(config), 0600); err != nil {
+		t.Fatal(err)
+	}
+	manifestPath := filepath.Join(dir, "sources.yaml")
+	if err := os.WriteFile(manifestPath, []byte("version: 1\nsources:\n  - key: docs\n    connection: docs\n    table: docs\n    config: {}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	cmd := newRootCommand(&out, &errOut)
+	cmd.SetArgs([]string{"--config", configPath, "sources", "plan", "--file", manifestPath})
+	if err := cmd.ExecuteContext(t.Context()); err != nil {
+		t.Fatal(err, errOut.String())
+	}
+	if users != 1 || connections != 1 {
+		t.Fatalf("hooks users=%d connections=%d", users, connections)
+	}
+}

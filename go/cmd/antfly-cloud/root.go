@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	sdk "github.com/antflydb/antfly-cloud/go/pkg/sdk"
 	"github.com/antflydb/antfly/go/pkg/sources/management/commands"
 	"github.com/spf13/cobra"
 )
@@ -95,7 +96,7 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		if requireToken && token == "" {
 			return nil, fmt.Errorf("not logged in: run `antfly-cloud login` or set ANTFLY_CLOUD_TOKEN")
 		}
-		client, err := NewClient(cfg.APIURL, token, httpClient)
+		client, err := sdk.NewClientWithTokenSource(cfg.APIURL, tokenFor, httpClient)
 		if err != nil {
 			return nil, err
 		}
