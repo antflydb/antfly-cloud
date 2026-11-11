@@ -67,8 +67,14 @@ antfly-cloud sources apply --file sources.yaml
   nothing, so content is not reacquired or reprocessed.
 - Fields you omit keep their current server values. New sources default to native
   publication and access private to you unless `permissions` is declared.
+- Omitting `name` preserves an existing display name; new sources default to their
+  manifest key. Explicit `streams: []` or `artifacts: []` clears that collection
+  and subsequent applies leave it unchanged.
 - Unknown fields are rejected. Streams, artifacts, processing and knowledge use the
   shared declaration schemas.
+- The complete effective search, processing and knowledge declarations are
+  validated before any sources are written. Provider access, authorization and
+  native index admission are checked by the server.
 - Provider settings go in `config`; publication is a top-level field. For example,
   a GCS source with projected PDF page text (the manifest form of
   `sources add --page-provenance`):
@@ -133,6 +139,11 @@ stderr: `{"error":{"code":"...","status":404,"server_code":"...","message":"..."
 If submitting a run or purge fails after the CLI sent it (for example, the
 response was lost), the error also carries `idempotency_key`; retry with
 `--idempotency-key KEY` so the server does not start a duplicate run.
+
+Apply emits one result per source. Failed results include `error_code`,
+`http_status` and `server_code` when available. If all failures have the same
+category, apply returns its exit status below. Mixed categories exit 1; inspect
+the per-source results for each cause. Sources already applied are retained.
 
 | Exit | Meaning |
 |------|---------|

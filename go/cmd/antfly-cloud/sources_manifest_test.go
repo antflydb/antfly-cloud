@@ -45,13 +45,15 @@ type manifestTestWrite struct {
 }
 
 type manifestTestFixture struct {
-	output          bytes.Buffer
-	factory         stateFactory
-	mu              sync.Mutex
-	connections     []map[string]any
-	connectionLists int
-	sources         map[string]management.Source
-	writes          []manifestTestWrite
+	output           bytes.Buffer
+	factory          stateFactory
+	mu               sync.Mutex
+	connections      []map[string]any
+	connectionLists  int
+	sources          map[string]management.Source
+	writes           []manifestTestWrite
+	writeErrorStatus int
+	writeErrorCode   string
 }
 
 func manifestTestConnectionEntry(id, name string, enabled bool) map[string]any {
@@ -108,6 +110,11 @@ func newManifestTestFixture(t *testing.T) *manifestTestFixture {
 			}
 			managementTestJSON(t, w, source)
 		case http.MethodPut:
+			if f.writeErrorStatus != 0 {
+				w.WriteHeader(f.writeErrorStatus)
+				managementTestJSON(t, w, map[string]any{"version": 1, "code": f.writeErrorCode})
+				return
+			}
 			var source management.Source
 			if err := json.NewDecoder(r.Body).Decode(&source); err != nil {
 				t.Errorf("decode source PUT: %v", err)
