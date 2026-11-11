@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -12,7 +14,7 @@ import (
 )
 
 func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
-	command := &cobra.Command{Use: "connections", Short: "Connect Google Workspace, Slack, and Discord sources"}
+	command := &cobra.Command{Use: "connections", Short: "Manage source connections"}
 	var provider string
 	list := &cobra.Command{Use: "list", Short: "List stored source connections", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
@@ -77,6 +79,31 @@ func newSourceConnectionsCommand(stateFor stateFactory) *cobra.Command {
 	connect.Flags().BoolVar(&noBrowser, "no-browser", false, "print the authorization URL instead of opening a browser")
 	connect.Flags().BoolVar(&noWait, "no-wait", false, "return the URL and flow ID without waiting")
 	command.AddCommand(connect)
+	var gcsBucket, gcsPrefix, gcsName string
+	gcs := &cobra.Command{Use: "gcs", Short: "Register a scoped keyless GCS connection", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
+		if err != nil {
+			return err
+		}
+		connection, err := st.client.CreateGCSWorkloadConnection(cmd.Context(), org.ID, instance.ID, gcsName, gcsBucket, strings.TrimSuffix(gcsPrefix, "/"))
+		if err != nil {
+			return err
+		}
+		return st.out.Print(connection, func() error {
+			fmt.Fprintf(st.out.W, "Registered GCS connection %s. Ask your Cloud operator to bind its import identity, then run antfly-cloud sources preview --connection %s\n", connection.ID, connection.ID)
+			return nil
+		})
+	}}
+	gcs.Flags().StringVar(&gcsBucket, "bucket", "", "GCS bucket")
+	gcs.Flags().StringVar(&gcsPrefix, "prefix", "", "Allowed object prefix")
+	gcs.Flags().StringVar(&gcsName, "name", "", "Connection display name")
+	_ = gcs.MarkFlagRequired("bucket")
+	_ = gcs.MarkFlagRequired("prefix")
+	_ = gcs.MarkFlagRequired("name")
+	add := &cobra.Command{Use: "add", Short: "Register a source connection"}
+	add.AddCommand(gcs)
+	command.AddCommand(add)
+
 	var resource, parent, cursor string
 	resources := &cobra.Command{Use: "resources <connection-id>", Short: "List selectable folders, Gmail labels, calendars, or channels", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		st, org, instance, err := sourceCommandInstance(cmd.Context(), stateFor)
@@ -169,7 +196,7 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 		previewOnly := previewOnly
 		var connection, resource, name, target string
 		var selected []string
-		var attachments, shared bool
+		var attachments, shared, pageProvenance bool
 		var every, permissionTTL time.Duration
 		use, short := "add", "Create a private source from selected content"
 		if previewOnly {
@@ -177,8 +204,8 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			short = "Preview selected content before creating a source"
 		}
 		action := &cobra.Command{Use: use, Short: short, Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-			if connection == "" || len(selected) == 0 {
-				return fmt.Errorf("--connection and --select are required")
+			if connection == "" {
+				return fmt.Errorf("--connection is required")
 			}
 			if !previewOnly && (name == "" || target == "") {
 				return fmt.Errorf("--name and --table are required")
@@ -187,15 +214,29 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			connections, err := st.client.SourceConnections(cmd.Context(), org.ID, instance.ID, "")
-			if err != nil {
-				return err
-			}
 			var chosen *sdk.SourceConnection
-			for i := range connections {
-				if connections[i].ID == connection {
-					chosen = &connections[i]
-					break
+			if target != "" {
+				resolved, err := st.client.ResolveSourceConnection(cmd.Context(), org.ID, instance.ID, connection, target)
+				var apiErr *sdk.APIError
+				switch {
+				case err == nil:
+					chosen = &resolved
+				case errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound:
+					// Older Cloud releases only expose connection listing.
+				default:
+					return err
+				}
+			}
+			if chosen == nil {
+				connections, err := st.client.SourceConnections(cmd.Context(), org.ID, instance.ID, "")
+				if err != nil {
+					return err
+				}
+				for i := range connections {
+					if connections[i].ID == connection {
+						chosen = &connections[i]
+						break
+					}
 				}
 			}
 			if chosen == nil || !chosen.Enabled || chosen.Status != "active" {
@@ -205,7 +246,30 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 				return fmt.Errorf("--permission-ttl must be a whole number of seconds between 1m and 24h")
 			}
 			config := map[string]any{"attachments": attachments, "permission_ttl_seconds": int(permissionTTL / time.Second)}
+			if chosen.Provider != "gcs" && (len(selected) == 0 || pageProvenance) {
+				return fmt.Errorf("select content with --select; --page-provenance is only supported for GCS")
+			}
 			switch chosen.Provider {
+			case "gcs":
+				bucket, _ := chosen.Config["bucket"].(string)
+				prefix, _ := chosen.Config["prefix"].(string)
+				if bucket == "" || len(selected) > 1 {
+					return fmt.Errorf("GCS requires a configured bucket and at most one --select prefix")
+				}
+				if len(selected) == 1 {
+					prefix = selected[0]
+				}
+				delete(config, "attachments")
+				config["bucket"] = bucket
+				if prefix != "" {
+					config["prefix"] = strings.TrimSuffix(prefix, "/") + "/"
+				}
+				if pageProvenance {
+					config["publication"] = "text"
+					config["page_provenance"] = true
+					config["suffixes"] = []string{".txt"}
+				}
+
 			case "google_workspace":
 				config["resource"] = resource
 				switch resource {
@@ -230,7 +294,15 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			default:
 				return fmt.Errorf("unsupported source connection")
 			}
-			preview, err := st.client.PreviewSource(cmd.Context(), org.ID, instance.ID, connection, config)
+			var preview sdk.SourcePreview
+			if chosen.Provider == "gcs" {
+				prefix, _ := config["prefix"].(string)
+				preview, err = st.client.PreviewGCSSource(cmd.Context(), org.ID, instance.ID, connection, sdk.GCSSourceSelection{
+					Prefix: prefix, PageProvenance: pageProvenance, TargetTable: target,
+				})
+			} else {
+				preview, err = st.client.PreviewSource(cmd.Context(), org.ID, instance.ID, connection, config)
+			}
 			if err != nil {
 				return err
 			}
@@ -267,7 +339,8 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 		}}
 		action.Flags().StringVar(&connection, "connection", "", "source connection ID")
 		action.Flags().StringVar(&resource, "resource", "drive", "Workspace service: drive, gmail, or calendar")
-		action.Flags().StringSliceVar(&selected, "select", nil, "folder, label, calendar, or channel IDs")
+		action.Flags().StringSliceVar(&selected, "select", nil, "GCS object prefix or folder, label, calendar, or channel IDs")
+		action.Flags().BoolVar(&pageProvenance, "page-provenance", false, "validate and preserve original PDF page citations on GCS text objects")
 		action.Flags().BoolVar(&attachments, "attachments", false, "extract attachment contents")
 		action.Flags().StringVar(&name, "name", "", "source name")
 		action.Flags().StringVar(&target, "table", "", "destination table")

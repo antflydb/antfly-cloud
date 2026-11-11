@@ -188,3 +188,99 @@ func TestSourceSetupFlow(t *testing.T) {
 		})
 	}
 }
+
+func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
+	const org = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+	const instance = "3bf7206e-c22c-47df-8126-366d4f53752d"
+	const connection = "1631a891-318b-4ebd-82f2-9360cb419365"
+	const job = "74751713-c795-4403-9cdd-357625ed800c"
+	const user = "7b092f06-5621-4ea0-89dd-4e1674d12cf3"
+	base := "/api/v1/organizations/" + org + "/cloud/instances/" + instance
+	auth := map[string]any{"id": connection, "provider": "gcs", "display_name": "Pages", "status": "active", "enabled": true, "config": map[string]any{"bucket": "private-pages", "prefix": "repaired", "access_mode": "read_only"}}
+	var output bytes.Buffer
+	var calls []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var value any
+		switch r.URL.Path {
+		case "/api/v1/organizations":
+			value = map[string]any{"data": []any{map[string]any{"id": org, "slug": "test"}}}
+		case "/api/v1/users/me":
+			value = map[string]any{"id": user}
+		case "/api/v1/organizations/" + org + "/cloud/instances":
+			value = map[string]any{"data": []any{map[string]any{"id": instance, "slug": "test"}}}
+		case base + "/provider-auths":
+			if r.Method != http.MethodPost {
+				http.Error(w, "provider auth listing is forbidden", http.StatusForbidden)
+				return
+			}
+			if r.Method == "POST" {
+				calls = append(calls, "register")
+				var body map[string]any
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["secret"] != `{"type":"workload_identity"}` {
+					t.Errorf("expected a keyless selector, decode error %v", err)
+				}
+				value = auth
+			}
+		case base + "/provider-auths/" + connection + "/source-selection":
+			calls = append(calls, "resolve")
+			if r.URL.Query().Get("target_table") != "pages" {
+				t.Error("connection lookup must use destination table authorization")
+			}
+			value = auth
+		case base + "/provider-auths/" + connection + "/preview-gcs-source":
+			calls = append(calls, "preview")
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["target_table"] != "pages" || body["prefix"] != "repaired/" || body["page_provenance"] != true {
+				t.Errorf("invalid GCS preview: %v (%v)", body, err)
+			}
+			value = map[string]any{"data": []any{map[string]any{"path": "repaired/page.txt"}}, "verified_by": "cloudaf"}
+		case base + "/import-jobs":
+			calls = append(calls, "create")
+			var body struct {
+				SourceConfig struct {
+					PageProvenance bool   `json:"page_provenance"`
+					Publication    string `json:"publication"`
+					Permissions    struct {
+						Public  bool
+						Readers []string
+					}
+				} `json:"source_config"`
+			}
+			err := json.NewDecoder(r.Body).Decode(&body)
+			config := body.SourceConfig
+			if err != nil || !config.PageProvenance || config.Publication != "text" || config.Permissions.Public || strings.Join(config.Permissions.Readers, ",") != "user:"+user {
+				t.Errorf("invalid private GCS page source: %+v (%v)", body, err)
+			}
+			value = map[string]any{"id": job, "name": "Pages"}
+		case base + "/import-jobs/" + job + "/run":
+			calls = append(calls, "run")
+			value = map[string]any{"id": job, "status": "pending"}
+		default:
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(value)
+	}))
+	defer server.Close()
+	client, err := NewClient(server.URL+"/api/v1", "management", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	factory := func(bool) (*appState, error) {
+		return &appState{cfg: Config{APIURL: server.URL + "/api/v1", Org: org, Instance: instance}, client: client, out: Output{W: &output}, timeout: time.Second}, nil
+	}
+	register := newSourceConnectionsCommand(factory)
+	register.SetArgs([]string{"add", "gcs", "--name", "Pages", "--bucket", "private-pages", "--prefix", "repaired/"})
+	if err := register.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	add := newSourcesCommand(factory)
+	add.SetArgs([]string{"add", "--connection", connection, "--name", "Pages", "--table", "pages", "--page-provenance"})
+	if err := add.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(calls, ","); got != "register,resolve,preview,create,run" {
+		t.Fatalf("GCS setup stages: %s", got)
+	}
+}

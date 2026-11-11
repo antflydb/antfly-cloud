@@ -42,7 +42,8 @@ type SourceResourcePage struct {
 	NextCursor string           `json:"next_cursor,omitempty"`
 }
 type SourcePreview struct {
-	Data []struct {
+	VerifiedBy string `json:"verified_by,omitempty"`
+	Data       []struct {
 		Path     string         `json:"path"`
 		URI      string         `json:"uri"`
 		Text     string         `json:"text"`
@@ -95,6 +96,7 @@ func (c *Client) sourceDo(ctx context.Context, method, path string, body, out an
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.sourceToken)
+	req.Header.Set("User-Agent", "antfly-cloud")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -131,6 +133,36 @@ func (c *Client) SourceConnections(ctx context.Context, org, instance, provider 
 	err = c.sourceDo(ctx, "GET", base+"/provider-auths?provider="+url.QueryEscape(provider), nil, &result)
 	return result.Data, err
 }
+
+// ResolveSourceConnection loads the connection's source selection for a writable table.
+func (c *Client) ResolveSourceConnection(ctx context.Context, org, instance, id, table string) (SourceConnection, error) {
+	base, err := sourceInstancePath(org, instance)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	if err := sourceID(id); err != nil {
+		return SourceConnection{}, err
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, "GET", base+"/provider-auths/"+id+"/source-selection?target_table="+url.QueryEscape(table), nil, &result)
+	return result, err
+}
+
+// CreateGCSWorkloadConnection registers a scoped keyless connection.
+func (c *Client) CreateGCSWorkloadConnection(ctx context.Context, org, instance, name, bucket, prefix string) (SourceConnection, error) {
+	base, err := sourceInstancePath(org, instance)
+	if err != nil {
+		return SourceConnection{}, err
+	}
+	var result SourceConnection
+	err = c.sourceDo(ctx, "POST", base+"/provider-auths", map[string]any{
+		"provider": "gcs", "display_name": name, "enabled": true,
+		"secret": `{"type":"workload_identity"}`,
+		"config": map[string]any{"bucket": bucket, "prefix": prefix, "access_mode": "read_only"},
+	}, &result)
+	return result, err
+}
+
 func (c *Client) StartSourceInstallation(ctx context.Context, org, instance, provider, reconnect string, services []string) (SourceInstallation, error) {
 	base, err := sourceInstancePath(org, instance)
 	if err != nil {
@@ -176,6 +208,21 @@ func (c *Client) SourceResources(ctx context.Context, org, instance, id, resourc
 	return result, err
 }
 func (c *Client) PreviewSource(ctx context.Context, org, instance, id string, config map[string]any) (SourcePreview, error) {
+	return c.previewSource(ctx, org, instance, id, "preview-source", config)
+}
+
+type GCSSourceSelection struct {
+	Prefix         string `json:"prefix,omitempty"`
+	PageProvenance bool   `json:"page_provenance,omitempty"`
+	TargetTable    string `json:"target_table,omitempty"`
+}
+
+// PreviewGCSSource checks access and samples one object through the GCS importer.
+func (c *Client) PreviewGCSSource(ctx context.Context, org, instance, id string, config GCSSourceSelection) (SourcePreview, error) {
+	return c.previewSource(ctx, org, instance, id, "preview-gcs-source", config)
+}
+
+func (c *Client) previewSource(ctx context.Context, org, instance, id, action string, config any) (SourcePreview, error) {
 	base, err := sourceInstancePath(org, instance)
 	if err != nil {
 		return SourcePreview{}, err
@@ -184,7 +231,7 @@ func (c *Client) PreviewSource(ctx context.Context, org, instance, id string, co
 		return SourcePreview{}, err
 	}
 	var result SourcePreview
-	err = c.sourceDo(ctx, "POST", base+"/provider-auths/"+id+"/preview-source", config, &result)
+	err = c.sourceDo(ctx, "POST", base+"/provider-auths/"+id+"/"+action, config, &result)
 	return result, err
 }
 func (c *Client) CreateSource(ctx context.Context, org, instance string, input CreateSourceRequest) (SourceJob, error) {

@@ -93,3 +93,30 @@ after approval, and refuses to overwrite a different versioned R2 object.
 Rotate the App key by updating its organization secret for Antfly and its
 protected environment secret for Cloud before deleting the old App key.
 See [CLI releases](docs/cli-releases.md) for release and recovery steps.
+
+### Private GCS sources
+
+Select the instance and register the bucket and its allowed prefix.
+
+```sh
+antfly-cloud instance use my-instance
+antfly-cloud connections add gcs --name "Private docs" --bucket my-bucket --prefix documents
+```
+
+Give the returned connection ID to your Cloud operator so they can bind its
+import identity. After the bucket owner grants read access, preview the
+connection and create a private source:
+
+```sh
+antfly-cloud sources preview --connection CONNECTION_ID
+antfly-cloud sources add --connection CONNECTION_ID --name my-docs --table docs
+antfly-cloud sources list
+antfly-grep --cloud --source my-docs 'a known phrase'
+```
+
+Preview verifies a sample through the Cloud API. The first sync verifies access
+from the indexing worker. Use `--table docs` on preview to authorize it as a
+writer of the destination table.
+
+For projected PDF page text, add `--page-provenance` to preview and add. The
+preview checks the original PDF citation metadata against the page text digest.
