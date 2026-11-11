@@ -3,7 +3,7 @@ module github.com/antflydb/antfly-cloud/go
 go 1.27.3
 
 require (
-	github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111031817-de058636d727
+	github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111050422-6435c9875cf4
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/getkin/kin-openapi v0.152.0
 	github.com/go-viper/mapstructure/v2 v2.5.0

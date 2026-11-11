@@ -1,6 +1,6 @@
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
-github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111031817-de058636d727 h1:ktR9FGhSKIg/SFYJsVjeeahTQJGe8Xd6g4vWfX3JjRk=
-github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111031817-de058636d727/go.mod h1:DGq39gIF3sJtJsG/Rjm3E4jUs6/xU9pS+Wek1gmHRMQ=
+github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111050422-6435c9875cf4 h1:ES0ygxc0qAm1+zqDP+eks5MEHSYx+TDHNYdwompc5sI=
+github.com/antflydb/antfly/go/pkg/sources v0.0.0-20261111050422-6435c9875cf4/go.mod h1:DGq39gIF3sJtJsG/Rjm3E4jUs6/xU9pS+Wek1gmHRMQ=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0 h1:axGnT1gRIfimI7gJifB699GoE/oq+F2MU7Dml6nw9rQ=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0/go.mod h1:lvDnEdqiQrp0O42VQGgmlKpxL1AP2+08jFMw88y4klk=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
