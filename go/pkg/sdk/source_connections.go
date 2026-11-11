@@ -42,7 +42,8 @@ type SourceResourcePage struct {
 	NextCursor string           `json:"next_cursor,omitempty"`
 }
 type SourcePreview struct {
-	Data []struct {
+	VerifiedBy string `json:"verified_by,omitempty"`
+	Data       []struct {
 		Path     string         `json:"path"`
 		URI      string         `json:"uri"`
 		Text     string         `json:"text"`
@@ -196,12 +197,18 @@ func (c *Client) PreviewSource(ctx context.Context, org, instance, id string, co
 	return c.previewSource(ctx, org, instance, id, "preview-source", config)
 }
 
+type GCSSourceSelection struct {
+	Prefix         string `json:"prefix,omitempty"`
+	PageProvenance bool   `json:"page_provenance,omitempty"`
+	TargetTable    string `json:"target_table,omitempty"`
+}
+
 // PreviewGCSSource checks access and samples one object through the GCS importer.
-func (c *Client) PreviewGCSSource(ctx context.Context, org, instance, id string, config map[string]any) (SourcePreview, error) {
+func (c *Client) PreviewGCSSource(ctx context.Context, org, instance, id string, config GCSSourceSelection) (SourcePreview, error) {
 	return c.previewSource(ctx, org, instance, id, "preview-gcs-source", config)
 }
 
-func (c *Client) previewSource(ctx context.Context, org, instance, id, action string, config map[string]any) (SourcePreview, error) {
+func (c *Client) previewSource(ctx context.Context, org, instance, id, action string, config any) (SourcePreview, error) {
 	base, err := sourceInstancePath(org, instance)
 	if err != nil {
 		return SourcePreview{}, err

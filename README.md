@@ -114,5 +114,9 @@ antfly-cloud sources list
 antfly-grep --cloud --source my-docs 'a known phrase'
 ```
 
+Preview verifies a sample through the Cloud API. The first sync verifies access
+from the indexing worker. Use `--table docs` on preview to authorize it as a
+writer of the destination table.
+
 For projected PDF page text, add `--page-provenance` to preview and add. The
 preview checks the original PDF citation metadata against the page text digest.

@@ -3936,6 +3936,83 @@ paths:
           description: Provider installation is not configured
       security:
         - BearerAuth: []
+  /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/preview-gcs-source:
+    servers:
+      - url: https://platform.antfly.io/api/v1
+    post:
+      tags:
+        - CloudSources
+      operationId: previewGCSSource
+      summary: Verify access to a connected GCS source
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: instance_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auth_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prefix:
+                  type: string
+                target_table:
+                  type: string
+                  description: Authorize preview as a writer of this destination table.
+                page_provenance:
+                  type: boolean
+      responses:
+        '200':
+          description: One verified object path
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - verified_by
+                properties:
+                  verified_by:
+                    type: string
+                    enum:
+                      - cloudaf
+                    description: Cloud API identity verified the sample. The indexing worker verifies its own access on sync.
+                  data:
+                    type: array
+                    maxItems: 1
+                    items:
+                      type: object
+                      required:
+                        - path
+                      properties:
+                        path:
+                          type: string
+        '400':
+          description: Invalid GCS selection or no matching objects
+        '401':
+          description: Authentication required
+        '403':
+          description: Access denied
+        '404':
+          description: Connection or flow unavailable
+      security:
+        - BearerAuth: []
   /organizations/{org_id}/cloud/instances/{instance_id}/provider-auths/{auth_id}/preview-source:
     servers:
       - url: https://platform.antfly.io/api/v1

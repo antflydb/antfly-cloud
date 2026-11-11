@@ -222,10 +222,10 @@ func TestGCSConnectionAndPageSourceFlow(t *testing.T) {
 		case base + "/provider-auths/" + connection + "/preview-gcs-source":
 			calls = append(calls, "preview")
 			var body map[string]any
-			if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["bucket"] != "private-pages" || body["prefix"] != "repaired/" || body["page_provenance"] != true {
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body["target_table"] != "pages" || body["prefix"] != "repaired/" || body["page_provenance"] != true {
 				t.Errorf("invalid GCS preview: %v (%v)", body, err)
 			}
-			value = map[string]any{"data": []any{map[string]any{"path": "repaired/page.txt"}}}
+			value = map[string]any{"data": []any{map[string]any{"path": "repaired/page.txt"}}, "verified_by": "cloudaf"}
 		case base + "/import-jobs":
 			calls = append(calls, "create")
 			var body struct {

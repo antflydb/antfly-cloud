@@ -278,11 +278,15 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			default:
 				return fmt.Errorf("unsupported source connection")
 			}
-			previewSource := st.client.PreviewSource
+			var preview sdk.SourcePreview
 			if chosen.Provider == "gcs" {
-				previewSource = st.client.PreviewGCSSource
+				prefix, _ := config["prefix"].(string)
+				preview, err = st.client.PreviewGCSSource(cmd.Context(), org.ID, instance.ID, connection, sdk.GCSSourceSelection{
+					Prefix: prefix, PageProvenance: pageProvenance, TargetTable: target,
+				})
+			} else {
+				preview, err = st.client.PreviewSource(cmd.Context(), org.ID, instance.ID, connection, config)
 			}
-			preview, err := previewSource(cmd.Context(), org.ID, instance.ID, connection, config)
 			if err != nil {
 				return err
 			}
@@ -319,7 +323,7 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 		}}
 		action.Flags().StringVar(&connection, "connection", "", "source connection ID")
 		action.Flags().StringVar(&resource, "resource", "drive", "Workspace service: drive, gmail, or calendar")
-		action.Flags().StringSliceVar(&selected, "select", nil, "folder, label, calendar, or channel IDs")
+		action.Flags().StringSliceVar(&selected, "select", nil, "GCS object prefix or folder, label, calendar, or channel IDs")
 		action.Flags().BoolVar(&pageProvenance, "page-provenance", false, "validate and preserve original PDF page citations on GCS text objects")
 		action.Flags().BoolVar(&attachments, "attachments", false, "extract attachment contents")
 		action.Flags().StringVar(&name, "name", "", "source name")
