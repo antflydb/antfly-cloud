@@ -6,6 +6,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client";
+import { InvitationAcceptanceError } from "./invitation-error";
+
+export { InvitationAcceptanceError } from "./invitation-error";
 
 /**
  * Hook to accept an invitation (for authenticated users)
@@ -21,24 +24,7 @@ export function useAcceptInvitation(token: string) {
       });
 
       if (error) {
-        const errorMessage =
-          (error as { detail?: string }).detail ||
-          (error as { message?: string }).message ||
-          "Failed to accept invitation";
-
-        if (response?.status === 400) {
-          throw new Error("Invalid invitation token");
-        }
-        if (response?.status === 403) {
-          throw new Error("Invitation email does not match your account");
-        }
-        if (response?.status === 404) {
-          throw new Error("Invitation not found or has expired");
-        }
-        if (response?.status === 409) {
-          throw new Error("You are already a member of this organization");
-        }
-        throw new Error(errorMessage);
+        throw new InvitationAcceptanceError(response.status, error);
       }
 
       return data;

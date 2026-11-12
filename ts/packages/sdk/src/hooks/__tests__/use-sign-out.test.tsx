@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { client } from "../../client";
+import { getOIDCIssuer } from "../../oidc";
 import { useSignOut } from "../use-sign-out";
 import { createTestQueryClient, setupMockLocalStorage } from "./test-utils";
 
@@ -110,6 +111,33 @@ describe("useSignOut", () => {
       configurable: true,
     });
     vi.restoreAllMocks();
+    sessionStorage.clear();
+    vi.mocked(getOIDCIssuer).mockResolvedValue(null);
+  });
+
+  it("clears the dashboard session and logs out of OIDC without losing tab-local recovery state", async () => {
+    setWindowLocation("https://dashboard.example.com/accept-invitation/example-token");
+    sessionStorage.setItem("pending-recovery", "example-token");
+    vi.mocked(getOIDCIssuer).mockResolvedValue("https://auth.example.com");
+    const clearCookies = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const { result } = renderHook(() => useSignOut(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      ),
+    });
+    act(() => result.current.signOut());
+    await waitFor(() => expect(window.location.href).toContain("https://auth.example.com/logout?"));
+    expect(client.POST).toHaveBeenCalledWith("/auth/signout", {});
+    expect(clearCookies).toHaveBeenCalledWith("/api/auth/signout", {
+      method: "POST",
+    });
+    expect(new URL(window.location.href).searchParams.get("post_logout_redirect_uri")).toBe(
+      "https://dashboard.example.com/login"
+    );
+    expect(window.location.href).not.toContain("example-token");
+    expect(sessionStorage.getItem("pending-recovery")).toBe("example-token");
   });
 
   it("clears localStorage on localhost sign out while preserving theme only", async () => {
