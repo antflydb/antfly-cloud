@@ -37,7 +37,7 @@ Create a source in a dedicated destination table you have provisioned:
 ```sh
 antfly-cloud sources add --connection CONNECTION_ID --resource gmail --select LABEL_ID --attachments --name customer-mail --table SOURCE_TABLE --every 15m
 antfly-cloud sources list
-antfly-cloud sources run SOURCE_ID --wait
+antfly-cloud sources runs wait SOURCE_ID RUN_ID
 ```
 
 To declare sources in a versioned file, inspect runs and readiness, or retire
@@ -49,10 +49,12 @@ opt-in. Previews include one parent and up to eight attachment samples, with eac
 text sample limited to 8 KiB. Calendar Drive attachments also need the connection's Drive grant. The
 server needs PDF/OCR extraction tools for those attachment formats.
 
-Source creation queues the first sync; queue acceptance does not mean the content
-is searchable. Check the source job/run and published catalog before searching.
-If queuing fails after creation, the error includes the saved source ID so you can
-retry `sources run` without creating another source.
+Source creation queues the first run and prints its ID and idempotency key. Watch
+that run with `sources runs wait`; `sources run` submits another acquisition.
+Queue acceptance does not mean the content is searchable. Check processing
+readiness and the published catalog before searching.
+If submission fails, the error includes the saved source ID and a retry command.
+Reuse the reported idempotency key when one is available; do not repeat `sources add`.
 
 For Discord run `connections connect discord`, select the server in the provider
 browser, then list `connections resources CONNECTION_ID --resource discord` and

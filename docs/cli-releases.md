@@ -22,10 +22,10 @@ gh api --paginate repos/antflydb/antfly-cloud/tags \
   --jq '.[] | select(.name | startswith("v")) | .name'
 ```
 
-A tag identifies a release attempt, not a successful upload. Check its
-[CLI Release workflow](https://github.com/antflydb/antfly-cloud/actions/workflows/go-cli-release.yml)
-and fetch its checksums before installing. GitHub Releases/assets and a mutable
-`latest` alias are not published by this workflow.
+A tag identifies a release attempt, not a successful upload. Check the
+[CLI Release Promotion workflow](https://github.com/antflydb/antfly-cloud/actions/workflows/go-cli-promote.yml)
+and fetch the tag's checksums before installing. GitHub Releases/assets and a
+mutable `latest` alias are not published by this workflow.
 
 Choose a published version explicitly, including `-rc.N` for a release candidate.
 Tag `v1.2.3` maps to directory `v1.2.3` and archive version `1.2.3`.
@@ -74,19 +74,30 @@ Each version directory also contains GoReleaser `metadata.json`. The local
 ## Maintainer publishing
 
 Merge client changes and release configuration before tagging the intended commit.
-Pushing `vX.Y.Z` or `vX.Y.Z-rc.N` triggers the CLI release workflow;
-merging a PR or creating a GitHub release alone does not trigger it. The workflow
-requires the tagged commit to belong to `main`, tests the CLI, and builds all
-four targets without publishing credentials. Review the tag, commit, payload
-manifest SHA256, and downloadable release artifact in the run summary. One of
-the five release reviewers must approve publication through the protected
-`antfly-cloud-cli-release` environment; the triggering user cannot self-approve.
-Emergency administrator bypass is available. This applies to RC and stable tags.
+Pushing `vX.Y.Z` or `vX.Y.Z-rc.N` triggers the CLI release build; merging a PR or
+creating a GitHub release alone does not trigger it. The build tests the CLI and
+packages all four targets without publishing credentials. When the build
+succeeds, GitHub loads the promotion workflow from `main`, not from the tag.
+Promotion checks the live tag and its source ancestry and verifies the build
+artifact before requesting approval. Review the tag, source commit, artifact
+link, and manifest SHA256 in the **promotion** run summary.
 
-After approval, the publisher rechecks the source and all payload checksums, then
-uploads those exact files to R2 bucket `antfly-releases` under
-`antfly-cloud/vX.Y.Z/`, including any prerelease suffix. It does not rebuild the
-approved files. The environment permits only `v*` tags.
+One of the five release reviewers must approve publication through the protected
+`antfly-cloud-cli-release` environment. Keep self-review prevention enabled;
+emergency administrator bypass is available. This applies to RC and stable tags.
+After approval, the publisher rechecks the live tag and exact reviewed artifact,
+then uploads those files to `antfly-releases/antfly-cloud/vX.Y.Z/` in R2. It
+does not rebuild the approved files.
+
+### Required environment cutover
+
+Before pushing the first tag with this workflow, cancel any pending legacy
+tag-based publish jobs. In the `antfly-cloud-cli-release` environment, set
+**Deployment branches and tags** to **Selected branches and tags**. Remove the
+`v*` **Tag** rule and leave exactly one **Branch** rule, `main`, with no tag
+rules. Do not leave the tag rule enabled: it lets tag-controlled workflows
+request publishing credentials directly. Retain the required reviewers,
+self-review prevention, and existing environment secrets.
 
 Configure `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL`, and
 `HOMEBREW_APP_PRIVATE_KEY` only in the protected `antfly-cloud-cli-release`
@@ -110,9 +121,10 @@ For stable tags, the publisher uploads blobs before updating Homebrew. A denied 
 update fails the job visibly and does not roll back uploaded objects. Verify
 CDN checksums and all four archives before treating a failed stable run as usable.
 A failed job does not mean nothing was published; inspect the failed step before
-retrying. Matching existing immutable objects are safe to retry; different
-content at an existing version is rejected and requires a new version. Rerun
-all jobs while the prepared artifact is retained if rebuilding is necessary.
+retrying. If any upload happened, rerun the failed promotion job against the
+original retained build artifact. Do not rebuild it: a new build can produce
+different bytes. If that artifact is gone, publish under a new version instead.
+Matching immutable objects are safe to retry; different bytes are never overwritten.
 A green RC run also requires public download verification: private
 upload success does not prove public CDN availability.
 

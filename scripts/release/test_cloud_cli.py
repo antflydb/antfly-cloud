@@ -185,7 +185,7 @@ class RefTests(unittest.TestCase):
             git("add", ".")
             git("commit", "-m", "trusted main")
             trusted = git("rev-parse", "HEAD")
-            git("tag", "v1.2.3")
+            git("tag", "-a", "v1.2.3", "-m", "release")
             git("clone", "--bare", str(repo), str(root / "origin.git"))
             git("remote", "add", "origin", str(root / "origin.git"))
             with chdir(repo):
@@ -195,11 +195,24 @@ class RefTests(unittest.TestCase):
             git("commit", "-am", "not on main")
             untrusted = git("rev-parse", "HEAD")
             git("tag", "v1.2.4")
+            git("push", "origin", "refs/tags/v1.2.4")
             with chdir(repo):
                 with self.assertRaisesRegex(ValueError, "must belong to main"):
                     release.validate_ref("v1.2.4", untrusted)
                 with self.assertRaisesRegex(ValueError, "must match"):
                     release.validate_ref("v1.2.3", trusted)
+                # Promotion runs from main, not from the source checkout.
+                release.validate_tag("v1.2.3", trusted)
+                with self.assertRaisesRegex(ValueError, "must belong to main"):
+                    release.validate_tag("v1.2.4", untrusted)
+            git("--git-dir", str(root / "origin.git"), "update-ref", "refs/tags/v1.2.3", untrusted)
+            with chdir(repo):
+                with self.assertRaisesRegex(ValueError, "Live tag and workflow commit must match"):
+                    release.validate_tag("v1.2.3", trusted)
+            git("--git-dir", str(root / "origin.git"), "update-ref", "-d", "refs/tags/v1.2.3")
+            with chdir(repo):
+                with self.assertRaisesRegex(ValueError, "Could not fetch live tag"):
+                    release.validate_tag("v1.2.3", trusted)
 
 
 if __name__ == "__main__":

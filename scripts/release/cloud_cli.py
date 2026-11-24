@@ -28,30 +28,44 @@ def identity(tag, commit):
     return tag[1:]
 
 
-def validate_ref(tag, commit):
+def validate_tag(tag, commit):
     identity(tag, commit)
-    subprocess.run(
+    remote_tag = f"refs/tags/{tag}"
+    fetched_tag = "refs/antfly-cloud-release/candidate"
+    result = subprocess.run(
         [
             "git",
             "fetch",
             "--no-tags",
             "origin",
             "+refs/heads/main:refs/remotes/origin/main",
+            f"+{remote_tag}:{fetched_tag}",
         ],
-        check=True,
         capture_output=True,
+        text=True,
     )
-    for ref in ("HEAD", f"refs/tags/{tag}^{{commit}}"):
-        actual = subprocess.check_output(
-            ["git", "rev-parse", "--verify", ref], text=True
-        ).strip()
-        if actual != commit:
-            raise ValueError("Tag, checked-out source, and workflow commit must match")
+    if result.returncode:
+        raise ValueError(f"Could not fetch live tag {tag} and main: {result.stderr.strip()}")
+    actual = subprocess.check_output(
+        ["git", "rev-parse", "--verify", f"{fetched_tag}^{{commit}}"], text=True
+    ).strip()
+    if actual != commit:
+        raise ValueError("Live tag and workflow commit must match")
     result = subprocess.run(
         ["git", "merge-base", "--is-ancestor", commit, "refs/remotes/origin/main"]
     )
     if result.returncode:
         raise ValueError("Release commit must belong to main")
+
+
+def validate_ref(tag, commit):
+    identity(tag, commit)
+    actual = subprocess.check_output(
+        ["git", "rev-parse", "--verify", "HEAD"], text=True
+    ).strip()
+    if actual != commit:
+        raise ValueError("Checked-out source and workflow commit must match")
+    validate_tag(tag, commit)
 
 
 def sha256(path):
@@ -250,7 +264,7 @@ def publish_formula(root, tag, token, request=github_request):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "operation", choices=("validate-ref", "prepare", "verify", "publish")
+        "operation", choices=("validate-ref", "validate-tag", "prepare", "verify", "publish")
     )
     parser.add_argument("--tag", required=True)
     parser.add_argument("--commit", required=True)
@@ -260,6 +274,8 @@ def main():
     args = parser.parse_args()
     if args.operation == "validate-ref":
         validate_ref(args.tag, args.commit)
+    elif args.operation == "validate-tag":
+        validate_tag(args.tag, args.commit)
     elif args.operation == "prepare":
         print(prepare(args.dist, args.payload, args.tag, args.commit))
     else:

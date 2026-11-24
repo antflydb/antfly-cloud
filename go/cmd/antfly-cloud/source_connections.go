@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -325,14 +326,30 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			if !valid {
 				return fmt.Errorf("--every must be 5m, 15m, 30m, 1h, 6h, 12h, or 24h")
 			}
+			env, err := sourceManagementForInstance(stateFor, st, org.ID, instance.ID)
+			if err != nil {
+				return err
+			}
 			job, err := st.client.CreateSource(cmd.Context(), org.ID, instance.ID, sdk.CreateSourceRequest{Name: name, ProviderAuthID: connection, TargetTable: target, SourceConfig: config, RunPolicy: "scheduled", ScheduleSeconds: seconds})
 			if err != nil {
 				return err
 			}
-			if err := st.client.SyncSource(cmd.Context(), org.ID, instance.ID, job.ID); err != nil {
-				return fmt.Errorf("source %s was saved; queue its first sync with `antfly-cloud sources sync %s`: %w", job.ID, job.ID, err)
+			env.Out = io.Discard
+			receipt, err := commands.StartRun(cmd.Context(), env, job.ID, commands.RunOptions{})
+			if err != nil {
+				retry := "antfly-cloud sources run " + job.ID
+				if receipt.IdempotencyKey != "" {
+					retry += " --idempotency-key " + receipt.IdempotencyKey
+				}
+				return fmt.Errorf("source %s was saved; retry its first run with `%s`: %w", job.ID, retry, err)
 			}
-			return st.out.Print(job, func() error { fmt.Fprintf(st.out.W, "Source created and sync queued: %s\n", job.ID); return nil })
+			return st.out.Print(struct {
+				sdk.SourceJob
+				commands.RunReceipt
+			}{job, receipt}, func() error {
+				_, err := fmt.Fprintf(st.out.W, "Source created: %s\nRun queued: %s\nIdempotency key: %s\nWatch: antfly-cloud sources runs wait %s %s\n", job.ID, receipt.Run.Id, receipt.IdempotencyKey, job.ID, receipt.Run.Id)
+				return err
+			})
 		}}
 		action.Flags().StringVar(&connection, "connection", "", "source connection ID")
 		action.Flags().StringVar(&resource, "resource", "drive", "Workspace service: drive, gmail, or calendar")
