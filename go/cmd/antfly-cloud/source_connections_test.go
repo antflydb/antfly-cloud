@@ -3,14 +3,79 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+type followUpEndpointTransport struct {
+	urls []string
+}
+
+func (t *followUpEndpointTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	t.urls = append(t.urls, r.URL.String())
+	return nil, errors.New("endpoint captured without network access")
+}
+
+func TestSourceFollowUpPreservesProductionOverride(t *testing.T) {
+	const devURL = "https://dev.example.invalid/api/v1"
+	for _, selection := range []string{"config", "environment"} {
+		t.Run(selection, func(t *testing.T) {
+			t.Setenv("ANTFLY_CLOUD_API_URL", "")
+			t.Setenv("ANTFLY_CLOUD_TOKEN", "management")
+			configPath := filepath.Join(t.TempDir(), "cloud config's.yaml")
+			configURL := devURL
+			if selection == "environment" {
+				configURL = defaultAPIURL
+				t.Setenv("ANTFLY_CLOUD_API_URL", devURL)
+			}
+			if err := os.WriteFile(configPath, []byte("api_url: "+configURL+"\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			transport := &followUpEndpointTransport{}
+			original := http.DefaultTransport
+			http.DefaultTransport = transport
+			t.Cleanup(func() { http.DefaultTransport = original })
+			st := &appState{cfg: Config{APIURL: defaultAPIURL}, configOverride: configPath}
+			for _, followUp := range []struct {
+				name    string
+				command string
+				args    []string
+			}{
+				{"watch", "sources runs wait", []string{"source-id", "run-id"}},
+				{"retry", "sources run", []string{"source-id", "--idempotency-key", "original-key"}},
+			} {
+				t.Run(followUp.name, func(t *testing.T) {
+					printed := sourceFollowUpCommand(st, "org-id", "instance-id", followUp.command, followUp.args...)
+					// Parse the printed command as a user shell would, then execute
+					// its arguments through the real CLI configuration path.
+					script := `set -- ` + strings.TrimPrefix(printed, "antfly-cloud ") + `; printf '%s\000' "$@"`
+					argv, err := exec.Command("sh", "-c", script).Output()
+					if err != nil {
+						t.Fatal(err)
+					}
+					args := strings.Split(strings.TrimSuffix(string(argv), "\x00"), "\x00")
+					var output bytes.Buffer
+					command := newRootCommand(&output, &output)
+					command.SetArgs(args)
+					transport.urls = nil
+					if err := command.ExecuteContext(t.Context()); err == nil {
+						t.Fatal("expected transport to stop the request")
+					}
+					if len(transport.urls) != 1 || strings.SplitN(transport.urls[0], "?", 2)[0] != defaultAPIURL+"/organizations" {
+						t.Fatalf("follow-up selected wrong endpoint: %v", transport.urls)
+					}
+				})
+			}
+		})
+	}
+}
 
 func TestConnectionsConnectUsesManagedBrowserFlow(t *testing.T) {
 	const org = "9a17e518-6274-4f79-8dff-80eb53e6d86c"

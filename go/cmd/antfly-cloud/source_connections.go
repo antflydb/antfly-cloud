@@ -201,7 +201,7 @@ func (e *savedSourceError) Unwrap() error { return e.err }
 func (e *savedSourceError) SourceID() string { return e.sourceID }
 
 // sourceFollowUpCommand keeps generated commands pinned to the resolved scope
-// and any non-default configuration needed to reach it.
+// and API URL, even when configuration selects a different default endpoint.
 func sourceFollowUpCommand(st *appState, orgID, instanceID, command string, args ...string) string {
 	var result strings.Builder
 	result.WriteString("antfly-cloud")
@@ -209,10 +209,8 @@ func sourceFollowUpCommand(st *appState, orgID, instanceID, command string, args
 		result.WriteString(" --config ")
 		result.WriteString(shellQuote(st.configOverride))
 	}
-	if st.cfg.APIURL != "" && st.cfg.APIURL != defaultAPIURL {
-		result.WriteString(" --api-url ")
-		result.WriteString(shellQuote(st.cfg.APIURL))
-	}
+	result.WriteString(" --api-url ")
+	result.WriteString(shellQuote(st.cfg.APIURL))
 	result.WriteString(" --org ")
 	result.WriteString(shellQuote(orgID))
 	result.WriteString(" --instance ")

@@ -52,7 +52,7 @@ server needs PDF/OCR extraction tools for those attachment formats.
 Source creation queues the first run and prints its ID and idempotency key. Watch
 that run with `sources runs wait`; `sources run` submits another acquisition.
 The printed watch and retry commands pin the resolved organization and instance
-IDs. They also retain an explicit config path and a non-default API URL, with
+IDs. They also retain an explicit config path and the resolved API URL, with
 shell quoting, so copying a command cannot silently switch Cloud contexts.
 Queue acceptance does not mean the content is searchable. Check processing
 readiness and the published catalog before searching.
