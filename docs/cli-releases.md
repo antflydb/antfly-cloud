@@ -125,8 +125,12 @@ retrying. If any upload happened, rerun the failed promotion job against the
 original retained build artifact. Do not rebuild it: a new build can produce
 different bytes. If that artifact is gone, publish under a new version instead.
 Matching immutable objects are safe to retry; different bytes are never overwritten.
-A green RC run also requires public download verification: private
-upload success does not prove public CDN availability.
+An identical Homebrew formula is also a safe no-op. The publisher refuses to
+replace a newer formula, replace the same version with different content, or
+replace a formula whose version cannot be read. Once a newer stable version is in
+the tap, do not retry an older promotion expecting it to update Homebrew.
+A green RC run also requires public download verification: private upload success
+does not prove public CDN availability.
 
 Before announcing a release, download `checksums.txt` and all four archives from
 the public CDN, verify every SHA256, and smoke-test `antfly-cloud version` on

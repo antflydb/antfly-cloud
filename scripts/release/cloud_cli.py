@@ -15,8 +15,14 @@ import urllib.request
 
 NUMBER = r"(?:0|[1-9][0-9]*)"
 PRERELEASE = r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
-TAG = re.compile(
-    rf"v{NUMBER}\.{NUMBER}\.{NUMBER}(?:-{PRERELEASE}(?:\.{PRERELEASE})*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+SEMVER = (
+    rf"{NUMBER}\.{NUMBER}\.{NUMBER}"
+    rf"(?:-{PRERELEASE}(?:\.{PRERELEASE})*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+)
+TAG = re.compile(rf"v{SEMVER}")
+FORMULA_VERSION = re.compile(
+    rb"""(?m)^[ \t]*version[ \t]+["']([^"']+)["'][ \t]*(?:#.*)?$"""
 )
 PLATFORMS = ("Darwin_arm64", "Darwin_x86_64", "Linux_arm64", "Linux_x86_64")
 FORMULA = "Formula/antfly-cloud.rb"
@@ -228,19 +234,72 @@ def github_request(path, token, method="GET", payload=None):
         return json.load(response)
 
 
+def semver_key(version):
+    if not re.fullmatch(SEMVER, version):
+        raise ValueError("Expected a SemVer version")
+    precedence = version.split("+", 1)[0]
+    core, separator, prerelease = precedence.partition("-")
+    major, minor, patch = (int(part) for part in core.split("."))
+    if not separator:
+        return major, minor, patch, 1, ()
+    identifiers = tuple(
+        (0, int(identifier)) if identifier.isdigit() else (1, identifier)
+        for identifier in prerelease.split(".")
+    )
+    return major, minor, patch, 0, identifiers
+
+
+def formula_version(formula):
+    versions = FORMULA_VERSION.findall(formula)
+    if len(versions) != 1:
+        raise ValueError(
+            "Could not determine the current Homebrew formula version; "
+            "refusing to overwrite it"
+        )
+    try:
+        declared_version = versions[0].decode("ascii")
+        version = (
+            declared_version[1:]
+            if declared_version.startswith("v")
+            else declared_version
+        )
+        semver_key(version)
+    except (UnicodeDecodeError, ValueError):
+        raise ValueError(
+            "Could not determine the current Homebrew formula version; "
+            "refusing to overwrite it"
+        ) from None
+    return version
+
+
 def publish_formula(root, tag, token, request=github_request):
     if "-" in tag.split("+", 1)[0]:
         print("Release candidate: stable Homebrew formula update skipped")
         return
     path = "/repos/antflydb/homebrew-taps/contents/" + FORMULA
     formula = (root / FORMULA).read_bytes()
+    candidate_version = tag[1:]
+    candidate_key = semver_key(candidate_version)
     for attempt in range(3):
         sha = None
         try:
             current = request(path + "?ref=main", token)
-            if base64.b64decode(current["content"]) == formula:
+            current_formula = base64.b64decode(current["content"])
+            if current_formula == formula:
                 print("Homebrew formula already matches")
                 return
+            current_version = formula_version(current_formula)
+            current_key = semver_key(current_version)
+            if current_key > candidate_key:
+                raise ValueError(
+                    "Refusing to downgrade stable Homebrew formula from "
+                    f"{current_version} to {candidate_version}"
+                )
+            if current_key == candidate_key:
+                raise ValueError(
+                    "Refusing to rewrite stable Homebrew formula version "
+                    f"{candidate_version} with different content"
+                )
             sha = current["sha"]
         except urllib.error.HTTPError as exc:
             if exc.code != 404:

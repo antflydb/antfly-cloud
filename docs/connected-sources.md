@@ -51,10 +51,14 @@ server needs PDF/OCR extraction tools for those attachment formats.
 
 Source creation queues the first run and prints its ID and idempotency key. Watch
 that run with `sources runs wait`; `sources run` submits another acquisition.
+The printed watch and retry commands pin the resolved organization and instance
+IDs. They also retain an explicit config path and a non-default API URL, with
+shell quoting, so copying a command cannot silently switch Cloud contexts.
 Queue acceptance does not mean the content is searchable. Check processing
 readiness and the published catalog before searching.
-If submission fails, the error includes the saved source ID and a retry command.
-Reuse the reported idempotency key when one is available; do not repeat `sources add`.
+If first-run submission fails after the source is saved, JSON errors include
+`source_id` and, when the submission was sent, `idempotency_key`. Use the printed
+retry command; do not repeat `sources add`.
 
 For Discord run `connections connect discord`, select the server in the provider
 browser, then list `connections resources CONNECTION_ID --resource discord` and

@@ -186,6 +186,46 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 	}
 }
 
+type savedSourceError struct {
+	sourceID     string
+	retryCommand string
+	err          error
+}
+
+func (e *savedSourceError) Error() string {
+	return fmt.Sprintf("source %s was saved; retry its first run with `%s`: %v", e.sourceID, e.retryCommand, e.err)
+}
+
+func (e *savedSourceError) Unwrap() error { return e.err }
+
+func (e *savedSourceError) SourceID() string { return e.sourceID }
+
+// sourceFollowUpCommand keeps generated commands pinned to the resolved scope
+// and any non-default configuration needed to reach it.
+func sourceFollowUpCommand(st *appState, orgID, instanceID, command string, args ...string) string {
+	var result strings.Builder
+	result.WriteString("antfly-cloud")
+	if st.configOverride != "" {
+		result.WriteString(" --config ")
+		result.WriteString(shellQuote(st.configOverride))
+	}
+	if st.cfg.APIURL != "" && st.cfg.APIURL != defaultAPIURL {
+		result.WriteString(" --api-url ")
+		result.WriteString(shellQuote(st.cfg.APIURL))
+	}
+	result.WriteString(" --org ")
+	result.WriteString(shellQuote(orgID))
+	result.WriteString(" --instance ")
+	result.WriteString(shellQuote(instanceID))
+	result.WriteByte(' ')
+	result.WriteString(command)
+	for _, arg := range args {
+		result.WriteByte(' ')
+		result.WriteString(shellQuote(arg))
+	}
+	return result.String()
+}
+
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 	command := &cobra.Command{Use: "sources", Short: "Manage connected sources, runs, and processing readiness"}
 	addSourceManagementCommands(command, stateFor)
@@ -337,17 +377,18 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			env.Out = io.Discard
 			receipt, err := commands.StartRun(cmd.Context(), env, job.ID, commands.RunOptions{})
 			if err != nil {
-				retry := "antfly-cloud sources run " + job.ID
+				retry := sourceFollowUpCommand(st, org.ID, instance.ID, "sources run", job.ID)
 				if receipt.IdempotencyKey != "" {
-					retry += " --idempotency-key " + receipt.IdempotencyKey
+					retry += " --idempotency-key " + shellQuote(receipt.IdempotencyKey)
 				}
-				return fmt.Errorf("source %s was saved; retry its first run with `%s`: %w", job.ID, retry, err)
+				return &savedSourceError{sourceID: job.ID, retryCommand: retry, err: err}
 			}
+			watch := sourceFollowUpCommand(st, org.ID, instance.ID, "sources runs wait", job.ID, receipt.Run.Id)
 			return st.out.Print(struct {
 				sdk.SourceJob
 				commands.RunReceipt
 			}{job, receipt}, func() error {
-				_, err := fmt.Fprintf(st.out.W, "Source created: %s\nRun queued: %s\nIdempotency key: %s\nWatch: antfly-cloud sources runs wait %s %s\n", job.ID, receipt.Run.Id, receipt.IdempotencyKey, job.ID, receipt.Run.Id)
+				_, err := fmt.Fprintf(st.out.W, "Source created: %s\nRun queued: %s\nIdempotency key: %s\nWatch: %s\n", job.ID, receipt.Run.Id, receipt.IdempotencyKey, watch)
 				return err
 			})
 		}}

@@ -5,9 +5,10 @@ management API for the selected organization and instance. It uses your Cloud
 login; provider credentials stay with the hosted service and are never
 downloaded. Hosted runs execute on the server and continue if the CLI exits.
 
-Every command accepts the usual `--org`, `--instance`, `--json` and `--timeout`
-flags. Run `antfly-cloud sources --help` (or `--help` on any subcommand) to see
-what is available. Sources can be referenced by ID or by unique name.
+Every command accepts the usual `--config`, `--api-url`, `--org`, `--instance`,
+`--json` and `--timeout` flags. Run `antfly-cloud sources --help` (or `--help`
+on any subcommand) to see what is available. Sources can be referenced by ID or
+by unique name.
 
 ## Inspect
 
@@ -138,9 +139,11 @@ connection ID you were given.
 
 With `--json`, output is machine-readable and errors are a single JSON line on
 stderr: `{"error":{"code":"...","status":404,"server_code":"...","message":"..."}}`.
-If submitting a run or purge fails after the CLI sent it (for example, the
-response was lost), the error also carries `idempotency_key`; retry with
-`--idempotency-key KEY` so the server does not start a duplicate run.
+If `sources add` saves the source but its first run cannot be submitted, the
+error also carries `source_id`; retry the run for that source rather than
+repeating creation. If submitting a run or purge fails after the CLI sent it
+(for example, the response was lost), the error also carries `idempotency_key`;
+retry with `--idempotency-key KEY` so the server does not start a duplicate run.
 
 Apply emits one result per source. Failed results include `error_code`,
 `http_status` and `server_code` when available. If all failures have the same

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -67,6 +69,7 @@ func TestSourceSetupFlow(t *testing.T) {
 			const job = "74751713-c795-4403-9cdd-357625ed800c"
 			const run = "c8d339f4-12c7-44b2-b636-a39b361bf326"
 			const user = "7b092f06-5621-4ea0-89dd-4e1674d12cf3"
+			const configOverride = "/tmp/cloud config's.yaml"
 			base := "/api/v1/organizations/" + org + "/cloud/instances/" + instance
 			var output bytes.Buffer
 			var stages []string
@@ -142,7 +145,7 @@ func TestSourceSetupFlow(t *testing.T) {
 				t.Fatal(err)
 			}
 			factory := func(bool) (*appState, error) {
-				return &appState{cfg: Config{APIURL: server.URL + "/api/v1", Org: org, Instance: instance, Token: "management"}, client: client, out: Output{W: &output}, timeout: time.Second}, nil
+				return &appState{cfg: Config{APIURL: server.URL + "/api/v1", Org: "antfly", Instance: "test", Token: "management"}, configOverride: configOverride, client: client, out: Output{W: &output}, timeout: time.Second}, nil
 			}
 			connect := newSourceConnectionsCommand(factory)
 			connect.SetArgs([]string{"connect", strings.ReplaceAll(provider, "_", "-"), "--services", "gmail", "--no-browser"})
@@ -190,10 +193,122 @@ func TestSourceSetupFlow(t *testing.T) {
 			if permissions["public"] != false || len(readers) != 1 || readers[0] != "user:"+user {
 				t.Fatalf("source is not private: %v", permissions)
 			}
-			if !strings.Contains(output.String(), "antfly-cloud sources runs wait "+job+" "+run) {
-				t.Fatalf("missing completion: %s", output.String())
+			watch := "Watch: antfly-cloud --config '/tmp/cloud config'\\''s.yaml' --api-url " + shellQuote(server.URL+"/api/v1") +
+				" --org " + shellQuote(org) + " --instance " + shellQuote(instance) + " sources runs wait " + shellQuote(job) + " " + shellQuote(run)
+			if !strings.Contains(output.String(), watch) {
+				t.Fatalf("missing scoped completion command %q: %s", watch, output.String())
 			}
 		})
+	}
+}
+func TestSourceAddRunFailureReportsSavedSourceAndScopedRetry(t *testing.T) {
+	const org = "9a17e518-6274-4f79-8dff-80eb53e6d86c"
+	const instance = "3bf7206e-c22c-47df-8126-366d4f53752d"
+	const connection = "1631a891-318b-4ebd-82f2-9360cb419365"
+	const source = "74751713-c795-4403-9cdd-357625ed800c"
+	const run = "c8d339f4-12c7-44b2-b636-a39b361bf326"
+	const user = "7b092f06-5621-4ea0-89dd-4e1674d12cf3"
+	const configOverride = "/tmp/cloud config's.yaml"
+	base := "/api/v1/organizations/" + org + "/cloud/instances/" + instance
+	var output bytes.Buffer
+	var createCalls, runCalls int
+	var idempotencyKey string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var value any
+		switch r.URL.Path {
+		case "/api/v1/organizations":
+			value = map[string]any{"data": []any{map[string]any{"id": org, "slug": "org-slug"}}}
+		case "/api/v1/organizations/" + org + "/cloud/instances":
+			value = map[string]any{"data": []any{map[string]any{"id": instance, "slug": "instance-slug"}}}
+		case base + "/provider-auths/" + connection + "/source-selection":
+			value = map[string]any{"id": connection, "provider": "google_workspace", "status": "active", "enabled": true}
+		case base + "/provider-auths/" + connection + "/preview-source":
+			value = map[string]any{"data": []any{map[string]any{"path": "docs"}}}
+		case "/api/v1/users/me":
+			value = map[string]any{"id": user}
+		case base + "/import-jobs":
+			createCalls++
+			w.WriteHeader(http.StatusCreated)
+			value = map[string]any{"id": source, "name": "Docs", "mode": "source", "status": "active"}
+		case base + "/sources/v1/capabilities":
+			value = map[string]any{"version": 1, "runtime": "colony", "per_source_runs": true}
+		case base + "/sources/v1/sources/" + source:
+			value = map[string]any{"id": source, "name": "Docs", "connection": connection, "table": "docs", "state": "configured", "config": map[string]any{}}
+		case base + "/sources/v1/sources/" + source + "/runs":
+			runCalls++
+			if got := r.Header.Get("Idempotency-Key"); idempotencyKey == "" {
+				idempotencyKey = got
+			} else if got != idempotencyKey {
+				t.Errorf("retry idempotency key = %q, want %q", got, idempotencyKey)
+			}
+			if runCalls == 1 {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				value = map[string]any{"version": 1, "code": "run_queue_unavailable"}
+			} else {
+				w.WriteHeader(http.StatusAccepted)
+				value = map[string]any{"id": run, "source_id": source, "state": "pending"}
+			}
+		default:
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL)
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(value)
+	}))
+	defer server.Close()
+	configPath := filepath.Join(t.TempDir(), "cloud config's.yaml")
+	config := "api_url: " + server.URL + "/api/v1\norg: org-slug\ninstance: instance-slug\ntoken: management\n"
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var errorOutput bytes.Buffer
+	execute := func(args ...string) error {
+		command := newRootCommand(&output, &errorOutput)
+		command.SetArgs(append([]string{
+			"--config", configPath,
+			"--api-url", server.URL + "/api/v1",
+			"--org", "org-slug",
+			"--instance", "instance-slug",
+			"--json",
+		}, args...))
+		return command.ExecuteContext(t.Context())
+	}
+	err := execute("sources", "add", "--connection", connection, "--resource", "drive", "--select", "folder", "--name", "Docs", "--table", "docs")
+	if err == nil || createCalls != 1 || runCalls != 1 || idempotencyKey == "" {
+		t.Fatalf("add result err=%v creates=%d runs=%d key=%q", err, createCalls, runCalls, idempotencyKey)
+	}
+	if got := errorExitCode(err); got != 1 {
+		t.Fatalf("exit = %d, want 1; error: %v", got, err)
+	}
+	fields := managementTestErrorJSON(t, err)
+	if fields["code"] != "request_failed" || fields["status"] != float64(http.StatusServiceUnavailable) ||
+		fields["server_code"] != "run_queue_unavailable" || fields["source_id"] != source ||
+		fields["idempotency_key"] != idempotencyKey {
+		t.Fatalf("partial-success error metadata = %v", fields)
+	}
+	retry := "antfly-cloud --config " + shellQuote(configPath) + " --api-url " + shellQuote(server.URL+"/api/v1") +
+		" --org " + shellQuote(org) + " --instance " + shellQuote(instance) + " sources run " + shellQuote(source) +
+		" --idempotency-key " + shellQuote(idempotencyKey)
+	if !strings.Contains(err.Error(), "`"+retry+"`") {
+		t.Fatalf("missing scoped retry command %q: %v", retry, err)
+	}
+
+	output.Reset()
+	if err := execute("sources", "run", source, "--idempotency-key", idempotencyKey); err != nil {
+		t.Fatal(err)
+	}
+	if createCalls != 1 || runCalls != 2 {
+		t.Fatalf("retry repeated creation: creates=%d runs=%d", createCalls, runCalls)
+	}
+	var receipt struct {
+		IdempotencyKey string `json:"idempotency_key"`
+		Run            struct {
+			ID string `json:"id"`
+		} `json:"run"`
+	}
+	if err := json.Unmarshal(output.Bytes(), &receipt); err != nil || receipt.IdempotencyKey != idempotencyKey || receipt.Run.ID != run {
+		t.Fatalf("retry receipt = %s (%v)", output.String(), err)
 	}
 }
 
