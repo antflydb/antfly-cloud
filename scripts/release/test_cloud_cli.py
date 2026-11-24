@@ -6,11 +6,22 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import urllib.error
 
 import cloud_cli as release
 
 COMMIT = "a" * 40
 TAG = "v1.2.3-rc.1"
+
+
+def formula_bytes(version, marker=""):
+    marker_line = f"  # {marker}\n" if marker else ""
+    return (
+        "class AntflyCloud < Formula\n"
+        f'  version "{version}"\n'
+        f"{marker_line}"
+        "end\n"
+    ).encode()
 
 
 class FakeError(Exception):
@@ -60,7 +71,7 @@ class ReleaseTests(unittest.TestCase):
         )
         formula = self.dist / "homebrew" / release.FORMULA
         formula.parent.mkdir(parents=True)
-        formula.write_text("class AntflyCloud < Formula\nend\n")
+        formula.write_bytes(formula_bytes(TAG[1:]))
         self.digest = release.prepare(self.dist, self.payload, TAG, COMMIT)
 
     def test_payload_is_bound_to_tag_commit_and_expected_manifest(self):
@@ -127,6 +138,8 @@ class ReleaseTests(unittest.TestCase):
         release.publish_formula(self.payload, TAG, "test-token", forbidden)
 
     def test_stable_formula_update_uses_expected_repository_and_blob_sha(self):
+        candidate = formula_bytes("1.2.3", "candidate")
+        (self.payload / release.FORMULA).write_bytes(candidate)
         calls = []
 
         def request(path, token, method="GET", payload=None):
@@ -134,7 +147,9 @@ class ReleaseTests(unittest.TestCase):
             if method == "GET":
                 return {
                     "sha": "old-blob",
-                    "content": base64.b64encode(b"old formula").decode(),
+                    "content": base64.b64encode(
+                        formula_bytes("1.2.2", "current")
+                    ).decode(),
                 }
             return {}
 
@@ -146,10 +161,104 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(method, "PUT")
         self.assertEqual(payload["branch"], "main")
         self.assertEqual(payload["sha"], "old-blob")
-        self.assertEqual(
-            base64.b64decode(payload["content"]),
-            (self.payload / release.FORMULA).read_bytes(),
+        self.assertEqual(base64.b64decode(payload["content"]), candidate)
+
+    def test_older_retry_cannot_downgrade_newer_stable_formula(self):
+        (self.payload / release.FORMULA).write_bytes(formula_bytes("1.2.3"))
+        calls = []
+
+        def request(path, token, method="GET", payload=None):
+            calls.append(method)
+            return {
+                "sha": "newer-blob",
+                "content": base64.b64encode(formula_bytes("1.2.4")).decode(),
+            }
+
+        with self.assertRaisesRegex(ValueError, "Refusing to downgrade"):
+            release.publish_formula(self.payload, "v1.2.3", "test-token", request)
+        self.assertEqual(calls, ["GET"])
+
+    def test_formula_version_comparison_uses_numeric_semver_order(self):
+        (self.payload / release.FORMULA).write_bytes(formula_bytes("1.9.0"))
+
+        def request(path, token, method="GET", payload=None):
+            self.assertEqual(method, "GET")
+            return {
+                "sha": "newer-blob",
+                "content": base64.b64encode(formula_bytes("1.10.0")).decode(),
+            }
+
+        with self.assertRaisesRegex(ValueError, "from 1.10.0 to 1.9.0"):
+            release.publish_formula(self.payload, "v1.9.0", "test-token", request)
+
+    def test_conflict_rechecks_and_rejects_newer_formula_before_retry(self):
+        (self.payload / release.FORMULA).write_bytes(formula_bytes("1.2.3"))
+        calls = []
+
+        def request(path, token, method="GET", payload=None):
+            calls.append(method)
+            if method == "GET":
+                version = "1.2.2" if calls.count("GET") == 1 else "1.2.4"
+                return {
+                    "sha": "blob-" + version,
+                    "content": base64.b64encode(formula_bytes(version)).decode(),
+                }
+            if calls.count("PUT") > 1:
+                self.fail("publisher attempted a second write after the tap advanced")
+            error = urllib.error.HTTPError(path, 409, "conflict", {}, None)
+            error.close()
+            raise error
+
+        with self.assertRaisesRegex(ValueError, "Refusing to downgrade"):
+            release.publish_formula(self.payload, "v1.2.3", "test-token", request)
+        self.assertEqual(calls, ["GET", "PUT", "GET"])
+
+    def test_identical_formula_retry_is_a_no_op(self):
+        candidate = formula_bytes("1.2.3")
+        (self.payload / release.FORMULA).write_bytes(candidate)
+        calls = []
+
+        def request(path, token, method="GET", payload=None):
+            calls.append(method)
+            return {
+                "sha": "same-blob",
+                "content": base64.b64encode(candidate).decode(),
+            }
+
+        release.publish_formula(self.payload, "v1.2.3", "test-token", request)
+        self.assertEqual(calls, ["GET"])
+
+    def test_equal_formula_version_with_different_content_is_immutable(self):
+        (self.payload / release.FORMULA).write_bytes(
+            formula_bytes("1.2.3", "candidate")
         )
+
+        def request(path, token, method="GET", payload=None):
+            self.assertEqual(method, "GET")
+            return {
+                "sha": "same-version-blob",
+                "content": base64.b64encode(
+                    formula_bytes("1.2.3", "different")
+                ).decode(),
+            }
+
+        with self.assertRaisesRegex(ValueError, "different content"):
+            release.publish_formula(self.payload, "v1.2.3", "test-token", request)
+
+    def test_formula_with_unknown_current_version_is_not_overwritten(self):
+        (self.payload / release.FORMULA).write_bytes(formula_bytes("1.2.3"))
+
+        def request(path, token, method="GET", payload=None):
+            self.assertEqual(method, "GET")
+            return {
+                "sha": "unknown-version-blob",
+                "content": base64.b64encode(
+                    b"class AntflyCloud < Formula\nend\n"
+                ).decode(),
+            }
+
+        with self.assertRaisesRegex(ValueError, "Could not determine"):
+            release.publish_formula(self.payload, "v1.2.3", "test-token", request)
 
     def test_semver_validation(self):
         for tag in ["v0.1.0", "v1.2.3-rc.1", "v1.2.3-rc.1+build.9"]:
@@ -185,7 +294,7 @@ class RefTests(unittest.TestCase):
             git("add", ".")
             git("commit", "-m", "trusted main")
             trusted = git("rev-parse", "HEAD")
-            git("tag", "v1.2.3")
+            git("tag", "-a", "v1.2.3", "-m", "release")
             git("clone", "--bare", str(repo), str(root / "origin.git"))
             git("remote", "add", "origin", str(root / "origin.git"))
             with chdir(repo):
@@ -195,11 +304,24 @@ class RefTests(unittest.TestCase):
             git("commit", "-am", "not on main")
             untrusted = git("rev-parse", "HEAD")
             git("tag", "v1.2.4")
+            git("push", "origin", "refs/tags/v1.2.4")
             with chdir(repo):
                 with self.assertRaisesRegex(ValueError, "must belong to main"):
                     release.validate_ref("v1.2.4", untrusted)
                 with self.assertRaisesRegex(ValueError, "must match"):
                     release.validate_ref("v1.2.3", trusted)
+                # Promotion runs from main, not from the source checkout.
+                release.validate_tag("v1.2.3", trusted)
+                with self.assertRaisesRegex(ValueError, "must belong to main"):
+                    release.validate_tag("v1.2.4", untrusted)
+            git("--git-dir", str(root / "origin.git"), "update-ref", "refs/tags/v1.2.3", untrusted)
+            with chdir(repo):
+                with self.assertRaisesRegex(ValueError, "Live tag and workflow commit must match"):
+                    release.validate_tag("v1.2.3", trusted)
+            git("--git-dir", str(root / "origin.git"), "update-ref", "-d", "refs/tags/v1.2.3")
+            with chdir(repo):
+                with self.assertRaisesRegex(ValueError, "Could not fetch live tag"):
+                    release.validate_tag("v1.2.3", trusted)
 
 
 if __name__ == "__main__":

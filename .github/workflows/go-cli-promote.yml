@@ -1,0 +1,134 @@
+name: Antfly Cloud CLI Release Promotion
+
+on:
+  workflow_run:
+    workflows: [Antfly Cloud CLI Release Build]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+# The build run selects the release source, never the publisher checkout.
+env:
+  RELEASE_TAG: ${{ github.event.workflow_run.head_branch }}
+  RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+  BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+
+jobs:
+  inspect:
+    name: Verify release source and prepare approval
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.id }}
+      manifest_sha256: ${{ steps.payload.outputs.sha256 }}
+      prerelease: ${{ steps.payload.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Verify the live tag and its main ancestry
+        run: python scripts/release/cloud_cli.py validate-tag --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT"
+      - name: Select the exact build attempt's artifact
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          artifact_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts" \
+            -f name="cloud-cli-$BUILD_RUN_ID-$BUILD_ATTEMPT" \
+            --jq '.artifacts | if length == 1 and (.[0].expired | not) then .[0].id else error("Expected one available build artifact") end')"
+          [[ "$artifact_id" =~ ^[0-9]+$ ]]
+          echo "id=$artifact_id" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.BUILD_RUN_ID }}
+          artifact-ids: ${{ steps.artifact.outputs.id }}
+          merge-multiple: true
+          path: release-payload
+      - name: Record the verified payload for approval
+        id: payload
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.id }}
+        run: |
+          digest="$(sha256sum release-payload/manifest.json | cut -d' ' -f1)"
+          python scripts/release/cloud_cli.py verify --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT" --manifest-sha256 "$digest"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+          version="${RELEASE_TAG%%+*}"
+          if [[ "$version" == *-* ]]; then prerelease=true; else prerelease=false; fi
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          {
+            echo '## Release awaiting approval'
+            echo "Tag: $RELEASE_TAG"
+            echo "Commit: $RELEASE_COMMIT"
+            echo "Payload manifest SHA256: $digest"
+            echo "[Review the exact build artifact]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts/$ARTIFACT_ID)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Approve and publish prepared release
+    needs: inspect
+    runs-on: arc-antfly-publish
+    timeout-minutes: 15
+    concurrency:
+      group: antfly-cloud-cli-publication
+      cancel-in-progress: false
+    environment:
+      name: antfly-cloud-cli-release
+      url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.BUILD_RUN_ID }}
+          artifact-ids: ${{ needs.inspect.outputs.artifact_id }}
+          merge-multiple: true
+          path: release-payload
+      - name: Verify the approved payload before loading credentials
+        env:
+          MANIFEST_SHA256: ${{ needs.inspect.outputs.manifest_sha256 }}
+        run: |
+          python scripts/release/cloud_cli.py verify --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT" --manifest-sha256 "$MANIFEST_SHA256"
+      - name: Install hash-locked object storage client
+        run: python -m pip install --require-hashes -r scripts/release/requirements.lock
+      - name: Recheck the live tag after approval
+        run: python scripts/release/cloud_cli.py validate-tag --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT"
+      - name: Create stable Homebrew publishing token
+        if: needs.inspect.outputs.prerelease != 'true'
+        id: homebrew-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.HOMEBREW_APP_CLIENT_ID }}
+          private-key: ${{ secrets.HOMEBREW_APP_PRIVATE_KEY }}
+          owner: antflydb
+          repositories: homebrew-taps
+          permission-contents: write
+      - name: Publish the approved files to R2 and Homebrew
+        env:
+          MANIFEST_SHA256: ${{ needs.inspect.outputs.manifest_sha256 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.homebrew-token.outputs.token }}
+        run: python scripts/release/cloud_cli.py publish --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT" --manifest-sha256 "$MANIFEST_SHA256"

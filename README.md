@@ -72,12 +72,14 @@ See [manage sources from the CLI](docs/sources-manifest.md) for declarative `pla
 
 ## Release approval and publishing credentials
 
-The CLI release workflow tests and packages `v*` tags whose commits belong to
-`main`, then records the exact payload and its SHA256 manifest for review.
+The CLI release build tests and packages `v*` tags without publishing credentials.
+A separate promotion workflow loaded from `main` verifies the live tag and build
+artifact, then records the payload and its SHA256 manifest for review.
 Both release candidates and stable releases require approval through the
 `antfly-cloud-cli-release` environment. One of the same five Antfly release
 reviewers must approve; the person who triggered the run cannot self-approve.
 Emergency administrator bypass remains enabled, matching Antfly.
+Restrict the protected environment to the exact `main` branch, with no tag rules.
 
 Store `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL`, and
 `HOMEBREW_APP_PRIVATE_KEY` as secrets in that protected environment. Remove

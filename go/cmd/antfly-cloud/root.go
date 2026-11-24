@@ -18,10 +18,11 @@ import (
 )
 
 type appState struct {
-	cfg     Config
-	client  *Client
-	out     Output
-	timeout time.Duration
+	cfg            Config
+	configOverride string
+	client         *Client
+	out            Output
+	timeout        time.Duration
 	// token returns a current bearer token, refreshing the login with the
 	// caller's context so cancellation and deadlines apply. Tests that build
 	// appState directly may leave it nil.
@@ -100,7 +101,11 @@ this binary is the customer-facing Antfly Cloud CLI.`,
 		if err != nil {
 			return nil, err
 		}
-		return &appState{cfg: cfg, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout, token: tokenFor}, nil
+		configOverride := configFile
+		if configOverride == "" {
+			configOverride = os.Getenv("ANTFLY_CLOUD_CONFIG")
+		}
+		return &appState{cfg: cfg, configOverride: configOverride, client: client, out: Output{JSON: jsonOut, W: stdout}, timeout: timeout, token: tokenFor}, nil
 	}
 	stateFor := func(requireToken bool) (*appState, error) { return loadState(runCtx, requireToken) }
 
@@ -183,9 +188,15 @@ func writeError(w io.Writer, jsonOut bool, err error) {
 		Status     int    `json:"status,omitempty"`
 		ServerCode string `json:"server_code,omitempty"`
 		Message    string `json:"message,omitempty"`
+		// SourceID identifies a source saved before a later operation failed.
+		SourceID string `json:"source_id,omitempty"`
 		// IdempotencyKey lets a script retry a submission whose outcome is unknown.
 		IdempotencyKey string `json:"idempotency_key,omitempty"`
 	}{Code: "error", Message: err.Error()}
+	var sourceErr interface{ SourceID() string }
+	if errors.As(err, &sourceErr) {
+		detail.SourceID = sourceErr.SourceID()
+	}
 	var commandErr *commands.Error
 	var apiErr *APIError
 	switch {

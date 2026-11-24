@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -185,6 +186,44 @@ func waitSourceInstallation(ctx context.Context, client *sdk.Client, org, instan
 	}
 }
 
+type savedSourceError struct {
+	sourceID     string
+	retryCommand string
+	err          error
+}
+
+func (e *savedSourceError) Error() string {
+	return fmt.Sprintf("source %s was saved; retry its first run with `%s`: %v", e.sourceID, e.retryCommand, e.err)
+}
+
+func (e *savedSourceError) Unwrap() error { return e.err }
+
+func (e *savedSourceError) SourceID() string { return e.sourceID }
+
+// sourceFollowUpCommand keeps generated commands pinned to the resolved scope
+// and API URL, even when configuration selects a different default endpoint.
+func sourceFollowUpCommand(st *appState, orgID, instanceID, command string, args ...string) string {
+	var result strings.Builder
+	result.WriteString("antfly-cloud")
+	if st.configOverride != "" {
+		result.WriteString(" --config ")
+		result.WriteString(shellQuote(st.configOverride))
+	}
+	result.WriteString(" --api-url ")
+	result.WriteString(shellQuote(st.cfg.APIURL))
+	result.WriteString(" --org ")
+	result.WriteString(shellQuote(orgID))
+	result.WriteString(" --instance ")
+	result.WriteString(shellQuote(instanceID))
+	result.WriteByte(' ')
+	result.WriteString(command)
+	for _, arg := range args {
+		result.WriteByte(' ')
+		result.WriteString(shellQuote(arg))
+	}
+	return result.String()
+}
+
 func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 	command := &cobra.Command{Use: "sources", Short: "Manage connected sources, runs, and processing readiness"}
 	addSourceManagementCommands(command, stateFor)
@@ -325,14 +364,31 @@ func newSourcesCommand(stateFor stateFactory) *cobra.Command {
 			if !valid {
 				return fmt.Errorf("--every must be 5m, 15m, 30m, 1h, 6h, 12h, or 24h")
 			}
+			env, err := sourceManagementForInstance(stateFor, st, org.ID, instance.ID)
+			if err != nil {
+				return err
+			}
 			job, err := st.client.CreateSource(cmd.Context(), org.ID, instance.ID, sdk.CreateSourceRequest{Name: name, ProviderAuthID: connection, TargetTable: target, SourceConfig: config, RunPolicy: "scheduled", ScheduleSeconds: seconds})
 			if err != nil {
 				return err
 			}
-			if err := st.client.SyncSource(cmd.Context(), org.ID, instance.ID, job.ID); err != nil {
-				return fmt.Errorf("source %s was saved; queue its first sync with `antfly-cloud sources sync %s`: %w", job.ID, job.ID, err)
+			env.Out = io.Discard
+			receipt, err := commands.StartRun(cmd.Context(), env, job.ID, commands.RunOptions{})
+			if err != nil {
+				retry := sourceFollowUpCommand(st, org.ID, instance.ID, "sources run", job.ID)
+				if receipt.IdempotencyKey != "" {
+					retry += " --idempotency-key " + shellQuote(receipt.IdempotencyKey)
+				}
+				return &savedSourceError{sourceID: job.ID, retryCommand: retry, err: err}
 			}
-			return st.out.Print(job, func() error { fmt.Fprintf(st.out.W, "Source created and sync queued: %s\n", job.ID); return nil })
+			watch := sourceFollowUpCommand(st, org.ID, instance.ID, "sources runs wait", job.ID, receipt.Run.Id)
+			return st.out.Print(struct {
+				sdk.SourceJob
+				commands.RunReceipt
+			}{job, receipt}, func() error {
+				_, err := fmt.Fprintf(st.out.W, "Source created: %s\nRun queued: %s\nIdempotency key: %s\nWatch: %s\n", job.ID, receipt.Run.Id, receipt.IdempotencyKey, watch)
+				return err
+			})
 		}}
 		action.Flags().StringVar(&connection, "connection", "", "source connection ID")
 		action.Flags().StringVar(&resource, "resource", "drive", "Workspace service: drive, gmail, or calendar")
