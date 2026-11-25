@@ -35,7 +35,7 @@ jobs:
         run: python scripts/release/cloud_cli.py validate-ref --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT"
       - name: Test release integrity controls
         run: python -m unittest discover -s scripts/release -p 'test_*.py'
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: go/go.mod
           cache-dependency-path: go/go.sum
