@@ -76,8 +76,10 @@ Each version directory also contains GoReleaser `metadata.json`. The local
 Merge client changes and release configuration before tagging the intended commit.
 Pushing `vX.Y.Z` or `vX.Y.Z-rc.N` triggers the CLI release build; merging a PR or
 creating a GitHub release alone does not trigger it. The build tests the CLI and
-packages all four targets without publishing credentials. When the build
-succeeds, GitHub loads the promotion workflow from `main`, not from the tag.
+packages all four targets without publishing credentials. GoReleaser uses the
+triggering tag even when a stable tag and an RC tag point to the same commit.
+When the build succeeds, GitHub loads the promotion workflow from `main`, not
+from the tag.
 Promotion checks the live tag and its source ancestry and verifies the build
 artifact before requesting approval. Review the tag, source commit, artifact
 link, and manifest SHA256 in the **promotion** run summary.
